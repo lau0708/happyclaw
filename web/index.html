@@ -83,7 +83,9 @@
       (function () {
         var d = document.documentElement,
           s = localStorage.getItem('happyclaw-theme');
+        // 默认深色（工业深色大屏）：无 key 或 system 跟随系统深色时进入 dark
         if (
+          !s ||
           s === 'dark' ||
           (s === 'system' &&
             window.matchMedia('(prefers-color-scheme: dark)').matches)
@@ -104,7 +106,7 @@
           m.setAttribute(
             'content',
             getComputedStyle(d).getPropertyValue('--background').trim() ||
-              '#faf9f5',
+              '#0B1220',
           );
         }
         if (localStorage.getItem('happyclaw-font-style') === 'anthropic')

@@ -20,14 +20,17 @@ function getSystemTheme(): 'light' | 'dark' {
     : 'light';
 }
 
-// 默认浅色：未设置过主题的用户不再跟随系统深色模式。
-// 存储语义与之对称——无 key = light；「深色」「跟随系统」都显式落 key。
+// 默认深色：本项目采用工业深色大屏视觉（与设备业务页一致），
+// 未设置过主题的用户直接进入深色，避免浅色页面与设备大屏割裂。
+// 存储语义——无 key = dark；三个取值都显式落 key。
+export const DEFAULT_THEME: Theme = 'dark';
+
 function readTheme(): Theme {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined') return DEFAULT_THEME;
   const stored = window.localStorage.getItem(THEME_KEY);
   if (stored === 'light' || stored === 'dark' || stored === 'system')
     return stored;
-  return 'light';
+  return DEFAULT_THEME;
 }
 
 function readColorScheme(): ColorScheme {
@@ -100,7 +103,7 @@ export function useTheme() {
   const theme = useSyncExternalStore(
     subscribe,
     readTheme,
-    () => 'light' as Theme,
+    () => DEFAULT_THEME,
   );
   const colorScheme = useSyncExternalStore(
     subscribe,
@@ -136,8 +139,8 @@ export function useTheme() {
   }, []);
 
   const setTheme = useCallback((t: Theme) => {
-    if (t === 'light') window.localStorage.removeItem(THEME_KEY);
-    else window.localStorage.setItem(THEME_KEY, t);
+    // 默认值是 dark，因此三个取值都显式落盘，避免「删除 key」被读回默认深色
+    window.localStorage.setItem(THEME_KEY, t);
     applyTheme(t);
     notify();
   }, []);

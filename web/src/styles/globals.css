@@ -1190,3 +1190,117 @@ pre code.language-diff .hljs-deletion {
   --error: #f87171;
   --error-bg: #450a0a;
 }
+
+/* =====================================================
+   Industrial Dark — 全站统一视觉（设备大屏同款）
+   深海军蓝底 (#0B1220) + 蓝色强调 (#4DA3FF)，与设备业务页
+   （components/mes/MesUi.tsx）的硬编码配色一一对应。
+   选择器同时覆盖 teal / orange / neutral 三个方案的深色态，
+   并置于文件末尾以保证优先级——否则 html.dark.theme-orange
+   的暖黑色会盖掉这里的海军蓝。
+   ===================================================== */
+html.dark,
+html.dark.theme-orange,
+html.dark.theme-neutral {
+  --background: #0b1220;
+  --qr-quiet-zone: #ffffff;
+  --foreground: #e6edf7;
+
+  --card: #0e1729;
+  --card-foreground: #e6edf7;
+  --popover: #101b31;
+  --popover-foreground: #e6edf7;
+
+  --primary: #4da3ff;
+  --primary-foreground: #06101f;
+  /* 蓝色作为文字/图标时的提亮版本（#4da3ff 在深底上偏暗） */
+  --primary-text: #7cbbff;
+
+  --secondary: #14213a;
+  --secondary-foreground: #e6edf7;
+  --muted: #14213a;
+  --muted-foreground: #8fa3c0;
+  --accent: #16294a;
+  --accent-foreground: #cfe4ff;
+
+  --destructive: #f87171;
+  --destructive-foreground: #1a0a0a;
+  --border: #1c2a44;
+  --input: #1c2a44;
+  --ring: #4da3ff;
+
+  --sidebar-foreground: #a9bcd8;
+  --sidebar-primary: #4da3ff;
+  --sidebar-primary-foreground: #06101f;
+  --sidebar-accent: #16294a;
+  --sidebar-accent-foreground: #e6edf7;
+  --sidebar-border: #1a2740;
+  --sidebar-ring: #4da3ff;
+
+  --success: #34d399;
+  --success-bg: #062b21;
+  --warning: #fbbf24;
+  --warning-bg: #2e2004;
+  --error: #f87171;
+  --error-bg: #2e0f12;
+
+  --surface: #101b31;
+
+  --code-block-bg: #0a1526;
+  --inline-code-bg: rgba(77, 163, 255, 0.14);
+  --inline-code-text: #7cbbff;
+
+  /* 品牌蓝色阶（供 bg-brand-500 / text-brand-300 等使用） */
+  --brand-50: #0b1b30;
+  --brand-100: #10294a;
+  --brand-200: #163a66;
+  --brand-300: #1d4e86;
+  --brand-400: #2a6fb5;
+  --brand-500: #4da3ff;
+  --brand-600: #7cbbff;
+  --brand-700: #a8d2ff;
+
+  --chart-1: #4da3ff;
+  --chart-2: #34d399;
+  --chart-3: #fbbf24;
+  --chart-4: #a78bfa;
+  --chart-5: #f87171;
+
+  /* 外框比画布更深一档，突出「仪表台」的嵌入感 */
+  --app-shell: #070e1a;
+  --surface-raised: #101b31;
+  --surface-hover: color-mix(in oklab, #4da3ff 8%, transparent);
+  --surface-selected: color-mix(in oklab, #4da3ff 14%, transparent);
+  --surface-border: color-mix(in oklab, #8fa3c0 18%, transparent);
+  --faint-foreground: #51638a;
+
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --canvas-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --menu-shadow:
+    0 8px 24px -4px rgba(0, 0, 0, 0.6), 0 2px 6px -2px rgba(0, 0, 0, 0.45);
+  --floating-shadow:
+    0 16px 48px -12px rgba(0, 0, 0, 0.7), 0 4px 12px -4px rgba(0, 0, 0, 0.45);
+}
+
+/* 登录/初始化页沿用同一套工业深色（原本是固定的暖橙配色） */
+.dark .landing-page {
+  --background: #0b1220;
+  --foreground: #e6edf7;
+  --primary: #4da3ff;
+  --primary-foreground: #06101f;
+  --ring: #4da3ff;
+  --muted: #14213a;
+  --muted-foreground: #8fa3c0;
+  --border: #1c2a44;
+  --input: #1c2a44;
+  --brand-50: #0b1b30;
+  --brand-100: #10294a;
+  --brand-200: #163a66;
+  --brand-300: #1d4e86;
+  --brand-400: #2a6fb5;
+  --brand-500: #4da3ff;
+  --brand-600: #7cbbff;
+  --brand-700: #a8d2ff;
+  --error: #f87171;
+  --error-bg: #2e0f12;
+}
