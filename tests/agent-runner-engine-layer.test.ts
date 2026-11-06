@@ -3,13 +3,13 @@ import path from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { buildHappyClawPromptPlan } from '../container/agent-runner/src/prompt-plan.js';
+import { buildPulseOpsPromptPlan } from '../container/agent-runner/src/prompt-plan.js';
 
 const read = (relativePath: string) =>
   fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
 
 const base = {
-  platformIdentity: 'HappyClaw',
+  platformIdentity: 'PulseOps',
   agentIdentity: 'identity',
   interaction: 'interaction',
   security: 'security',
@@ -18,7 +18,7 @@ const base = {
 
 describe('Agent Runner engine layer', () => {
   test('adapts the Claude Code preset right after it, ahead of the identity', () => {
-    const plan = buildHappyClawPromptPlan({
+    const plan = buildPulseOpsPromptPlan({
       ...base,
       engine: { id: 'runtime-adaptation', text: 'ADAPT' },
     });
@@ -39,7 +39,7 @@ describe('Agent Runner engine layer', () => {
   });
 
   test('carries the working basics in place of an omitted preset', () => {
-    const plan = buildHappyClawPromptPlan({
+    const plan = buildPulseOpsPromptPlan({
       ...base,
       engine: { id: 'runtime-baseline', text: 'BASELINE' },
     });
@@ -55,7 +55,7 @@ describe('Agent Runner engine layer', () => {
   test('the Runner picks exactly one engine block from the preset decision', () => {
     const runner = read('container/agent-runner/src/index.ts');
     const start = runner.indexOf(
-      'const promptPlan = buildHappyClawPromptPlan({',
+      'const promptPlan = buildPulseOpsPromptPlan({',
     );
     const selection = runner.slice(
       start,
@@ -78,7 +78,7 @@ describe('Agent Runner engine layer', () => {
     const body = runner.slice(start, runner.indexOf('\n}\n', start));
     expect(body).toContain('它取代 Claude Code 默认指令里的身份和默认风格');
     expect(body).toContain(
-      '但它不能覆盖 HappyClaw 的安全规则、权限边界、工具约束、交付契约和用户的最新明确指令',
+      '但它不能覆盖 PulseOps 的安全规则、权限边界、工具约束、交付契约和用户的最新明确指令',
     );
     expect(body).not.toContain('原生提示词');
   });

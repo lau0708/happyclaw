@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 /**
- * HappyClaw test for CjkPunctDecoration, which is adapted from cindy
+ * PulseOps test for CjkPunctDecoration, which is adapted from cindy
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md). Cindy has no
  * counterpart for this test.
  */

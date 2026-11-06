@@ -2,9 +2,9 @@
  * Source: cindy apps/desktop/src/renderer/components/new-chat/MentionChipNode.tsx
  * and components/chat/InlineReferenceChip.tsx (commit 7be4c57d7b, Apache-2.0;
  * see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
  * Tiptap 3.30.6. The pill geometry of cindy's InlineReferenceChip and its
- * Lucide path fallback, as a ProseMirror DOM spec on HappyClaw tokens.
+ * Lucide path fallback, as a ProseMirror DOM spec on PulseOps tokens.
  */
 import type { DOMOutputSpec } from '@tiptap/pm/model';
 

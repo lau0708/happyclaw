@@ -1,8 +1,8 @@
 """server.py — 自研 mcp-server-mes：把模拟 MES 封装为 Agent 可调用的 MCP 工具
 
-接入 HappyClaw：在智能体能力治理中注册本 MCP Server（stdio 或 SSE transport）。
+接入 PulseOps：在智能体能力治理中注册本 MCP Server（stdio 或 SSE transport）。
 依赖：pip install mcp
-运行（stdio，供 HappyClaw 默认接入）：
+运行（stdio，供 PulseOps 默认接入）：
     python server.py
 运行（SSE，供 http 接入）：
     python server.py --transport sse
@@ -13,7 +13,7 @@ import argparse
 import sys
 from pathlib import Path
 
-# 无论 HappyClaw 从哪个工作目录启动 MCP，都从本文件所在目录导入 db
+# 无论 PulseOps 从哪个工作目录启动 MCP，都从本文件所在目录导入 db
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 try:
@@ -112,14 +112,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--transport", choices=["stdio", "sse"], default="stdio",
-        help="stdio 供 HappyClaw 容器内本地执行；sse 供容器经 host.docker.internal 访问宿主机",
+        help="stdio 供 PulseOps 容器内本地执行；sse 供容器经 host.docker.internal 访问宿主机",
     )
     parser.add_argument("--host", default="0.0.0.0", help="sse 模式绑定地址")
     parser.add_argument("--port", type=int, default=18080, help="sse 模式端口")
     args = parser.parse_args()
 
     if args.transport == "sse":
-        # SSE：让 HappyClaw 沙箱容器通过 host.docker.internal:<port> 访问宿主机 MCP
+        # SSE：让 PulseOps 沙箱容器通过 host.docker.internal:<port> 访问宿主机 MCP
         try:
             import uvicorn
         except ImportError:  # pragma: no cover

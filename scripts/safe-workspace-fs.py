@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Descriptor-relative workspace mutations for the HappyClaw host.
+"""Descriptor-relative workspace mutations for the PulseOps host.
 
 All path components are opened relative to an already-open directory with
 O_NOFOLLOW. This keeps the final write/delete/mkdir inside the workspace even

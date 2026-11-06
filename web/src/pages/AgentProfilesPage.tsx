@@ -126,7 +126,7 @@ function promptsOf(profile: AgentProfile): AgentPromptParts {
   };
 }
 
-/** A profile's own avatar, falling back to the main HappyClaw appearance. */
+/** A profile's own avatar, falling back to the main PulseOps appearance. */
 function resolveAgentAvatar(
   avatar: {
     url: string | null;
@@ -581,7 +581,7 @@ export function AgentProfilesPage() {
     setCreateOpen(false);
     selectProfile(profile.id);
     toast.success(
-      '已创建智能体；当前未绑定工作区，Session 与 Memory 均和 HappyClaw 隔离',
+      '已创建智能体；当前未绑定工作区，Session 与 Memory 均和 PulseOps 隔离',
     );
   };
 
@@ -667,7 +667,7 @@ export function AgentProfilesPage() {
       setAvatarColor(profile.avatar_color);
       setAvatarUrl(profile.avatar_url);
       setAvatarStyleOpen(false);
-      toast.success('已改为继承主 HappyClaw 头像');
+      toast.success('已改为继承主 PulseOps 头像');
     } catch (error) {
       toast.error(errorText(error, '恢复主头像失败'));
     } finally {
@@ -721,7 +721,7 @@ export function AgentProfilesPage() {
       (candidate) => candidate.jid === workspaceJid,
     );
     if (workspace?.is_home) {
-      toast.error('Home Workspace 固定归属内置 HappyClaw，不能迁移');
+      toast.error('Home Workspace 固定归属内置 PulseOps，不能迁移');
       return;
     }
     const target = profiles.find((profile) => profile.id === targetProfileId);
@@ -1258,7 +1258,7 @@ export function AgentProfilesPage() {
                         <p className="mt-0.5 text-caption leading-5 text-muted-foreground">
                           {avatarUrl || avatarEmoji || avatarColor
                             ? '当前使用这个智能体的自定义头像。'
-                            : '未单独设置，自动继承主 HappyClaw 头像。'}
+                            : '未单独设置，自动继承主 PulseOps 头像。'}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
@@ -1355,7 +1355,7 @@ export function AgentProfilesPage() {
                 id="agent-capabilities"
                 className="scroll-mt-20"
                 title="能力配置"
-                description="模型、推理等级和按来源配置的 Skills 与 MCP。HappyClaw、宿主机与工作区能力会在运行时叠加；同名项以“最终生效能力”中的结果为准。"
+                description="模型、推理等级和按来源配置的 Skills 与 MCP。PulseOps、宿主机与工作区能力会在运行时叠加；同名项以“最终生效能力”中的结果为准。"
               >
                 <AgentCapabilityForm
                   value={capabilities}
@@ -1371,7 +1371,7 @@ export function AgentProfilesPage() {
                   {isAdmin && (
                     <SettingsRow
                       label="加载完整宿主机 Claude Code 配置"
-                      description="将 ~/.claude 作为用户配置层叠加，包含提示词、Rules、Agents、Commands、Hooks、Workflows、Output Styles、Plugins 与设置（含宿主机 MCP）。工作区仍是运行目录；HappyClaw MCP 与宿主机 Skills 由上面的设置独立控制。"
+                      description="将 ~/.claude 作为用户配置层叠加，包含提示词、Rules、Agents、Commands、Hooks、Workflows、Output Styles、Plugins 与设置（含宿主机 MCP）。工作区仍是运行目录；PulseOps MCP 与宿主机 Skills 由上面的设置独立控制。"
                       control={
                         <Switch
                           checked={contextSource === 'host_claude'}

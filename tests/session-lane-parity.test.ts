@@ -594,7 +594,7 @@ describe('a migrated main session elsewhere in the runtime', () => {
       getMessagesSince: db.getMessagesSince,
       storeMessageDirect: db.storeMessageDirect,
       broadcastNewMessage: vi.fn(),
-      ASSISTANT_NAME: 'HappyClaw',
+      ASSISTANT_NAME: 'PulseOps',
       queue: { enqueueTask: vi.fn() },
       processAgentConversation: vi.fn(),
     };

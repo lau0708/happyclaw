@@ -71,7 +71,7 @@ export function validateHostDirectoryMounts(
     const containerPath = mount.containerPath.trim();
     if (!hostPath) {
       errors[`additional_mounts.${index}.host_path`] =
-        '请选择 HappyClaw 服务器上的宿主机目录';
+        '请选择 PulseOps 服务器上的宿主机目录';
     } else if (!hostPath.startsWith('/')) {
       errors[`additional_mounts.${index}.host_path`] =
         '宿主机目录必须是服务器上的绝对路径';
@@ -169,7 +169,7 @@ export function HostDirectoryMountEditor({
             宿主机目录挂载
           </h3>
           <p className="mt-0.5 text-caption leading-5 text-muted-foreground">
-            仅管理员可用。选择 HappyClaw/Docker
+            仅管理员可用。选择 PulseOps/Docker
             服务器上的目录，并实时挂载到容器；这不是复制，源目录后续变化会直接反映到容器中。
           </p>
         </div>
@@ -250,7 +250,7 @@ export function HostDirectoryMountEditor({
                   }}
                   inputId={`${mount.id}-host-path`}
                   label="宿主机目录"
-                  description="这里浏览的是 HappyClaw/Docker 服务器目录，不是当前浏览器设备上的文件夹。"
+                  description="这里浏览的是 PulseOps/Docker 服务器目录，不是当前浏览器设备上的文件夹。"
                   placeholder="/srv/projects/example"
                   purpose="mount"
                   allowCreateFolder={false}

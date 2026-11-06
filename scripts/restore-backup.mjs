@@ -60,7 +60,7 @@ async function assertPortFree(port) {
     (await canConnect('127.0.0.1', port)) || (await canConnect('::1', port));
   if (listening) {
     throw new Error(
-      `Refusing to restore while a service is listening on port ${port}. Stop HappyClaw first (make stop).`,
+      `Refusing to restore while a service is listening on port ${port}. Stop PulseOps first (make stop).`,
     );
   }
 }

@@ -38,7 +38,7 @@ function describeHostGrants(grants: AgentHostGrant[]): string {
 
 export function describeReferences(refs: AgentCapabilityReferences): string {
   return [
-    refs.skills.length ? `HappyClaw Skills：${refs.skills.join('、')}` : '',
+    refs.skills.length ? `PulseOps Skills：${refs.skills.join('、')}` : '',
     refs.host_skills.length
       ? `宿主机 Skills：${refs.host_skills.join('、')}`
       : '',
@@ -102,7 +102,7 @@ export function ImportAgentDialog({
       setName(typeof data.agent?.name === 'string' ? data.agent.name : '');
     } catch {
       setFile(null);
-      setError('这不是 HappyClaw 智能体导出文件（.json）');
+      setError('这不是 PulseOps 智能体导出文件（.json）');
     }
   };
 

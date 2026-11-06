@@ -44,7 +44,7 @@ export function memoryRecallQuery(turnText: string): string {
     for (const [, attributes, body] of turnText
       .slice(start)
       .matchAll(MESSAGE)) {
-      // A forward's text, and the request HappyClaw adds for one, are not
+      // A forward's text, and the request PulseOps adds for one, are not
       // the sender's own words.
       if (/\brelation="forwarded_material"/.test(attributes)) continue;
       if (/\bid="[^"]*:default-request"/.test(attributes)) continue;

@@ -1,9 +1,9 @@
 /**
  * Source: cindy apps/desktop/src/renderer/components/new-chat/MentionChipNode.tsx
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
  * Tiptap 3.30.6. Only workspace file and directory references exist in
- * HappyClaw; the chip renders through `renderHTML` instead of a React NodeView.
+ * PulseOps; the chip renders through `renderHTML` instead of a React NodeView.
  *
  * Atomic Tiptap node for workspace file and directory references in the
  * composer. It is removed as a whole and serialized as `@path` on send.

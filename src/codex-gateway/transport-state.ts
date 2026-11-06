@@ -5,7 +5,7 @@
 //   带回的粘性路由令牌，同一 turn 的后续请求原样回放；新 turn 从空开始。
 // - ChatGPT 基础设施 cookie（http-client/src/chatgpt_cloudflare_cookies.rs）：
 //   只保留 Cloudflare 与 __oailb 路由 cookie，任何账号/会话 cookie 都不存。
-// 官方是单账号进程，cookie 罐进程全局；HappyClaw 同进程服务多个账号，两类状态
+// 官方是单账号进程，cookie 罐进程全局；PulseOps 同进程服务多个账号，两类状态
 // 都按 provider + 账号隔离，绝不跨账号共享。全部只在内存中，有 TTL 与条数上限。
 
 import { randomBytes } from 'node:crypto';

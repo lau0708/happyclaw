@@ -1,6 +1,6 @@
 /**
  * mes.ts — 对接自研 mcp-server-mes 的 HTTP API（经 vite /mes-api 代理 → api.py:8002）
- * 与 HappyClaw 自己的 /api（后端 3000）隔离，避免冲突。
+ * 与 PulseOps 自己的 /api（后端 3000）隔离，避免冲突。
  */
 export interface Equipment {
   equipment_id: string;

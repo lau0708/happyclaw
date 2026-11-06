@@ -88,11 +88,11 @@ describe('Agent governance isolation UI', () => {
     expect(container?.textContent).toContain('非 Home 工作区');
   });
 
-  test('shows Home as fixed to HappyClaw and offers no migration control', async () => {
+  test('shows Home as fixed to PulseOps and offers no migration control', async () => {
     const happyClaw = {
       ...baseProfile,
       id: 'happyclaw',
-      name: 'HappyClaw',
+      name: 'PulseOps',
       is_default: true,
     };
     await render(happyClaw, {
@@ -111,7 +111,7 @@ describe('Agent governance isolation UI', () => {
       channel_mounts: [],
     });
 
-    expect(container?.textContent).toContain('Home · 固定归属 HappyClaw');
+    expect(container?.textContent).toContain('Home · 固定归属 PulseOps');
     expect(
       container?.querySelector('[aria-label="迁移工作区 Home"]'),
     ).toBeNull();

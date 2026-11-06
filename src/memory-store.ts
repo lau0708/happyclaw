@@ -57,7 +57,7 @@ export type WorkspaceMemorySourceType =
   | 'scheduled_task'
   | 'migration';
 
-/** One durable Home Workspace fact completes HappyClaw's first-wake ritual. */
+/** One durable Home Workspace fact completes PulseOps's first-wake ritual. */
 export const HAPPYCLAW_OWNER_PREFERRED_ADDRESS_CANONICAL_KEY =
   'happyclaw.owner.preferred_address';
 const HAPPYCLAW_OWNER_PROFILE_MEMORY_NAMESPACE = 'happyclaw.owner-profile';
@@ -230,7 +230,7 @@ function rejectReservedCanonicalKey(value: string | null | undefined): void {
   }
   throw new WorkspaceMemoryStoreError(
     'reserved_canonical_key',
-    'This canonical key is owned by the HappyClaw Owner Profile service',
+    'This canonical key is owned by the PulseOps Owner Profile service',
   );
 }
 
@@ -395,7 +395,7 @@ function rejectReservedMemoryItem(item: WorkspaceMemoryItem): void {
   if (!isReservedMemoryItem(item)) return;
   throw new WorkspaceMemoryStoreError(
     'reserved_canonical_key',
-    'This memory item is owned by the HappyClaw Owner Profile service',
+    'This memory item is owned by the PulseOps Owner Profile service',
   );
 }
 
@@ -886,7 +886,7 @@ export function bindWorkspaceMemoryDatabase(db: SqliteDatabase | null): void {
  * be undone by an older active duplicate. Every duplicate is detached from
  * the reserved key with full version/audit/outbox history.
  */
-export function reconcileHappyClawOwnerAddressCanonicalKey(): {
+export function reconcilePulseOpsOwnerAddressCanonicalKey(): {
   workspaces: number;
   retiredItems: number;
 } {
@@ -979,7 +979,7 @@ export function reconcileHappyClawOwnerAddressCanonicalKey(): {
  * createWorkspaceMemorySchema is essential: an old database may contain
  * duplicates and would otherwise fail before the migration can repair them.
  */
-export function enforceHappyClawOwnerAddressCanonicalInvariant(): void {
+export function enforcePulseOpsOwnerAddressCanonicalInvariant(): void {
   for (const table of SEARCH_INDEXES) {
     requireDatabase()
       .prepare(
@@ -1006,7 +1006,7 @@ export function enforceHappyClawOwnerAddressCanonicalInvariant(): void {
 /**
  * Remove every memory artifact for a deleted workspace explicitly.
  *
- * HappyClaw may temporarily disable SQLite foreign-key enforcement when a
+ * PulseOps may temporarily disable SQLite foreign-key enforcement when a
  * legacy installation contains unrelated FK orphans. Deletion therefore must
  * not rely on ON DELETE CASCADE: leaving the store behind would let a future
  * workspace that reuses the same JID inherit another owner's memory.
@@ -1155,7 +1155,7 @@ export interface ReservedWorkspaceMemoryMutationResult {
  * Read the platform-owned Owner Profile item without exposing it through the
  * generic Workspace Memory service.
  */
-export function getHappyClawOwnerAddressMemoryItem(workspaceJid: string): {
+export function getPulseOpsOwnerAddressMemoryItem(workspaceJid: string): {
   store: WorkspaceMemoryStore;
   item: WorkspaceMemoryItem | null;
 } {
@@ -1234,7 +1234,7 @@ function reservedRequestReplay(
  * to `superseded`; restoring changes it back to `active`. This lets callers
  * use one CAS lineage across set → update → clear → restore.
  */
-export function mutateHappyClawOwnerAddressMemory(input: {
+export function mutatePulseOpsOwnerAddressMemory(input: {
   workspaceJid: string;
   preferredAddress?: string;
   clear?: boolean;
@@ -1246,7 +1246,7 @@ export function mutateHappyClawOwnerAddressMemory(input: {
   const db = requireDatabase();
   return db.transaction(() => {
     const { store: initialStore, item: current } =
-      getHappyClawOwnerAddressMemoryItem(input.workspaceJid);
+      getPulseOpsOwnerAddressMemoryItem(input.workspaceJid);
     const idempotencyKey = normalizeNullable(input.idempotencyKey);
     const preferredAddress = normalizeNullable(input.preferredAddress);
     if (!input.clear && !preferredAddress) {
@@ -1257,7 +1257,7 @@ export function mutateHappyClawOwnerAddressMemory(input: {
       if (input.clear) {
         throw new WorkspaceMemoryStoreError(
           'revision_conflict',
-          'HappyClaw Owner Profile revision conflict',
+          'PulseOps Owner Profile revision conflict',
           { currentRevision: 0, storeRevision: initialStore.revision },
         );
       }
@@ -1267,7 +1267,7 @@ export function mutateHappyClawOwnerAddressMemory(input: {
       ) {
         throw new WorkspaceMemoryStoreError(
           'revision_conflict',
-          'HappyClaw Owner Profile revision conflict',
+          'PulseOps Owner Profile revision conflict',
           { currentRevision: 0, storeRevision: initialStore.revision },
         );
       }
@@ -1378,7 +1378,7 @@ export function mutateHappyClawOwnerAddressMemory(input: {
     ) {
       throw new WorkspaceMemoryStoreError(
         'revision_conflict',
-        'HappyClaw Owner Profile revision conflict',
+        'PulseOps Owner Profile revision conflict',
         {
           currentRevision: current.revision,
           storeRevision: initialStore.revision,
@@ -1442,7 +1442,7 @@ export function mutateHappyClawOwnerAddressMemory(input: {
       const latest = requireItem(initialStore, current.id);
       throw new WorkspaceMemoryStoreError(
         'revision_conflict',
-        'HappyClaw Owner Profile revision conflict',
+        'PulseOps Owner Profile revision conflict',
         {
           currentRevision: latest.revision,
           storeRevision: requireStore(input.workspaceJid).revision,

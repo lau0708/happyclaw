@@ -53,7 +53,7 @@ interface PaletteOptions {
 const RESULT_LIMIT = 50;
 
 /**
- * State of the `/` and `@` palettes. `/` lists HappyClaw's commands and the
+ * State of the `/` and `@` palettes. `/` lists PulseOps's commands and the
  * workspace's Skills and inserts `/name ` as text; `@` browses the workspace
  * one directory at a time and inserts a reference chip.
  */

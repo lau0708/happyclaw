@@ -56,7 +56,7 @@ afterAll(() => {
   fs.rmSync(cwd, { recursive: true, force: true });
 });
 
-describe('HappyClaw tool initialization', () => {
+describe('PulseOps tool initialization', () => {
   test('uses the SDK and Claude CLI versions pinned by the runner build', () => {
     const runnerPackage = JSON.parse(
       fs.readFileSync(path.join(runnerRoot, 'package.json'), 'utf8'),

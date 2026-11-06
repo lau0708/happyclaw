@@ -1534,8 +1534,8 @@ describe('on a phone', () => {
     mocks.put.mockResolvedValue(following);
     await render('s0');
     await open();
-    expect(checked()[0].getAttribute('title')).toBe('跟随主 HappyClaw');
-    expect(detail('跟随主 HappyClaw')).toBe('Claude 官方 · opus');
+    expect(checked()[0].getAttribute('title')).toBe('跟随主 PulseOps');
+    expect(detail('跟随主 PulseOps')).toBe('Claude 官方 · opus');
     expect(segments()?.previousElementSibling).toBe(checked()[0]);
     await click(segment('最高'));
     expect(mocks.put).toHaveBeenCalledWith(
@@ -1599,7 +1599,7 @@ describe('the default row', () => {
   test.each([
     ['agent', '智能体默认'],
     ['owner_main', '跟随主智能体'],
-    ['system_main', '跟随主 HappyClaw'],
+    ['system_main', '跟随主 PulseOps'],
   ] as const)(
     'reads %s as 「%s」 with the connection and model it runs',
     async (source, label) => {

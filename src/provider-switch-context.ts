@@ -13,7 +13,7 @@ export interface ProviderSwitchInput {
 }
 
 const PROVIDER_SWITCH_HISTORY_INTRO =
-  '检测到本次因切换 provider 或模型需要使用新的底层模型 session。以下是 HappyClaw 保存的最近对话记录，供你延续上下文。';
+  '检测到本次因切换 provider 或模型需要使用新的底层模型 session。以下是 PulseOps 保存的最近对话记录，供你延续上下文。';
 
 export interface ProviderSwitchSelection {
   profileId: string;
@@ -65,7 +65,7 @@ function seedPromptWithPersistedHistory<T extends ProviderSwitchInput>(
  * Claude SDK sessions are bound to one OAuth account / provider, and a ChatGPT
  * session's encrypted reasoning verifies only for the model that issued it.
  * When the pool fails over or the conversation changes model, drop the resume
- * token and seed the replacement session with HappyClaw's persisted
+ * token and seed the replacement session with PulseOps's persisted
  * transcript so prior user/assistant turns survive.
  */
 export function applyProviderSwitchToInput<T extends ProviderSwitchInput>(

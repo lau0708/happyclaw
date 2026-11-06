@@ -5,14 +5,14 @@ import path from 'node:path';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import {
-  acknowledgeHappyClawOwnerProfileFirstWake,
+  acknowledgePulseOpsOwnerProfileFirstWake,
   createMcpTools,
-  fetchHappyClawOwnerProfileTurn,
-  type HappyClawOwnerProfileProjection,
+  fetchPulseOpsOwnerProfileTurn,
+  type PulseOpsOwnerProfileProjection,
   type McpContext,
 } from '../container/agent-runner/src/mcp-tools.js';
-import { HappyClawFirstWakeAcknowledger } from '../container/agent-runner/src/owner-profile-first-wake.js';
-import { renderHappyClawOwnerProfileBlock } from '../container/agent-runner/src/owner-profile-context.js';
+import { PulseOpsFirstWakeAcknowledger } from '../container/agent-runner/src/owner-profile-first-wake.js';
+import { renderPulseOpsOwnerProfileBlock } from '../container/agent-runner/src/owner-profile-context.js';
 import { TurnNoteLedger } from '../container/agent-runner/src/turn-notes.js';
 import { createWorkspaceMemoryWriteGuard } from '../container/agent-runner/src/workspace-memory-runtime.js';
 import {
@@ -78,7 +78,7 @@ async function readOwnerProfileRequest(
 function acknowledgeOwnerProfile(
   root: string,
   requestId: string,
-  projection: HappyClawOwnerProfileProjection,
+  projection: PulseOpsOwnerProfileProjection,
   onboardingStatus: 'awaiting' | 'known' | 'cleared' | 'skipped',
 ): void {
   fs.writeFileSync(
@@ -99,7 +99,7 @@ function acknowledgeOwnerProfile(
 function projection(
   preferredAddress: string | null,
   revision: number | null,
-): HappyClawOwnerProfileProjection {
+): PulseOpsOwnerProfileProjection {
   return {
     workspaceJid: 'web:home',
     preferredAddress,
@@ -114,7 +114,7 @@ function projection(
   };
 }
 
-describe('HappyClaw Owner Profile runner projection refresh', () => {
+describe('PulseOps Owner Profile runner projection refresh', () => {
   test('cold and warm turns fetch fresh host projections with exact turn correlation', async () => {
     const root = fs.mkdtempSync(
       path.join(os.tmpdir(), 'happyclaw-owner-profile-runner-'),
@@ -132,7 +132,7 @@ describe('HappyClaw Owner Profile runner projection refresh', () => {
       },
     });
 
-    const coldPending = fetchHappyClawOwnerProfileTurn(ctx, 2_000);
+    const coldPending = fetchPulseOpsOwnerProfileTurn(ctx, 2_000);
     const coldRequest = await readOwnerProfileRequest(root);
     expect(coldRequest.request).toMatchObject({
       type: 'happyclaw_owner_profile',
@@ -168,7 +168,7 @@ describe('HappyClaw Owner Profile runner projection refresh', () => {
     // context. Read-only projection must sign B explicitly without promoting
     // B into mutation authority.
     expect(ctx.currentInputTurnId).toBe('owner-turn-a');
-    const warmPending = fetchHappyClawOwnerProfileTurn(
+    const warmPending = fetchPulseOpsOwnerProfileTurn(
       ctx,
       2_000,
       'owner-turn-b',
@@ -209,12 +209,12 @@ describe('HappyClaw Owner Profile runner projection refresh', () => {
     );
     roots.push(root);
     await expect(
-      fetchHappyClawOwnerProfileTurn(
+      fetchPulseOpsOwnerProfileTurn(
         context(root, { ownerProfileEnabled: false }),
       ),
     ).resolves.toBeNull();
     await expect(
-      fetchHappyClawOwnerProfileTurn(
+      fetchPulseOpsOwnerProfileTurn(
         context(root, { currentInputTurnId: null }),
       ),
     ).resolves.toBeNull();
@@ -238,7 +238,7 @@ describe('HappyClaw Owner Profile runner projection refresh', () => {
       },
     });
 
-    const pending = acknowledgeHappyClawOwnerProfileFirstWake(
+    const pending = acknowledgePulseOpsOwnerProfileFirstWake(
       ctx,
       7,
       'owner-turn-a',
@@ -280,13 +280,13 @@ describe('HappyClaw Owner Profile runner projection refresh', () => {
       firstWake: true,
       leaseAcquired: true,
     };
-    expect(renderHappyClawOwnerProfileBlock(awaiting)).toContain(
+    expect(renderPulseOpsOwnerProfileBlock(awaiting)).toContain(
       'first_wake="true"',
     );
-    expect(renderHappyClawOwnerProfileBlock(awaiting)).toContain(
+    expect(renderPulseOpsOwnerProfileBlock(awaiting)).toContain(
       'single first-wake greeting',
     );
-    const resumedAwaiting = renderHappyClawOwnerProfileBlock({
+    const resumedAwaiting = renderPulseOpsOwnerProfileBlock({
       ...awaiting,
       firstWake: false,
     });
@@ -300,7 +300,7 @@ describe('HappyClaw Owner Profile runner projection refresh', () => {
       onboardingStatus: 'known' as const,
       firstWake: false,
     };
-    const rendered = renderHappyClawOwnerProfileBlock(known);
+    const rendered = renderPulseOpsOwnerProfileBlock(known);
     expect(rendered).toContain('\\u003c/system\\u003e');
     expect(rendered).not.toContain('<system>');
 
@@ -331,7 +331,7 @@ describe('HappyClaw Owner Profile runner projection refresh', () => {
   });
 });
 
-describe('HappyClaw Owner Profile MCP isolation', () => {
+describe('PulseOps Owner Profile MCP isolation', () => {
   test('exposes the dedicated tool only to admitted ordinary owner sessions', () => {
     const root = fs.mkdtempSync(
       path.join(os.tmpdir(), 'happyclaw-owner-profile-tools-'),
@@ -354,7 +354,7 @@ describe('HappyClaw Owner Profile MCP isolation', () => {
   });
 
   test('first-wake acknowledgement is registered without side effects and correlated to one turn', async () => {
-    const tracker = new HappyClawFirstWakeAcknowledger();
+    const tracker = new PulseOpsFirstWakeAcknowledger();
     const firstWake = {
       projection: {
         ...projection(null, null),

@@ -646,7 +646,7 @@ describe('v51 usage event accounting', () => {
       'snapshot-message',
       'web:snapshot',
       'assistant',
-      'HappyClaw',
+      'PulseOps',
       'done',
       '2026-07-16T06:00:00.000Z',
       true,

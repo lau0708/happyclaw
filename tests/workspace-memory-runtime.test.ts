@@ -182,7 +182,7 @@ describe('Workspace Memory runtime boundary', () => {
     }
   });
 
-  test('marks read-only and always-loaded HappyClaw tools for Claude Code', () => {
+  test('marks read-only and always-loaded PulseOps tools for Claude Code', () => {
     const root = fs.mkdtempSync(
       path.join(os.tmpdir(), 'workspace-tool-hints-'),
     );

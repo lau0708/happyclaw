@@ -26,14 +26,14 @@ describe('planImageClipboardPaste', () => {
         value: 'hello world',
         selectionStart: 6,
         selectionEnd: 11,
-        text: 'HappyClaw',
+        text: 'PulseOps',
         imageItemCount: 1,
       }),
     ).toMatchObject({
-      value: 'hello HappyClaw',
+      value: 'hello PulseOps',
       selectionStart: 15,
       selectionEnd: 15,
-      insertedText: 'HappyClaw',
+      insertedText: 'PulseOps',
     });
   });
 

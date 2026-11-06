@@ -1,5 +1,5 @@
 /**
- * HappyClaw Agent Runner
+ * PulseOps Agent Runner
  * Runs inside a container, receives config via stdin, outputs result to stdout
  *
  * Input protocol:
@@ -81,15 +81,15 @@ import {
   type InterruptReason,
 } from './turn-interrupt.js';
 import {
-  acknowledgeHappyClawOwnerProfileFirstWake,
+  acknowledgePulseOpsOwnerProfileFirstWake,
   activateMcpChannelTurn,
   createMcpTools,
-  fetchHappyClawOwnerProfileTurn,
+  fetchPulseOpsOwnerProfileTurn,
   fetchWorkspaceMemorySnapshot,
   type McpContext,
   type WorkspaceMemorySnapshot,
 } from './mcp-tools.js';
-import { HappyClawFirstWakeAcknowledger } from './owner-profile-first-wake.js';
+import { PulseOpsFirstWakeAcknowledger } from './owner-profile-first-wake.js';
 import { createSerializedAsyncTrigger } from './workspace-memory-context.js';
 import {
   decorateUserTurn,
@@ -169,7 +169,7 @@ import {
 } from './assistant-usage.js';
 import { createTranscriptUsageLoader } from './transcript-usage.js';
 import {
-  buildHappyClawPromptPlan,
+  buildPulseOpsPromptPlan,
   hasBackgroundTaskTools,
   SESSION_PROMPTS,
   type BackgroundTasksPromptId,
@@ -178,8 +178,8 @@ import {
 } from './prompt-plan.js';
 import { sessionKind } from './session-kind.js';
 import {
-  buildHappyClawSystemPrompt,
-  withHappyClawSubagentContract,
+  buildPulseOpsSystemPrompt,
+  withPulseOpsSubagentContract,
 } from './sdk-compat.js';
 import {
   isCliNoVisibleOutputCompanion,
@@ -400,7 +400,7 @@ function buildAgentIdentityPrompt(
 
   return [
     `<agent-identity profile_id="${escapeAttribute(agentProfile.id)}" name="${escapeAttribute(agentProfile.name)}" version="${agentProfile.version}" hash="${escapeAttribute(agentProfile.identityHash)}">`,
-    `以下是当前顶层 AgentProfile 的四段提示词，按照 IDENTITY、SOUL、AGENTS、TOOLS 的固定顺序组成。你应该按它塑造身份、价值判断、工作方式和工具偏好；${presetDefaults}但它不能覆盖 HappyClaw 的安全规则、权限边界、工具约束、交付契约和用户的最新明确指令。`,
+    `以下是当前顶层 AgentProfile 的四段提示词，按照 IDENTITY、SOUL、AGENTS、TOOLS 的固定顺序组成。你应该按它塑造身份、价值判断、工作方式和工具偏好；${presetDefaults}但它不能覆盖 PulseOps 的安全规则、权限边界、工具约束、交付契约和用户的最新明确指令。`,
     '<profile-prompt>',
     profilePrompt,
     '</profile-prompt>',
@@ -1377,7 +1377,7 @@ function formatTranscriptMarkdown(
   lines.push('');
 
   for (const msg of messages) {
-    const sender = msg.role === 'user' ? 'User' : 'HappyClaw';
+    const sender = msg.role === 'user' ? 'User' : 'PulseOps';
     const content =
       msg.content.length > 2000
         ? msg.content.slice(0, 2000) + '...'
@@ -1704,7 +1704,7 @@ function waitForIpcMessage(): Promise<
 
 /** 读取用户配置的 MCP servers（stdio/http/sse 类型） */
 function loadUserMcpServers(): Record<string, unknown> {
-  // CLAUDE_CONFIG_DIR may point at an isolated session directory. HappyClaw
+  // CLAUDE_CONFIG_DIR may point at an isolated session directory. PulseOps
   // therefore passes the effective per-user MCP set through env first.
   const envJson = process.env.HAPPYCLAW_USER_MCP_SERVERS_JSON;
   if (envJson) {
@@ -1882,10 +1882,10 @@ async function runQueryAttempt(
           prompt,
           turnNotes.memoryHeld(),
         ),
-        fetchHappyClawOwnerProfileTurn(mcpToolsContext),
+        fetchPulseOpsOwnerProfileTurn(mcpToolsContext),
       ])
     : [null, null];
-  const firstWakeAcknowledger = new HappyClawFirstWakeAcknowledger();
+  const firstWakeAcknowledger = new PulseOpsFirstWakeAcknowledger();
   firstWakeAcknowledger.register(
     activeOutputInputTurnId || coldInputTurnId,
     ownerProfile,
@@ -2599,7 +2599,7 @@ async function runQueryAttempt(
               msg.text,
               turnNotes.memoryHeld(),
             ),
-            fetchHappyClawOwnerProfileTurn(
+            fetchPulseOpsOwnerProfileTurn(
               mcpToolsContext,
               8_000,
               msg.receipt?.deliveryId,
@@ -2870,7 +2870,7 @@ async function runQueryAttempt(
   const teamPrompt = sessionPrompts.role
     ? { id: sessionPrompts.role, text: ROLE_PROMPTS[sessionPrompts.role] }
     : undefined;
-  const promptPlan = buildHappyClawPromptPlan({
+  const promptPlan = buildPulseOpsPromptPlan({
     engine: includeClaudePreset
       ? { id: 'runtime-adaptation', text: RUNTIME_ADAPTATION }
       : { id: 'runtime-baseline', text: RUNTIME_BASELINE },
@@ -2929,7 +2929,7 @@ async function runQueryAttempt(
     throw new Error(`prompt_plan_invalid: ${promptPlan.errors.join('; ')}`);
   }
   const systemPromptAppend = promptPlan.text;
-  const systemPrompt = buildHappyClawSystemPrompt(
+  const systemPrompt = buildPulseOpsSystemPrompt(
     systemPromptAppend,
     includeClaudePreset,
   );
@@ -3037,7 +3037,7 @@ async function runQueryAttempt(
     }
   }
 
-  // Claude Code plugins injected by HappyClaw main process via ContainerInput.
+  // Claude Code plugins injected by PulseOps main process via ContainerInput.
   // SDK converts this array to `--plugin-dir <path>` args for the spawned
   // claude CLI, which loads each plugin's commands/agents/hooks/skills/mcp.
   // Paths are already runtime-translated upstream (container-internal for
@@ -3085,7 +3085,7 @@ async function runQueryAttempt(
           .join(' ')}`,
       );
     }
-    const sdkCompat = withHappyClawSubagentContract({
+    const sdkCompat = withPulseOpsSubagentContract({
       ...(pathToClaudeCodeExecutable && { pathToClaudeCodeExecutable }),
       ...queryModelRuntime.queryModelOptions,
       cwd: WORKSPACE_GROUP,
@@ -3845,7 +3845,7 @@ async function runQueryAttempt(
             const acknowledged = await firstWakeAcknowledger.acknowledge(
               inputTurnId,
               (candidate) =>
-                acknowledgeHappyClawOwnerProfileFirstWake(
+                acknowledgePulseOpsOwnerProfileFirstWake(
                   mcpToolsContext,
                   candidate.leaseToken,
                   candidate.inputTurnId,
@@ -3853,7 +3853,7 @@ async function runQueryAttempt(
             );
             if (acknowledged) {
               log(
-                `Acknowledged HappyClaw first-wake after healthy Assistant progress for ${inputTurnId}`,
+                `Acknowledged PulseOps first-wake after healthy Assistant progress for ${inputTurnId}`,
               );
             }
           }

@@ -502,7 +502,7 @@ describe('Keychain claudeAiOauth cleared by Claude Code', () => {
       JSON.stringify({ claudeAiOauth: CLEARED_BY_CLAUDE_CODE, mcpOAuth }),
     );
     // Ownership still points at the revoked account, fingerprinted at the
-    // credential HappyClaw last confirmed for it.
+    // credential PulseOps last confirmed for it.
     fake.items.set(
       ownershipService,
       JSON.stringify({

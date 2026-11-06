@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
-import { buildHappyClawSystemPrompt } from '../container/agent-runner/src/sdk-compat.js';
+import { buildPulseOpsSystemPrompt } from '../container/agent-runner/src/sdk-compat.js';
 
 const runnerRoot = path.resolve('container/agent-runner');
 const runnerRequire = createRequire(path.join(runnerRoot, 'package.json'));
@@ -144,7 +144,7 @@ async function runTurn(
       model: 'claude-sonnet-4-5-20250929',
       env: fakeProviderEnv(),
       ...(resume ? { resume } : {}),
-      systemPrompt: buildHappyClawSystemPrompt(promptText, includeClaudePreset),
+      systemPrompt: buildPulseOpsSystemPrompt(promptText, includeClaudePreset),
       allowedTools: [],
       permissionMode: 'bypassPermissions',
       allowDangerouslySkipPermissions: true,
@@ -208,7 +208,7 @@ afterAll(async () => {
   fs.rmSync(scratch, { recursive: true, force: true });
 });
 
-describe('HappyClaw system prompt on resumed SDK sessions', () => {
+describe('PulseOps system prompt on resumed SDK sessions', () => {
   test.each([
     { form: 'Claude Code preset + append', includeClaudePreset: true },
     { form: 'custom prompt', includeClaudePreset: false },

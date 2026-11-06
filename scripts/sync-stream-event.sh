@@ -44,7 +44,7 @@ for target in \
   sync_file "$SRC_CP" "$target"
 done
 
-# --- Claude environment HappyClaw owns (backend strip + Runner pin) ---
+# --- Claude environment PulseOps owns (backend strip + Runner pin) ---
 SRC_PE="$ROOT/shared/claude-provider-env.ts"
 for target in \
   "$ROOT/src/claude-provider-env.ts" \

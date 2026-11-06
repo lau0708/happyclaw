@@ -913,7 +913,7 @@ function storeMessage(
     id,
     chatJid,
     options.sender ?? (options.fromMe === false ? 'user-1' : 'happyclaw-agent'),
-    options.fromMe === false ? 'User' : 'HappyClaw',
+    options.fromMe === false ? 'User' : 'PulseOps',
     `content ${id}`,
     `2026-10-12T00:${String(minute).padStart(2, '0')}:00.000Z`,
     options.fromMe !== false,

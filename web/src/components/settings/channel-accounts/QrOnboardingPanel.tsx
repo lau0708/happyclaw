@@ -279,8 +279,8 @@ export function QrOnboardingPanel({
             <p className="mt-1 text-micro leading-4 text-muted-foreground">
               网络路径：
               {account.options?.bypassProxy !== false
-                ? '绕过 HappyClaw HTTP(S) 代理；系统 TUN 或 VPN 仍可能接管'
-                : '使用 HappyClaw 启动环境中的 HTTP(S) 代理'}
+                ? '绕过 PulseOps HTTP(S) 代理；系统 TUN 或 VPN 仍可能接管'
+                : '使用 PulseOps 启动环境中的 HTTP(S) 代理'}
             </p>
           )}
           <p className="mt-0.5 text-caption leading-5 text-muted-foreground">
@@ -545,7 +545,7 @@ function onboardingHelp(
   if (state.auth_status === 'authorized') {
     if (state.transport_status === 'connected') return '授权和消息连接均正常。';
     if (state.transport_status === 'reconnecting')
-      return '网络暂时不可用，HappyClaw 会持续自动重试。';
+      return '网络暂时不可用，PulseOps 会持续自动重试。';
     if (state.transport_status === 'connecting')
       return '正在建立消息连接，首次连接可能需要一个长轮询周期。';
     return '授权仍然有效，可以直接重新连接，无需再次扫码。';
@@ -553,17 +553,17 @@ function onboardingHelp(
   if (state.status === 'need_verifycode')
     return '请在下方输入微信客户端显示的数字验证码。验证码只用于本次扫码确认。';
   if (state.status === 'scaned_but_redirect')
-    return '微信正在将扫码流程切换到对应服务节点，HappyClaw 会自动继续轮询。';
+    return '微信正在将扫码流程切换到对应服务节点，PulseOps 会自动继续轮询。';
   if (state.status === 'binded_redirect')
-    return '微信提示该机器人已绑定，HappyClaw 正在恢复本地授权。';
+    return '微信提示该机器人已绑定，PulseOps 正在恢复本地授权。';
   if (state.status === 'verify_code_blocked')
     return '验证码连续校验失败，系统会自动刷新二维码；若仍失败，请稍后重新扫码。';
   if (state.status === 'expired')
     return '二维码已经失效，请重新获取二维码后扫码。';
   if (state.auth_status === 'awaiting_scan')
     return account.provider === 'wechat'
-      ? '二维码由 HappyClaw 向微信申请，扫码结果会自动保存。'
-      : '扫码完成后，HappyClaw 会保存关联设备会话。';
+      ? '二维码由 PulseOps 向微信申请，扫码结果会自动保存。'
+      : '扫码完成后，PulseOps 会保存关联设备会话。';
   if (state.auth_status === 'revoked') return '本地授权已清除，需要重新扫码。';
   return account.provider === 'wechat'
     ? '点击“扫码连接”获取微信登录二维码。'

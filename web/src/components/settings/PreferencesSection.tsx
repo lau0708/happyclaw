@@ -54,7 +54,7 @@ const SCHEME_OPTIONS: {
 ];
 
 const FONT_OPTIONS: { value: FontStyle; label: string }[] = [
-  { value: 'default', label: 'HappyClaw' },
+  { value: 'default', label: 'PulseOps' },
   { value: 'anthropic', label: 'Anthropic' },
 ];
 

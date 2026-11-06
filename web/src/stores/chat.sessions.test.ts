@@ -78,7 +78,7 @@ const reply = (id: string, agentId: string) => ({
   id,
   chat_jid: `${JID}#agent:${agentId}`,
   sender: 'happyclaw-agent',
-  sender_name: 'HappyClaw',
+  sender_name: 'PulseOps',
   content: '完成了。',
   timestamp: '2026-01-01T00:01:00.000Z',
   is_from_me: true,

@@ -1,9 +1,9 @@
 # Built-in Codex protocol compatibility
 
 The reference is CLIProxyAPI commit
-`a2976eb8a303f11b4ea5177bce9f9ff752634dfc`. The HappyClaw starting commit was
+`a2976eb8a303f11b4ea5177bce9f9ff752634dfc`. The PulseOps starting commit was
 `930b7874e4d597e5f81cdb179a8a47ce168e2f02`. The implementation remains
-TypeScript inside the HappyClaw host service; it uses Claude Agent SDK for the
+TypeScript inside the PulseOps host service; it uses Claude Agent SDK for the
 agent loop and adds no Go runtime or external gateway process.
 
 The port and derived compatibility fixtures retain the original
@@ -23,7 +23,7 @@ The port and derived compatibility fixtures retain the original
 | PDF document                   | Rejected                                          | Base64 PDF maps to `input_file` while `CODEX_SEND_PDF_AS_INPUT_FILE`; otherwise a visible placeholder    | `ConvertClaudeRequestToCodex`                                           |
 | Thinking and structured output | Dropped SDK settings                              | Budget/adaptive effort and JSON-schema output mapped to Responses; optional schemas downgrade strictness | `ConvertClaudeRequestToCodex`, `thinking/convert.go`                    |
 | Native web search              | Unsupported                                       | Official hosted `web_search` (live access, allowed domains, location); server tool history accepted      | openai/codex `core/src/tools/hosted_spec.rs`                            |
-| Reasoning replay               | Only private HappyClaw envelopes recognized       | Native GPT transport signatures and legacy envelopes accepted; replay omits the upstream reasoning ID    | `signature/gpt_validation.go`, `CompatibleSignatureForProvider`         |
+| Reasoning replay               | Only private PulseOps envelopes recognized       | Native GPT transport signatures and legacy envelopes accepted; replay omits the upstream reasoning ID    | `signature/gpt_validation.go`, `CompatibleSignatureForProvider`         |
 
 ## Official Codex client request shape
 
@@ -165,11 +165,11 @@ Anthropic side follows what the Claude Code CLI expects.
 
 ## Intentional runtime differences
 
-- HappyClaw requests `reasoning.summary: auto` for its thinking UI unless
+- PulseOps requests `reasoning.summary: auto` for its thinking UI unless
   thinking is disabled.
 - Empty tools are removed; `tool_choice` and `parallel_tool_calls` are always
   sent, as the official client does.
-- HappyClaw resolves the final reasoning effort itself (disabled thinking →
+- PulseOps resolves the final reasoning effort itself (disabled thinking →
   lowest supported level, haiku-tier → low, explicit Agent effort, then the
   provider's `CODEX_REASONING_EFFORT` or catalog default) and clamps it to the
   current model catalog; a removed `minimal` level is normalized to `low`.
@@ -211,7 +211,7 @@ tool controls, no `instructions`).
 Golden data is generated with `scripts/reference/codex-claude-reference.go`
 inside a disposable checkout of the pinned CLIProxyAPI commit. Feed the existing
 corpus to the harness's standard input to regenerate it; the Go implementation
-is never loaded by the HappyClaw application.
+is never loaded by the PulseOps application.
 
 Additional tests cover interleaved tools, final-only snapshots, signatures,
 schema literals, transport cancellation/failures and session isolation.

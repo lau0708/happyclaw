@@ -146,7 +146,7 @@ describe('POST /:jid/clear-history workspace rebuild', () => {
       reason: 'Prepare a tombstone for the regression test',
       context,
     });
-    ownerProfile.setHappyClawOwnerPreferredAddress({
+    ownerProfile.setPulseOpsOwnerPreferredAddress({
       workspaceJid: JID,
       preferredAddress: '小何',
       expectedRevision: 0,
@@ -155,7 +155,7 @@ describe('POST /:jid/clear-history workspace rebuild', () => {
 
     const oldStore = memoryStore.getWorkspaceMemoryStore(JID);
     expect(oldStore?.revision).toBeGreaterThan(0);
-    expect(ownerProfile.getHappyClawOwnerProfileProjection(JID)).toMatchObject({
+    expect(ownerProfile.getPulseOpsOwnerProfileProjection(JID)).toMatchObject({
       preferredAddress: '小何',
       onboarding: { state: 'completed' },
     });
@@ -207,7 +207,7 @@ describe('POST /:jid/clear-history workspace rebuild', () => {
         code: 'item_not_found',
       }),
     );
-    expect(ownerProfile.getHappyClawOwnerProfileProjection(JID)).toMatchObject({
+    expect(ownerProfile.getPulseOpsOwnerProfileProjection(JID)).toMatchObject({
       preferredAddress: null,
       revision: null,
       onboarding: {

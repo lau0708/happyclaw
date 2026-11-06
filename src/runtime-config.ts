@@ -135,7 +135,7 @@ const RESERVED_CLAUDE_ENV_KEYS = new Set([
 const CLAUDE_ENDPOINT_KIND_ENV = 'HAPPYCLAW_CLAUDE_ENDPOINT_KIND';
 
 /**
- * Every Claude environment key HappyClaw owns (shared/claude-provider-env.ts),
+ * Every Claude environment key PulseOps owns (shared/claude-provider-env.ts),
  * plus the provider tuning a connection sets and the endpoint kind marker.
  */
 const INHERITED_CLAUDE_PROVIDER_ENV_KEYS: readonly string[] = [
@@ -148,7 +148,7 @@ const INHERITED_CLAUDE_PROVIDER_ENV_KEYS: readonly string[] = [
 ];
 
 /**
- * Remove provider-owned values inherited from the HappyClaw parent process.
+ * Remove provider-owned values inherited from the PulseOps parent process.
  * The selected provider is reapplied afterwards from buildContainerEnvLines().
  * Without this reset, switching to an official provider in host mode can retain
  * a previous ANTHROPIC_BASE_URL/model/token and silently use the wrong endpoint.
@@ -310,7 +310,7 @@ const DANGEROUS_ENV_VARS = new Set([
   'TMPDIR',
   'TEMP',
   'TMP',
-  // HappyClaw 内部路径映射
+  // PulseOps 内部路径映射
   'HAPPYCLAW_WORKSPACE_GROUP',
   // Legacy internal names remain blocked for rollback/old-runner safety even
   // though the current runtime no longer reads or mounts these paths.
@@ -3504,7 +3504,7 @@ let globalModelConfigResolver: (() => string | null) | null = null;
 /**
  * Tell the configuration which connection the host's own, non-conversation
  * Claude calls (titles, recall, bug reports, a launch nothing else chose a
- * connection for) run on, e.g. the system main HappyClaw's binding. Without
+ * connection for) run on, e.g. the system main PulseOps's binding. Without
  * one, or when it names a connection that is gone or has no credential, the
  * first connection holding a credential is used.
  */
@@ -5294,7 +5294,7 @@ function parseOAuthModelWindow(v: unknown): OAuthModelUsageBucket | null {
 /**
  * Project dynamic weekly model windows from either the current SDK shape
  * (`model_scoped`) or the raw OAuth endpoint's `limits[]` shape. The endpoint
- * owns the labels; HappyClaw deliberately does not invent fields such as
+ * owns the labels; PulseOps deliberately does not invent fields such as
  * `seven_day_sonnet_max`.
  */
 export function parseOAuthModelWindows(raw: unknown): OAuthModelUsageBucket[] {

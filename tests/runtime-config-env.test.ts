@@ -424,7 +424,7 @@ describe('buildClaudeEnvLines', () => {
   });
 
   test('clears every routing and credential key a parent shell left, keeping network config', () => {
-    // HappyClaw started from an admin shell that runs its own Claude Code on Bedrock.
+    // PulseOps started from an admin shell that runs its own Claude Code on Bedrock.
     const env: Record<string, string | undefined> = {
       CLAUDE_CODE_USE_BEDROCK: '1',
       CLAUDE_CODE_USE_VERTEX: '1',

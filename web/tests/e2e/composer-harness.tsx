@@ -68,7 +68,7 @@ const history = (chatJid: string, prefix: string): Message[] =>
       id: `${prefix}-${index}`,
       chat_jid: chatJid,
       sender: fromAgent ? 'happyclaw-agent' : userId,
-      sender_name: fromAgent ? 'HappyClaw' : '测试用户',
+      sender_name: fromAgent ? 'PulseOps' : '测试用户',
       content: fromAgent
         ? `第 ${index} 条回复：这是一段用于撑开消息区的回复内容，确认队列和输入框不会把对话挤没。`
         : `第 ${index} 条提问`,

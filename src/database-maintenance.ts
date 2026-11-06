@@ -55,7 +55,7 @@ export function assertDatabaseMaintenanceAccess(databasePath: string): void {
   }
   if (process.env[DATABASE_MAINTENANCE_TOKEN_ENV] === lock.token) return;
   throw new Error(
-    `Database maintenance is active (pid ${lock.pid}); refuse to start HappyClaw until it finishes`,
+    `Database maintenance is active (pid ${lock.pid}); refuse to start PulseOps until it finishes`,
   );
 }
 

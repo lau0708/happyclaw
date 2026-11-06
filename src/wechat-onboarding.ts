@@ -34,7 +34,7 @@ export interface WeChatQrStatus {
 export interface WeChatQrStartOptions {
   /** Existing token for this account only. Never include another user's token. */
   localTokenList?: string[];
-  /** Bypass HappyClaw's HTTP(S) proxy for this account. */
+  /** Bypass PulseOps's HTTP(S) proxy for this account. */
   bypassProxy?: boolean;
 }
 
@@ -43,7 +43,7 @@ export interface WeChatQrPollOptions {
   baseUrl?: string;
   /** Number shown by the WeChat client for second-factor verification. */
   verifyCode?: string;
-  /** Bypass HappyClaw's HTTP(S) proxy for this account. */
+  /** Bypass PulseOps's HTTP(S) proxy for this account. */
   bypassProxy?: boolean;
 }
 

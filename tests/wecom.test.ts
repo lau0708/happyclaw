@@ -653,7 +653,7 @@ describe('WeCom connection security and delivery', () => {
       frame({
         reqId: 'mentioned-group',
         chattype: 'group',
-        content: '@HappyClaw hello',
+        content: '@PulseOps hello',
       }),
     );
     await vi.waitFor(() => expect(storeMessageDirect).toHaveBeenCalledTimes(1));
@@ -669,7 +669,7 @@ describe('WeCom connection security and delivery', () => {
         reqId: 'disabled-group',
         msgId: 'disabled-group',
         chattype: 'group',
-        content: '@HappyClaw ignored',
+        content: '@PulseOps ignored',
       }),
     );
     await new Promise((resolve) => setTimeout(resolve, 0));

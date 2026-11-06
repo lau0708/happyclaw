@@ -1,4 +1,4 @@
-# HappyClaw Agent Instructions
+# PulseOps Agent Instructions
 
 ## Definition of done
 

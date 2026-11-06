@@ -14,7 +14,7 @@ import {
   createMcpTools,
   type McpContext,
 } from '../container/agent-runner/src/mcp-tools.js';
-import { buildHappyClawPromptPlan } from '../container/agent-runner/src/prompt-plan.js';
+import { buildPulseOpsPromptPlan } from '../container/agent-runner/src/prompt-plan.js';
 import type { TeamRole } from '../container/agent-runner/src/work-items.js';
 
 const runnerRequire = createRequire(
@@ -283,7 +283,7 @@ describe('team-mode PromptPlan', () => {
 
   test("a team section takes the output contract's place", () => {
     const { output: _output, ...rest } = sources;
-    const plan = buildHappyClawPromptPlan({
+    const plan = buildPulseOpsPromptPlan({
       ...rest,
       team: { id: 'team-router', text: 'ROUTER_MARKER' },
     });
@@ -306,13 +306,13 @@ describe('team-mode PromptPlan', () => {
 
   test('without a team section the output contract stays required', () => {
     const { output: _output, ...rest } = sources;
-    expect(buildHappyClawPromptPlan(rest).errors).toEqual([
+    expect(buildPulseOpsPromptPlan(rest).errors).toEqual([
       'required prompt block is empty: output',
     ]);
   });
 
   test('without a team section the plan is what it was', () => {
-    const plan = buildHappyClawPromptPlan({
+    const plan = buildPulseOpsPromptPlan({
       ...sources,
       deliveryContract: 'delivery',
     });

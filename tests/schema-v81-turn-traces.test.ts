@@ -69,7 +69,7 @@ function storeTurnMessage(id: string, turnId: string, minute: number): void {
     id,
     JID,
     'happyclaw-agent',
-    'HappyClaw',
+    'PulseOps',
     `reply ${id}`,
     `2026-10-12T00:${String(minute).padStart(2, '0')}:00.000Z`,
     true,

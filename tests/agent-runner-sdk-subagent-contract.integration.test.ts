@@ -9,7 +9,7 @@ import { afterAll, describe, expect, test } from 'vitest';
 
 import {
   HAPPYCLAW_SUBAGENT_RUNTIME_CONTRACT,
-  withHappyClawSubagentContract,
+  withPulseOpsSubagentContract,
 } from '../container/agent-runner/src/sdk-compat.js';
 
 const runnerRoot = path.resolve('container/agent-runner');
@@ -190,7 +190,7 @@ afterAll(() => {
 });
 
 describe('Claude Agent SDK delegated runtime contract', () => {
-  test('real SDK/CLI appends the HappyClaw contract and explicit Skill only to the subagent request', async () => {
+  test('real SDK/CLI appends the PulseOps contract and explicit Skill only to the subagent request', async () => {
     const skillDir = path.join(cwd, '.claude', 'skills', 'qa-child-skill');
     fs.mkdirSync(skillDir, { recursive: true });
     fs.writeFileSync(
@@ -249,7 +249,7 @@ describe('Claude Agent SDK delegated runtime contract', () => {
           },
         },
       };
-      const sdkOptions = withHappyClawSubagentContract(baseOptions, {}).options;
+      const sdkOptions = withPulseOpsSubagentContract(baseOptions, {}).options;
       const conversation = runnerSdk.query({
         prompt:
           'Delegate this check to contract-verifier, then return its result.',

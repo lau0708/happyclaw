@@ -10,7 +10,7 @@
 | 宿主集成           | Session Skill 对账、Container mounts、API preview          | ghost Skill、disabled collision、Plugin MCP  | 隔离 ghost；预览与实际 manifest 一致            |
 | SDK/CLI 集成       | 项目锁定版本的 Claude Agent SDK 和 Claude CLI              | main → Task Subagent → main                  | 子请求只收到自有 prompt、短运行契约与显式 Skill |
 | 前端契约/构建      | Agent 页面、Effective Context                              | 点击“新建”、选择工作区                       | 创建入口在右侧主区；真实上下文与总预算可见      |
-| 真实 Provider 冒烟 | 当前 HappyClaw 已配置 Provider                             | 固定标记问答                                 | 模型完成请求且逐字返回固定标记                  |
+| 真实 Provider 冒烟 | 当前 PulseOps 已配置 Provider                             | 固定标记问答                                 | 模型完成请求且逐字返回固定标记                  |
 
 ## 可复现命令
 
@@ -57,13 +57,13 @@ npm run test:real-model
 
 - main prompt 带唯一 main marker，并调用 Task。
 - Task AgentDefinition 带唯一 child marker、`skills: ['qa-child-skill']`。
-- 期望：子请求包含 child marker、HappyClaw delegated-task contract 与 Skill 内容；不包含 main marker；子 Agent 不获得 Task 工具。
+- 期望：子请求包含 child marker、PulseOps delegated-task contract 与 Skill 内容；不包含 main marker；子 Agent 不获得 Task 工具。
 
 ### 4. Agent 新建界面
 
 - 打开“自定义 Agent”，点击左侧“新建”。
 - 期望：弹出“新建智能体”对话框，只需名称；可选“AI 写提示词”（一句话描述）或四个内置模板之一；
-  创建后直接进入完整编辑页。名称与已有智能体（含 HappyClaw）重名时在名称框下提示。
+  创建后直接进入完整编辑页。名称与已有智能体（含 PulseOps）重名时在名称框下提示。
 
 ### 5. Plugin MCP 能力指纹
 

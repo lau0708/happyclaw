@@ -1,10 +1,10 @@
 /**
  * macOS Keychain credential reconciliation for host-mode Claude runners.
  *
- * Claude Code prefers its Keychain item over `.credentials.json`. HappyClaw
+ * Claude Code prefers its Keychain item over `.credentials.json`. PulseOps
  * therefore has to reconcile that item before every host spawn. A separate
  * ownership item records which provider owns the credential and the last
- * credential fingerprint HappyClaw confirmed. That lets us distinguish an SDK
+ * credential fingerprint PulseOps confirmed. That lets us distinguish an SDK
  * refresh from an explicit provider update without putting tokens in metadata.
  *
  * The Claude item can also contain MCP OAuth state. We only replace or remove
@@ -588,7 +588,7 @@ export class MacosKeychainCredentialStore {
           // supported way to clear the item.
           //
           // There is also no third party to protect. The service name is
-          // derived from HappyClaw's own CLAUDE_CONFIG_DIR, so HappyClaw is the
+          // derived from PulseOps's own CLAUDE_CONFIG_DIR, so PulseOps is the
           // only writer of that item. Adopt the selected provider and record
           // ownership; this is a one-shot migration that reproduces the
           // pre-ownership behaviour, and every later reconcile takes the

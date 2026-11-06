@@ -1,7 +1,7 @@
 /**
  * A fresh install: the admin adds the first model connection, and the system
- * main HappyClaw (which nothing bound yet) runs on it, instead of every turn
- * failing with 「还没有为主 HappyClaw 选择模型」.
+ * main PulseOps (which nothing bound yet) runs on it, instead of every turn
+ * failing with 「还没有为主 PulseOps 选择模型」.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -102,7 +102,7 @@ afterAll(() => {
 });
 
 describe('the first connection of an install', () => {
-  test('binds the unbound system main HappyClaw, and only the first', async () => {
+  test('binds the unbound system main PulseOps, and only the first', async () => {
     const first = await create('First');
     expect(first.status).toBe(201);
     const main = db.getOrCreateDefaultAgentProfile(ADMIN);

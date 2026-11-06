@@ -17,7 +17,7 @@ import {
 
 /**
  * Native Claude Code capability directories that belong to the user config
- * layer. Skills stay out of this list because HappyClaw governs them with an
+ * layer. Skills stay out of this list because PulseOps governs them with an
  * independent, per-Agent policy.
  */
 export const HOST_CLAUDE_NATIVE_DIRECTORIES = [
@@ -52,7 +52,7 @@ export interface ClaudeContextPlanArgs {
   groupSessionsDir?: string;
   /**
    * Explicit Agent policy opt-in for the administrator's native ~/.claude
-   * context. Managed HappyClaw skills are resolved independently below.
+   * context. Managed PulseOps skills are resolved independently below.
    */
   includeHostClaudeContext?: boolean;
   /** Host ~/.claude/skills policy, independent of CLAUDE.md/rules. */
@@ -177,12 +177,12 @@ function mergeSettings(
 
 /**
  * Load the native user settings layer in Claude Code precedence order. The
- * caller applies HappyClaw's required env and effective MCP policy
+ * caller applies PulseOps's required env and effective MCP policy
  * afterward, so enabling native context cannot bypass those explicit controls.
  *
  * The layer is written into the session's settings.json, which a container
  * mounts read-write for the agent, and it outranks the process environment.
- * So everything HappyClaw owns leaves it: provider routing and credentials,
+ * So everything PulseOps owns leaves it: provider routing and credentials,
  * the session's effort, compaction and context
  * (HAPPYCLAW_OWNED_CLAUDE_ENV_KEYS), and the settings that run a command for
  * credentials. Everything else (hooks, permissions, other env) stays.
@@ -199,7 +199,7 @@ export function loadHostClaudeSettings(
       if (isPlainRecord(parsed)) merged = mergeSettings(merged, parsed);
     } catch {
       // Invalid native settings are surfaced by Claude Code when used
-      // directly. HappyClaw skips the invalid layer to keep startup usable.
+      // directly. PulseOps skips the invalid layer to keep startup usable.
     }
   }
   for (const key of CLAUDE_CREDENTIAL_SETTING_KEYS) delete merged[key];
@@ -519,7 +519,7 @@ export function syncHostClaudeContext(
     (entry) => entry.isFile() || entry.isDirectory() || entry.isSymbolicLink(),
   );
 
-  // These paths are HappyClaw-owned projections of the selected native user
+  // These paths are PulseOps-owned projections of the selected native user
   // config. Always remove a previous Agent's projection first so disabling or
   // changing the policy cannot leak stale capabilities into the next run.
   for (const name of [

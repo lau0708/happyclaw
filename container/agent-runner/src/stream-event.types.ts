@@ -255,7 +255,7 @@ export interface ClaudeContextAudit {
     runtimePolicyHash?: string;
   };
   cwd?: string;
-  /** HappyClaw repository root used to distinguish platform memory from workspace memory. */
+  /** PulseOps repository root used to distinguish platform memory from workspace memory. */
   projectRoot?: string;
   claudeConfigDir?: string;
   externalClaudeDir?: string;

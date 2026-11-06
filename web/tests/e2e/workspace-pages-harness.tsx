@@ -110,7 +110,7 @@ function agentProfile(id: string, name: string, identity: string) {
   };
 }
 const profiles = [
-  { ...agentProfile('main', 'HappyClaw', ''), is_default: true },
+  { ...agentProfile('main', 'PulseOps', ''), is_default: true },
   agentProfile(
     'research',
     '调研智能体',

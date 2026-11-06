@@ -101,7 +101,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': API_PROXY_TARGET,
-      // 设备业务数据走自研 MES API（避免与 HappyClaw 后端 /api 冲突）
+      // 设备业务数据走自研 MES API（避免与 PulseOps 后端 /api 冲突）
       '/mes-api': {
         target: MES_API_TARGET,
         changeOrigin: true,

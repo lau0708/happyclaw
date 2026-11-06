@@ -25,7 +25,7 @@ export interface AgentIdentityOptions {
 
 /**
  * Resolve a chat identity from the active Agent. A custom Agent only replaces
- * the global HappyClaw avatar when it owns at least one avatar field.
+ * the global PulseOps avatar when it owns at least one avatar field.
  */
 export function resolveAgentDisplayIdentity({
   agentName,

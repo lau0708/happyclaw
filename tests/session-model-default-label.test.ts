@@ -265,7 +265,7 @@ describe('default.model names what an unpicked launch runs', () => {
     });
   });
 
-  test('the system main HappyClaw', async () => {
+  test('the system main PulseOps', async () => {
     bindAgent(null);
     bindMain(ADMIN, kimi.id);
     await expectLabelMatchesLaunch({ source: 'system_main', model: 'kimi-k3' });
@@ -306,6 +306,6 @@ describe('default.model names what an unpicked launch runs', () => {
     });
     expect(() =>
       runner.trySelectPoolProvider(FOLDER, null, null, null),
-    ).toThrow(/还没有为主 HappyClaw 选择模型/);
+    ).toThrow(/还没有为主 PulseOps 选择模型/);
   });
 });

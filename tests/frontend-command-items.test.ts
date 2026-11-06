@@ -95,7 +95,7 @@ describe('command palette items', () => {
       },
     }).find((g) => g.heading === '工作区')!;
     expect(workspaces.items.map((item) => item.label)).toEqual([
-      'HappyClaw',
+      'PulseOps',
       '置顶工作区',
       '最近工作区',
       '旧工作区',
@@ -110,7 +110,7 @@ describe('command palette items', () => {
       '新会话',
       '旧会话',
     ]);
-    expect(sessions.items[0].hint).toBe('HappyClaw');
+    expect(sessions.items[0].hint).toBe('PulseOps');
     expect(sessions.items[0].action).toEqual({
       type: 'openSession',
       jid: 'web:main',

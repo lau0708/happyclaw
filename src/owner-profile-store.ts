@@ -3,10 +3,10 @@ import crypto from 'node:crypto';
 import {
   HAPPYCLAW_OWNER_PREFERRED_ADDRESS_CANONICAL_KEY,
   WorkspaceMemoryStoreError,
-  enforceHappyClawOwnerAddressCanonicalInvariant,
-  getHappyClawOwnerAddressMemoryItem,
-  mutateHappyClawOwnerAddressMemory,
-  reconcileHappyClawOwnerAddressCanonicalKey,
+  enforcePulseOpsOwnerAddressCanonicalInvariant,
+  getPulseOpsOwnerAddressMemoryItem,
+  mutatePulseOpsOwnerAddressMemory,
+  reconcilePulseOpsOwnerAddressCanonicalKey,
   type WorkspaceMemoryMutationContext,
 } from './memory-store.js';
 
@@ -48,20 +48,20 @@ const LEGACY_OWNER_ADDRESS_SKIP_SENTINEL_SET = new Set<string>(
   LEGACY_OWNER_ADDRESS_SKIP_SENTINELS,
 );
 
-export type HappyClawOwnerIntroductionState =
+export type PulseOpsOwnerIntroductionState =
   | 'pending'
   | 'claimed'
   | 'completed'
   | 'skipped';
 
-export interface HappyClawOwnerProfileProjection {
+export interface PulseOpsOwnerProfileProjection {
   workspaceJid: string;
   preferredAddress: string | null;
   /** Monotonic revision of the single reserved Memory item, including clear. */
   revision: number | null;
   onboarding: {
     flowKey: typeof HAPPYCLAW_OWNER_INTRODUCTION_FLOW_KEY;
-    state: HappyClawOwnerIntroductionState;
+    state: PulseOpsOwnerIntroductionState;
     revision: number;
     leaseOwner: string | null;
     leaseToken: number | null;
@@ -73,7 +73,7 @@ export interface HappyClawOwnerProfileProjection {
 interface OnboardingRow {
   workspace_jid: string;
   flow_key: string;
-  state: HappyClawOwnerIntroductionState;
+  state: PulseOpsOwnerIntroductionState;
   revision: number;
   lease_owner: string | null;
   lease_token: number;
@@ -136,7 +136,7 @@ function requireHomeWorkspace(workspaceJid: string): void {
   if (!row) {
     throw new OwnerProfileStoreError(
       'not_home_workspace',
-      'HappyClaw Owner Profile is available only in the owner Home Workspace',
+      'PulseOps Owner Profile is available only in the owner Home Workspace',
     );
   }
 }
@@ -258,11 +258,11 @@ export function createOwnerProfileSchema(db: SqliteDatabase): void {
   }
 }
 
-export function getHappyClawOwnerProfileProjection(
+export function getPulseOpsOwnerProfileProjection(
   workspaceJid: string,
-): HappyClawOwnerProfileProjection {
+): PulseOpsOwnerProfileProjection {
   requireHomeWorkspace(workspaceJid);
-  const { item } = getHappyClawOwnerAddressMemoryItem(workspaceJid);
+  const { item } = getPulseOpsOwnerAddressMemoryItem(workspaceJid);
   const onboarding = onboardingRow(workspaceJid);
   return {
     workspaceJid,
@@ -295,14 +295,14 @@ function completeIntroduction(workspaceJid: string, at: string): void {
     .run(at, at, workspaceJid, HAPPYCLAW_OWNER_INTRODUCTION_FLOW_KEY);
 }
 
-export function setHappyClawOwnerPreferredAddress(input: {
+export function setPulseOpsOwnerPreferredAddress(input: {
   workspaceJid: string;
   preferredAddress: string;
   expectedRevision?: number;
   idempotencyKey?: string | null;
   context: WorkspaceMemoryMutationContext;
 }): {
-  projection: HappyClawOwnerProfileProjection;
+  projection: PulseOpsOwnerProfileProjection;
   replayed: boolean;
   changed: boolean;
 } {
@@ -311,7 +311,7 @@ export function setHappyClawOwnerPreferredAddress(input: {
   const db = requireDatabase();
   try {
     return db.transaction(() => {
-      const mutation = mutateHappyClawOwnerAddressMemory({
+      const mutation = mutatePulseOpsOwnerAddressMemory({
         workspaceJid: input.workspaceJid,
         preferredAddress,
         expectedRevision: input.expectedRevision,
@@ -324,7 +324,7 @@ export function setHappyClawOwnerPreferredAddress(input: {
       });
       completeIntroduction(input.workspaceJid, nowIso());
       return {
-        projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+        projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
         replayed: mutation.replayed,
         changed: mutation.changed,
       };
@@ -334,13 +334,13 @@ export function setHappyClawOwnerPreferredAddress(input: {
   }
 }
 
-export function clearHappyClawOwnerPreferredAddress(input: {
+export function clearPulseOpsOwnerPreferredAddress(input: {
   workspaceJid: string;
   expectedRevision: number;
   idempotencyKey?: string | null;
   context: WorkspaceMemoryMutationContext;
 }): {
-  projection: HappyClawOwnerProfileProjection;
+  projection: PulseOpsOwnerProfileProjection;
   replayed: boolean;
   changed: boolean;
 } {
@@ -348,7 +348,7 @@ export function clearHappyClawOwnerPreferredAddress(input: {
   const db = requireDatabase();
   try {
     return db.transaction(() => {
-      const mutation = mutateHappyClawOwnerAddressMemory({
+      const mutation = mutatePulseOpsOwnerAddressMemory({
         workspaceJid: input.workspaceJid,
         clear: true,
         expectedRevision: input.expectedRevision,
@@ -364,7 +364,7 @@ export function clearHappyClawOwnerPreferredAddress(input: {
         completeIntroduction(input.workspaceJid, nowIso());
       }
       return {
-        projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+        projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
         replayed: mutation.replayed,
         changed: mutation.changed,
       };
@@ -374,7 +374,7 @@ export function clearHappyClawOwnerPreferredAddress(input: {
   }
 }
 
-export function claimHappyClawOwnerIntroduction(input: {
+export function claimPulseOpsOwnerIntroduction(input: {
   workspaceJid: string;
   leaseOwner: string;
   leaseMs?: number;
@@ -387,7 +387,7 @@ export function claimHappyClawOwnerIntroduction(input: {
   newlyClaimed: boolean;
   leaseToken: number | null;
   leaseExpiresAt: string | null;
-  projection: HappyClawOwnerProfileProjection;
+  projection: PulseOpsOwnerProfileProjection;
 } {
   requireHomeWorkspace(input.workspaceJid);
   const leaseOwner = input.leaseOwner.trim();
@@ -412,7 +412,7 @@ export function claimHappyClawOwnerIntroduction(input: {
   const expiresAt = new Date(atMs + leaseMs).toISOString();
   const db = requireDatabase();
   return db.transaction(() => {
-    const profile = getHappyClawOwnerAddressMemoryItem(input.workspaceJid);
+    const profile = getPulseOpsOwnerAddressMemoryItem(input.workspaceJid);
     if (profile.item?.status === 'active') {
       completeIntroduction(input.workspaceJid, at);
       return {
@@ -422,7 +422,7 @@ export function claimHappyClawOwnerIntroduction(input: {
         newlyClaimed: false,
         leaseToken: null,
         leaseExpiresAt: null,
-        projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+        projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
       };
     }
     const row = ensureOnboardingRow(input.workspaceJid, at);
@@ -434,7 +434,7 @@ export function claimHappyClawOwnerIntroduction(input: {
         newlyClaimed: false,
         leaseToken: null,
         leaseExpiresAt: null,
-        projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+        projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
       };
     }
     const leaseIsCurrent =
@@ -449,7 +449,7 @@ export function claimHappyClawOwnerIntroduction(input: {
         newlyClaimed: false,
         leaseToken: Number(row.lease_token),
         leaseExpiresAt: row.lease_expires_at,
-        projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+        projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
       };
     }
     if (leaseIsCurrent && row.lease_owner === leaseOwner) {
@@ -472,7 +472,7 @@ export function claimHappyClawOwnerIntroduction(input: {
         newlyClaimed: row.first_wake_at === null,
         leaseToken: Number(row.lease_token),
         leaseExpiresAt: expiresAt,
-        projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+        projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
       };
     }
     const firstWake = row.first_wake_at === null;
@@ -513,7 +513,7 @@ export function claimHappyClawOwnerIntroduction(input: {
       newlyClaimed: isFirstWake,
       leaseToken: Number(claimed.lease_token),
       leaseExpiresAt: claimed.lease_expires_at,
-      projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+      projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
     };
   })();
 }
@@ -523,14 +523,14 @@ export function claimHappyClawOwnerIntroduction(input: {
  * healthy top-level Assistant progress for the claiming turn. Both fences are
  * required so a stale/overlapping runner cannot acknowledge another lease.
  */
-export function acknowledgeHappyClawOwnerIntroduction(input: {
+export function acknowledgePulseOpsOwnerIntroduction(input: {
   workspaceJid: string;
   leaseOwner: string;
   leaseToken: number;
   now?: string;
 }): {
   acknowledged: boolean;
-  projection: HappyClawOwnerProfileProjection;
+  projection: PulseOpsOwnerProfileProjection;
 } {
   requireHomeWorkspace(input.workspaceJid);
   const leaseOwner = input.leaseOwner.trim();
@@ -567,7 +567,7 @@ export function acknowledgeHappyClawOwnerIntroduction(input: {
     if (row.first_wake_at !== null) {
       return {
         acknowledged: false,
-        projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+        projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
       };
     }
     const result = db
@@ -594,7 +594,7 @@ export function acknowledgeHappyClawOwnerIntroduction(input: {
     }
     return {
       acknowledged: true,
-      projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+      projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
     };
   })();
 }
@@ -603,7 +603,7 @@ export function acknowledgeHappyClawOwnerIntroduction(input: {
  * Release an uncompleted runner lease on process exit. The first-wake marker is
  * intentionally retained only when it was separately acknowledged.
  */
-export function releaseHappyClawOwnerIntroductionLease(
+export function releasePulseOpsOwnerIntroductionLease(
   leaseOwner: string,
   now: string = nowIso(),
 ): number {
@@ -620,30 +620,30 @@ export function releaseHappyClawOwnerIntroductionLease(
   return result.changes;
 }
 
-export function skipHappyClawOwnerIntroduction(input: {
+export function skipPulseOpsOwnerIntroduction(input: {
   workspaceJid: string;
   expectedOnboardingRevision?: number;
   context: WorkspaceMemoryMutationContext;
 }): {
-  projection: HappyClawOwnerProfileProjection;
+  projection: PulseOpsOwnerProfileProjection;
   changed: boolean;
 } {
   requireHomeWorkspace(input.workspaceJid);
   const db = requireDatabase();
   return db.transaction(() => {
     const at = nowIso();
-    const profile = getHappyClawOwnerAddressMemoryItem(input.workspaceJid);
+    const profile = getPulseOpsOwnerAddressMemoryItem(input.workspaceJid);
     if (profile.item?.status === 'active') {
       completeIntroduction(input.workspaceJid, at);
       return {
-        projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+        projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
         changed: false,
       };
     }
     const row = ensureOnboardingRow(input.workspaceJid, at);
     if (row.state === 'skipped') {
       return {
-        projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+        projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
         changed: false,
       };
     }
@@ -653,7 +653,7 @@ export function skipHappyClawOwnerIntroduction(input: {
     ) {
       throw new OwnerProfileStoreError(
         'revision_conflict',
-        'HappyClaw onboarding revision conflict',
+        'PulseOps onboarding revision conflict',
         { currentRevision: row.revision },
       );
     }
@@ -665,7 +665,7 @@ export function skipHappyClawOwnerIntroduction(input: {
        WHERE workspace_jid = ? AND flow_key = ?`,
     ).run(at, at, input.workspaceJid, HAPPYCLAW_OWNER_INTRODUCTION_FLOW_KEY);
     return {
-      projection: getHappyClawOwnerProfileProjection(input.workspaceJid),
+      projection: getPulseOpsOwnerProfileProjection(input.workspaceJid),
       changed: true,
     };
   })();
@@ -686,13 +686,13 @@ export function reconcileLegacyOwnerProfileMemory(): {
 } {
   const db = requireDatabase();
   return db.transaction(() => {
-    const reconciled = reconcileHappyClawOwnerAddressCanonicalKey();
+    const reconciled = reconcilePulseOpsOwnerAddressCanonicalKey();
     const homes = db
       .prepare(`SELECT jid FROM workspaces WHERE is_home = 1`)
       .all() as Array<{ jid: string }>;
     for (const home of homes) {
       const at = nowIso();
-      const { item } = getHappyClawOwnerAddressMemoryItem(home.jid);
+      const { item } = getPulseOpsOwnerAddressMemoryItem(home.jid);
       const onboarding = ensureOnboardingRow(home.jid, at);
       // A prior explicit outcome is authoritative. In particular, a normal
       // restart must never reinterpret an already-skipped row as completed.
@@ -701,7 +701,7 @@ export function reconcileLegacyOwnerProfileMemory(): {
       }
       if (!item) continue;
       if (item.status === 'active' && legacyAddressMeansSkip(item.content)) {
-        mutateHappyClawOwnerAddressMemory({
+        mutatePulseOpsOwnerAddressMemory({
           workspaceJid: home.jid,
           clear: true,
           expectedRevision: item.revision,
@@ -723,7 +723,7 @@ export function reconcileLegacyOwnerProfileMemory(): {
         completeIntroduction(home.jid, at);
       }
     }
-    enforceHappyClawOwnerAddressCanonicalInvariant();
+    enforcePulseOpsOwnerAddressCanonicalInvariant();
     return reconciled;
   })();
 }

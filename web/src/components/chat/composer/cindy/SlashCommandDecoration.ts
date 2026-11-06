@@ -1,8 +1,8 @@
 /**
  * Source: cindy apps/desktop/src/renderer/components/new-chat/SlashCommandDecoration.ts
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
- * Tiptap 3.30.6. The roster is HappyClaw's commands and Skills; cindy's Pi
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
+ * Tiptap 3.30.6. The roster is PulseOps's commands and Skills; cindy's Pi
  * runtime aliases and legacy slash-chip draft migration are dropped.
  */
 /**

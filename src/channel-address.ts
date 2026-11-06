@@ -63,7 +63,7 @@ export function scopeChannelJid(jid: string, channelAccountId: string): string {
   return `${prefix}${parsed.externalChatId}${fragments.length ? `#${fragments.join('#')}` : ''}`;
 }
 
-/** Remove only HappyClaw's account fragment before invoking a provider SDK. */
+/** Remove only PulseOps's account fragment before invoking a provider SDK. */
 export function toProviderJid(jid: string): string {
   const parsed = parseChannelAddress(jid);
   if (!parsed) return jid;

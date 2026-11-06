@@ -296,7 +296,7 @@ function describeState(
   if (state.phase === 'idle') {
     return {
       title: '扫码创建应用',
-      help: `生成二维码后，${spacedLabel('用手机', appName, '扫码并确认')}，HappyClaw 会自动创建应用并保存凭证，无需手动复制 App ID 和 App Secret。`,
+      help: `生成二维码后，${spacedLabel('用手机', appName, '扫码并确认')}，PulseOps 会自动创建应用并保存凭证，无需手动复制 App ID 和 App Secret。`,
       tone: 'idle',
     };
   }
@@ -326,7 +326,7 @@ function describeState(
     case 'creating':
       return {
         title: '已确认，正在保存',
-        help: '应用已在手机上创建，HappyClaw 正在保存凭证并建立连接。',
+        help: '应用已在手机上创建，PulseOps 正在保存凭证并建立连接。',
         tone: 'busy',
       };
     case 'success':

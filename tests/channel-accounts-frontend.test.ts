@@ -387,7 +387,7 @@ describe('channel account frontend behavior', () => {
     useChannelAccountsStore.getState().applyStatusEvent({
       accountId: 'wechat-a',
       transportStatus: 'reconnecting',
-      lastError: '连接微信服务超时，HappyClaw 正在自动重试',
+      lastError: '连接微信服务超时，PulseOps 正在自动重试',
     });
 
     expect(useChannelAccountsStore.getState().accounts).toEqual([
@@ -395,7 +395,7 @@ describe('channel account frontend behavior', () => {
         id: 'wechat-a',
         status: 'reconnecting',
         transport_status: 'reconnecting',
-        last_error: '连接微信服务超时，HappyClaw 正在自动重试',
+        last_error: '连接微信服务超时，PulseOps 正在自动重试',
       }),
       sibling,
     ]);

@@ -217,7 +217,7 @@ interface ChatViewProps {
 }
 
 const IM_BANNER_TEXT =
-  '未配置消息渠道（飞书 / Telegram / Discord / QQ / 微信 / 钉钉 / WhatsApp），无法在 IM 中与 HappyClaw 对话';
+  '未配置消息渠道（飞书 / Telegram / Discord / QQ / 微信 / 钉钉 / WhatsApp），无法在 IM 中与 PulseOps 对话';
 
 export function ChatView({ groupJid, onBack, headerLeft }: ChatViewProps) {
   const { mode: displayMode, toggle: toggleDisplayMode } = useDisplayMode();
@@ -680,7 +680,7 @@ export function ChatView({ groupJid, onBack, headerLeft }: ChatViewProps) {
   const agentProfileLabel = group?.agent_profile_name
     ? getAgentProfileDisplayName(group.agent_profile_name)
     : group?.is_home
-      ? 'HappyClaw'
+      ? 'PulseOps'
       : '智能体';
   // Who answers, for the transcript and the empty conversation.
   const agentLook = {

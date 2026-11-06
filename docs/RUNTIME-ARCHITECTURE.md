@@ -1,6 +1,6 @@
-# HappyClaw Runtime Architecture
+# PulseOps Runtime Architecture
 
-HappyClaw is a modular monolith with one control-plane process and isolated
+PulseOps is a modular monolith with one control-plane process and isolated
 Agent runtimes. The process boundary is intentional: HTTP, scheduling, durable
 state and channel routing share one SQLite transaction domain, while Host and
 Docker Agent execution remain independently supervised.

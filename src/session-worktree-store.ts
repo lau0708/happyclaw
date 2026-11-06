@@ -1,5 +1,5 @@
 /**
- * Durable records of the git worktrees HappyClaw creates for Runtime
+ * Durable records of the git worktrees PulseOps creates for Runtime
  * Sessions. The worktree directory and its branch live on disk; this table
  * only remembers which session owns which checkout so every run, the file
  * panel and the review panel resolve the same root.

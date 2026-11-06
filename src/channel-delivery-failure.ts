@@ -168,5 +168,5 @@ export function channelRejectionAgentGuidance(
       'Do not retry; the user withdrew the message or the bot can no longer post there.'
     );
   }
-  return 'The complete answer will remain available in HappyClaw Web; do not retry or rewrite it solely for this channel failure.';
+  return 'The complete answer will remain available in PulseOps Web; do not retry or rewrite it solely for this channel failure.';
 }

@@ -37,7 +37,7 @@ function getOrCreateKey(): Buffer {
       flag: 'wx',
     });
     // link(2) is an atomic no-replace publish. Unlike rename, it cannot
-    // overwrite a key another HappyClaw process won the race to create.
+    // overwrite a key another PulseOps process won the race to create.
     try {
       fs.linkSync(temporaryKeyFile, KEY_FILE);
       fs.chmodSync(KEY_FILE, 0o600);

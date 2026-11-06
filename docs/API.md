@@ -1,4 +1,4 @@
-# HappyClaw Web API
+# PulseOps Web API
 
 本文档记录当前公开路由族和主要端点。请求/响应 Schema 以对应的
 `src/routes/*.ts`、`src/schemas.ts` 和前端 API 调用为准。
@@ -6,7 +6,7 @@
 ## 约定
 
 - API 默认前缀为 `/api`，WebSocket 为 `/ws`。
-- 除明确标记 Public 的接口外，均需要有效的 HappyClaw Cookie Session。
+- 除明确标记 Public 的接口外，均需要有效的 PulseOps Cookie Session。
 - 资源接口还会执行 owner、角色、Permission、Host 执行权限等检查，见
   [ACL 权限矩阵](ACL-MATRIX.md)。
 - 其他用户的资源通常以 `404` 返回，避免泄漏资源是否存在。
@@ -148,9 +148,9 @@ active 的 admin 可以为自己创建只读访客（`role=guest`），并授权
 同样必须带会话。GET 返回当前选择、默认值的解析来源和全部已保存模型配置（不含凭据）；
 `default.source` 按与运行时相同的函数解析，取值 `agent`（智能体自己的绑定）、
 `workspace_env`（工作区自带 Provider 环境变量）、`owner_main`（工作区所有者的主智能体）、
-`system_main`（系统主 HappyClaw：最早创建的 admin 的主智能体）、`none`；未设置的一步
+`system_main`（系统主 PulseOps：最早创建的 admin 的主智能体）、`none`；未设置的一步
 跳过，已设置但连接已删除或没有凭据时 `default.connectionMissing` 为 true，本轮失败并提示
-重新选择（不改用别的连接）；`none` 时同样失败，提示为主 HappyClaw 选择模型。`default.model` 是不选择时实际运行的模型（不带 `[1m]`；
+重新选择（不改用别的连接）；`none` 时同样失败，提示为主 PulseOps 选择模型。`default.model` 是不选择时实际运行的模型（不带 `[1m]`；
 `workspace_env`、`none` 与直通中转为 `null`），`default.effort` 是不选择时运行的推理
 等级（该模型不支持档位时为 `null`）。
 PUT 的 `modelConfigId` 为 `null` 时恢复默认。会话选择的（配置, 模型）优先于智能体
@@ -391,12 +391,12 @@ Assistant 模式和 fire-and-forget 的 Spawn Agent 不受该设置影响，发�
 其他工具一样是一个工具步骤。消息、聊天或工作区被删除时对应的轨迹一并清除，服务启动时
 清理孤儿轨迹。
 
-Home Workspace 固定归属当前用户的内置 HappyClaw。尝试通过
+Home Workspace 固定归属当前用户的内置 PulseOps。尝试通过
 `PATCH /api/groups/:jid/agent-profile` 将 Home 迁移到自定义 Agent 时返回：
 
 ```json
 {
-  "error": "Home Workspace 始终属于内置 HappyClaw，不能迁移到自定义智能体",
+  "error": "Home Workspace 始终属于内置 PulseOps，不能迁移到自定义智能体",
   "code": "HOME_WORKSPACE_AGENT_IMMUTABLE"
 }
 ```
@@ -420,7 +420,7 @@ HTTP 状态为 409；请求不会停止现有 Runner，也不会修改绑定。
 }
 ```
 
-`host_path` 是 HappyClaw/Docker 守护进程所在服务器上的绝对目录，不是浏览器
+`host_path` 是 PulseOps/Docker 守护进程所在服务器上的绝对目录，不是浏览器
 所在设备的目录；`container_path` 是 `/workspace/extra/` 下的相对路径。来源目录
 必须通过 `config/mount-allowlist.json`，目标不能重复、嵌套、穿越或覆盖运行时
 保留目录。普通用户、停用管理员和 host 模式请求都会被拒绝。权限、allowlist、
@@ -485,7 +485,7 @@ owner 开放。`:path` 是工作区相对路径的 base64url。`preview` 带 `ET
 一律关闭 fsmonitor、hooks、textconv、外部 diff 和仓库配置的 filter（clean、smudge、
 process），也不取可选锁：Docker 工作区的 `.git/config` 由容器内的 Agent 控制，读取时不
 执行其中配置的任何命令。只有用户发起的 `worktree add` 保持 git 默认行为（运行仓库自己的
-hook）。HappyClaw 本身不访问网络，但 LFS 或 partial clone 仓库在 `worktree add` 和 diff
+hook）。PulseOps 本身不访问网络，但 LFS 或 partial clone 仓库在 `worktree add` 和 diff
 时可能按需访问远端。
 
 `git/status` 读取会话的 worktree，或工作目录所在的仓库（`data/groups/{folder}` 只认它
@@ -663,18 +663,18 @@ hook）。HappyClaw 本身不访问网络，但 LFS 或 partial clone 仓库在 
 说明运行实际用的连接与模型。请求体可带未保存的 `model_config_id`、`model`，与未保存
 的 `runtime_policy` 一样按它们计算；绑定的连接已删除时 `connection_missing` 为 true。
 `source` 按固定顺序取 `session`（会话手选；智能体预览不针对具体会话，不取这一步）、`agent`（智能体绑定）、`workspace_env`、`owner_main`（所有者的主智能体）、
-`system_main`（系统主 HappyClaw）或 `none`。`GET /api/agent-profiles` 另返回
+`system_main`（系统主 PulseOps）或 `none`。`GET /api/agent-profiles` 另返回
 `model_configs[]`（每个连接 `{ id, name, type, model, usable, models }`，`models` 形状同
 `model-selection`）和 `inherited_model`（`owner_main`、`system_main` 各为
 `{ model_config_id, model, effort }` 或 `null`；`system_main_profile_id` 只在调用者拥有
-系统主 HappyClaw 时给出，否则为 `null`），供表单显示「跟随主智能体」。保存绑定或档位时
+系统主 PulseOps 时给出，否则为 `null`），供表单显示「跟随主智能体」。保存绑定或档位时
 档位必须是所绑定模型支持的。
 
 `GET /:id/workspaces` 的每个工作区带 `active_conversations`：该工作区运行时中正在
 执行或有排队输入的个数，即一次会重启 Runner 的保存会中断的对话数；只在等待输入的
 暖 Runner 不计入。
 
-名称在同一用户的 active 智能体（含内置 HappyClaw）之间唯一，按 NFKC 折叠后不区分
+名称在同一用户的 active 智能体（含内置 PulseOps）之间唯一，按 NFKC 折叠后不区分
 大小写比较；创建、导入和改名冲突返回 409 与 `code: AGENT_NAME_TAKEN`，已有的重名
 不受影响。四段 Prompt 每段最多 20000 个字符；超限返回 400 与
 `code: PROMPT_TOO_LONG`、`field`（如 `soul_prompt`）和 `max`，名称不合法（含零宽
@@ -689,7 +689,7 @@ Skills 不再随有效上下文来源隐式继承。
 
 `duplicate` 新建「<名称> 副本」（重名时为「副本 2」「副本 3」…），复制四段 Prompt、
 `prompt_mode`、`runtime_policy`、模型绑定、头像 Emoji/背景色与上传的头像文件（复制为
-新文件），不复制工作区和渠道挂载；内置 HappyClaw 返回 400。校验与创建相同；非
+新文件），不复制工作区和渠道挂载；内置 PulseOps 返回 400。校验与创建相同；非
 admin 复制时去掉宿主机上下文与宿主机 Skills，响应 `stripped` 列出
 `host_context`/`host_skills`。
 
@@ -725,7 +725,7 @@ admin 导入时去掉宿主机上下文与宿主机 Skills；admin 导入会授�
 
 `POST /api/agent-profiles` 只创建隔离的 AgentProfile。它不会隐式创建 Workspace、
 Session 或 Memory，也不会绑定/复制 Home Workspace。用户必须在创建 Workspace 时
-显式选择它，或通过上面的非 Home Workspace 迁移接口建立归属。内置 HappyClaw 的
+显式选择它，或通过上面的非 Home Workspace 迁移接口建立归属。内置 PulseOps 的
 代码级平台身份不存放在这些可编辑的 Prompt 字段中，自定义 Agent 不会继承。
 
 ## Agent-first 工作区投影
@@ -738,12 +738,12 @@ Session 或 Memory，也不会绑定/复制 Home Workspace。用户必须在创�
 
 这些接口是 `registered_groups` 兼容存储之上的只读产品投影。
 
-### HappyClaw Owner Profile
+### PulseOps Owner Profile
 
 - `GET /api/workspaces/:jid/owner-profile`
 - `PATCH /api/workspaces/:jid/owner-profile`
 
-只允许该用户不可删除的 Home Workspace、内置默认 HappyClaw AgentProfile 和实际
+只允许该用户不可删除的 Home Workspace、内置默认 PulseOps AgentProfile 和实际
 owner。无权访问、自定义 Agent 或非 Home 目标统一返回 404。
 
 PATCH 使用 action 联合类型：
@@ -921,7 +921,7 @@ Provider（模型连接：一份凭据和一个端点，提供一组模型）：
 - `GET /api/config/claude/providers/:id/impact`，返回
   `{ activeRunners, stoppedRunners }`：正在使用该连接的 Runner 数，以及修改其
   协议字段（端点、密钥、认证方式、默认模型、环境变量）时实际会停掉的 Runner 数
-  （连接是系统主 HappyClaw 的连接、有会话记录、被智能体绑定或被会话选用时为全部存活
+  （连接是系统主 PulseOps 的连接、有会话记录、被智能体绑定或被会话选用时为全部存活
   Runner，否则为 0）
 - `GET /api/config/claude/providers/:id/usage`，读不到用量时以 `status`
   区分 `unsupported`（setup-token、仅推理权限或非 OAuth 凭据，见

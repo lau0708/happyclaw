@@ -8,7 +8,7 @@ const SOURCE_LABELS: Record<AgentModelResolution['source'], string> = {
   session: '会话手选',
   agent: '智能体绑定',
   owner_main: '跟随主智能体',
-  system_main: '跟随主 HappyClaw',
+  system_main: '跟随主 PulseOps',
   workspace_env: '工作区环境变量',
   none: '未选择模型',
 };
@@ -49,7 +49,7 @@ function describe(resolution: AgentModelResolution): string {
 /**
  * The connection and model a run of this Agent uses and which step of the
  * order chose it: conversation pick, the Agent's own binding, the workspace
- * env, the owner's main Agent or the system main HappyClaw. A binding whose
+ * env, the owner's main Agent or the system main PulseOps. A binding whose
  * connection is gone or has no credential fails; it never falls back.
  */
 export function ModelResolutionRow({

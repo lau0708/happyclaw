@@ -489,7 +489,7 @@ agentProfileRoutes.post('/:id/duplicate', authMiddleware, async (c) => {
       const source = getAgentProfileForUser(id, user.id);
       if (!source) return c.json({ error: '智能体配置不存在' }, 404);
       if (source.is_default) {
-        return c.json({ error: '内置 HappyClaw 不能复制' }, 400);
+        return c.json({ error: '内置 PulseOps 不能复制' }, 400);
       }
       const { policy: granted, stripped } = stripHostGrants(
         source.runtime_policy,
@@ -533,7 +533,7 @@ agentProfileRoutes.get('/:id/export', authMiddleware, (c) => {
   const profile = getAgentProfileForUser(c.req.param('id'), user.id);
   if (!profile) return c.json({ error: '智能体配置不存在' }, 404);
   if (profile.is_default) {
-    return c.json({ error: '内置 HappyClaw 不能导出' }, 400);
+    return c.json({ error: '内置 PulseOps 不能导出' }, 400);
   }
   return c.json(buildAgentProfileExport(profile));
 });
@@ -837,7 +837,7 @@ agentProfileRoutes.post(
     if (!profile) return c.json({ error: '智能体配置不存在' }, 404);
     if (profile.is_default) {
       return c.json(
-        { error: 'Configure the main HappyClaw avatar in system settings' },
+        { error: 'Configure the main PulseOps avatar in system settings' },
         400,
       );
     }
@@ -879,7 +879,7 @@ agentProfileRoutes.delete('/:id/avatar', authMiddleware, (c) => {
   if (!profile) return c.json({ error: '智能体配置不存在' }, 404);
   if (profile.is_default) {
     return c.json(
-      { error: 'Configure the main HappyClaw avatar in system settings' },
+      { error: 'Configure the main PulseOps avatar in system settings' },
       400,
     );
   }
@@ -1210,7 +1210,7 @@ agentProfileRoutes.patch('/:id', authMiddleware, async (c) => {
 
 const ARCHIVE_REFUSALS = {
   not_found: { status: 404, error: '智能体配置不存在' },
-  is_default: { status: 400, error: '不能删除内置的 HappyClaw 智能体' },
+  is_default: { status: 400, error: '不能删除内置的 PulseOps 智能体' },
   has_workspaces: {
     status: 409,
     error: '该智能体仍拥有工作区；请先迁移或删除这些工作区',

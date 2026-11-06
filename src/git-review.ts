@@ -46,7 +46,7 @@ export interface GitRunResult {
 /**
  * A repository's config can name commands git runs while reading it: an
  * fsmonitor, hooks, optional-lock writers. A container Agent controls
- * data/groups/<folder>/.git/config, and HappyClaw must never execute what it
+ * data/groups/<folder>/.git/config, and PulseOps must never execute what it
  * planted, so every call but `worktree add` turns these off.
  */
 export const SAFE_GIT_READ_ARGS = [
@@ -103,7 +103,7 @@ function parseConfigEntries(
  * Environment that redirects which repository, work tree, index or object
  * store git uses, or injects config: what `git rev-parse --local-env-vars`
  * lists, plus discovery and config-file overrides. Inherited from the host
- * process (HappyClaw started from a git hook, say) it would aim every call at
+ * process (PulseOps started from a git hook, say) it would aim every call at
  * another repository, so no git child sees it.
  */
 const REPOSITORY_ENV = new Set([
@@ -307,8 +307,8 @@ export interface GitRepoLocation {
 
 /**
  * Locate the repository that contains `dir`. `requireTopLevel` refuses a
- * directory that is only nested in some outer repository: HappyClaw's own
- * data/groups/<folder> lives inside the HappyClaw checkout, and must never be
+ * directory that is only nested in some outer repository: PulseOps's own
+ * data/groups/<folder> lives inside the PulseOps checkout, and must never be
  * mistaken for it.
  */
 export async function locateGitRepo(

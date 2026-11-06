@@ -32,7 +32,7 @@ export interface PromptPlan {
   errors: string[];
 }
 
-export interface HappyClawPromptSources {
+export interface PulseOpsPromptSources {
   platformIdentity?: string;
   platformBootstrap?: string;
   agentIdentity?: string;
@@ -167,7 +167,7 @@ export function hasBackgroundTaskTools(
 }
 
 const ENGINE_CONDITIONS: Record<
-  NonNullable<HappyClawPromptSources['engine']>['id'],
+  NonNullable<PulseOpsPromptSources['engine']>['id'],
   string
 > = {
   'runtime-adaptation': 'Claude Code preset is included',
@@ -221,8 +221,8 @@ function wrap(tag: string, text: string): string {
 }
 
 /** Build the main-agent platform contract in its documented, stable order. */
-export function buildHappyClawPromptPlan(
-  sources: HappyClawPromptSources,
+export function buildPulseOpsPromptPlan(
+  sources: PulseOpsPromptSources,
 ): PromptPlan {
   const inputs: PromptBlockInput[] = [];
 
@@ -247,7 +247,7 @@ export function buildHappyClawPromptPlan(
       scope: 'main',
       owner: 'platform',
       required: true,
-      condition: 'built-in default HappyClaw AgentProfile',
+      condition: 'built-in default PulseOps AgentProfile',
       text: wrap('platform-identity', sources.platformIdentity),
     });
   }
@@ -260,7 +260,7 @@ export function buildHappyClawPromptPlan(
       owner: 'platform',
       required: false,
       condition:
-        'built-in HappyClaw Home runtime; each turn follows the host-authoritative owner-profile block',
+        'built-in PulseOps Home runtime; each turn follows the host-authoritative owner-profile block',
       text: wrap('platform-bootstrap', sources.platformBootstrap),
     });
   }

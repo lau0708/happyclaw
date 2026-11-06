@@ -653,7 +653,7 @@ export function HostIntegrationSettingsSection({
       );
       toast.success(
         scope === 'main-agent'
-          ? '主 HappyClaw 默认策略已保存'
+          ? '主 PulseOps 默认策略已保存'
           : draft.pluginAutoScan !== settings.pluginAutoScan
             ? '宿主机集成设置已保存；Plugin 自动扫描将在服务重启后生效'
             : '宿主机集成设置已保存',
@@ -687,17 +687,17 @@ export function HostIntegrationSettingsSection({
     return (
       <SettingsSection
         title="配置继承与上下文压缩"
-        description="控制主 HappyClaw 是否继承宿主机 Claude Code 配置，以及何时自动压缩上下文。"
+        description="控制主 PulseOps 是否继承宿主机 Claude Code 配置，以及何时自动压缩上下文。"
       >
         <SettingsGroup>
           <SettingsSwitchRow
-            label="主 HappyClaw 继承宿主机 Claude Code 配置"
+            label="主 PulseOps 继承宿主机 Claude Code 配置"
             htmlFor="host-integration-main-agent-context"
             description={
               <span id="host-integration-main-agent-context-description">
                 开启后自动继承宿主机提示词、Rules、全部 Skills 与 MCP，
-                无需再逐项选择；HappyClaw 管理的能力继续附加。普通用户的 默认
-                HappyClaw 始终使用托管配置。
+                无需再逐项选择；PulseOps 管理的能力继续附加。普通用户的 默认
+                PulseOps 始终使用托管配置。
               </span>
             }
             control={
@@ -726,7 +726,7 @@ export function HostIntegrationSettingsSection({
             htmlFor="main-agent-auto-compact-default"
             description={
               <span id="main-agent-auto-compact-default-description">
-                全局作用于所有用户的默认 HappyClaw。SDK
+                全局作用于所有用户的默认 PulseOps。SDK
                 根据当前模型决定压缩时机：普通模型通常为 200K 上下文；模型名带
                 [1m] 时按 1M 处理。
               </span>

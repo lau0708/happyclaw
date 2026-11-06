@@ -16,8 +16,8 @@ import {
 /**
  * The real pinned Claude CLI against two scripted upstreams: A is the bound
  * connection, B is where a settings file tries to send the run. The admin's
- * layer goes through the host's strip, as HappyClaw writes it into the
- * session settings, and the Runner's flag settings pin what HappyClaw set.
+ * layer goes through the host's strip, as PulseOps writes it into the
+ * session settings, and the Runner's flag settings pin what PulseOps set.
  */
 const runnerRoot = path.resolve('container/agent-runner');
 const runnerRequire = createRequire(path.join(runnerRoot, 'package.json'));
@@ -149,7 +149,7 @@ async function* hello() {
   };
 }
 
-/** The admin's ~/.claude/settings.json as HappyClaw projects it. */
+/** The admin's ~/.claude/settings.json as PulseOps projects it. */
 function adminLayer(settings: object): object {
   const external = fs.mkdtempSync(path.join(scratch, 'admin-'));
   fs.writeFileSync(
@@ -174,7 +174,7 @@ function adminLayer(settings: object): object {
   );
 }
 
-/** One turn as the Runner runs it, with `bound` as HappyClaw's env. */
+/** One turn as the Runner runs it, with `bound` as PulseOps's env. */
 async function runTurn(options: {
   bound: Record<string, string>;
   admin?: object;
@@ -253,7 +253,7 @@ const boundKey = (url: string) => ({
 const atA = [{ stub: 'A', auth: null, key: 'bound-key' }];
 
 describe('the bound connection and the session choices win', () => {
-  test('pins only what HappyClaw set, and every backend switch off', () => {
+  test('pins only what PulseOps set, and every backend switch off', () => {
     const pinned = pinBoundProviderSettings({
       ANTHROPIC_BASE_URL: 'http://bound',
       ANTHROPIC_DEFAULT_SONNET_MODEL: 'bound-sonnet',

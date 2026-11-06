@@ -158,7 +158,7 @@ try {
 
   await mkdir(workspace, { recursive: true });
   // config.ts captures PROJECT_ROOT at import time: switch into the empty
-  // scratch first so no real HappyClaw data directory is touched.
+  // scratch first so no real PulseOps data directory is touched.
   process.chdir(scratch);
   process.env.LOG_LEVEL = process.env.LOG_LEVEL || 'silent';
 

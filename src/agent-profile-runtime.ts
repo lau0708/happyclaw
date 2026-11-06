@@ -15,7 +15,7 @@ import { logger } from './logger.js';
 import { resolveEffectiveAgentRuntimePolicy } from './agent-profile-identity.js';
 
 export {
-  bindHappyClawPlatformIdentityHash,
+  bindPulseOpsPlatformIdentityHash,
   HAPPYCLAW_PLATFORM_IDENTITY_VERSION,
 } from './agent-profile-identity.js';
 

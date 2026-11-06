@@ -1,4 +1,4 @@
-# HappyClaw — 工程协作指南
+# PulseOps — 工程协作指南
 
 本文档描述当前代码的工程约束和导航入口，供人类与 AI 协作者共同使用。
 
@@ -22,7 +22,7 @@
 
 ## 2. 产品模型
 
-HappyClaw 是基于 Claude Agent SDK 的自托管、多用户 Agent 工作台，支持 Web 与飞书、
+PulseOps 是基于 Claude Agent SDK 的自托管、多用户 Agent 工作台，支持 Web 与飞书、
 Telegram、QQ、钉钉、微信、企业微信、Discord、WhatsApp。
 
 当前产品层级：
@@ -190,8 +190,8 @@ Web UI 约定：
 - 聊天输入框是 Tiptap 编辑器（`@tiptap/*` 全部精确锁同一版本）。编辑器内核（结构化列表、
   中文标点与选区修补、长粘贴折叠块、序列化）取自 cindy，位于
   `components/chat/composer/cindy/`，按 Apache-2.0 保留来源与修改声明；外层
-  `MessageInput` 和 `components/chat/composer/` 是 HappyClaw 自己的，回车、排队、插话
-  语义见 §4。`/` 面板插入 `/技能名`：HappyClaw 的消息信封让 CLI 不会直接展开斜杠命令，
+  `MessageInput` 和 `components/chat/composer/` 是 PulseOps 自己的，回车、排队、插话
+  语义见 §4。`/` 面板插入 `/技能名`：PulseOps 的消息信封让 CLI 不会直接展开斜杠命令，
   由模型调用 Skill 工具；`@` 选中的文件序列化为 `@"工作区相对路径"`，由 CLI 自动附带。
   为此消息正文在 `<message>` 内另起一行、不转义引号（属性值照常转义）。
 
@@ -203,7 +203,7 @@ Web UI 约定：
 - stdout 使用 `OUTPUT_START_MARKER` / `OUTPUT_END_MARKER` 输出结构化结果。
 - 后续消息、工具请求和关闭控制通过独立 IPC 目录传递。
 - `container/agent-runner/prompts/` 中的 Prompt 在启动时加载。
-- HappyClaw MCP 工具由 `container/agent-runner/src/mcp-tools.ts` 注册。
+- PulseOps MCP 工具由 `container/agent-runner/src/mcp-tools.ts` 注册。
 - `shared/stream-event.ts` 同步到主服务、Web 和 Runner。
 
 不要在文档中维护固定的 MCP 工具数量或 StreamEvent 数量；它们会随能力演进变化，
@@ -289,9 +289,9 @@ Host 模式没有 `maxConcurrentHostProcesses`。旧客户端提交该字段时�
 - `AGENTS`：工作流、输入输出、默认值、分支和失败处理。
 - `TOOLS`：Skill、MCP 和工具的选择方式与限制，可为空。
 
-System prompt 是 Claude Code preset（`prompt_mode=append`，主动模式除外）加 HappyClaw
+System prompt 是 Claude Code preset（`prompt_mode=append`，主动模式除外）加 PulseOps
 的 PromptPlan。PromptPlan 的第一块是引擎层：带 preset 时为 `runtime-adaptation`，说明
-preset 里终端编程 CLI 的假设（身份、请求范围、渲染、篇幅、`/help`）在 HappyClaw 中怎么
+preset 里终端编程 CLI 的假设（身份、请求范围、渲染、篇幅、`/help`）在 PulseOps 中怎么
 改；不带 preset 时为 `runtime-baseline`，补上 preset 原本给的工作基础。Agent 提示词取代
 preset 的身份和默认风格，只低于平台的安全、权限、工具和交付规则。preset 原文由
 `tests/fixtures/claude-code-preset.txt` 固定。
@@ -317,7 +317,7 @@ preset 的身份和默认风格，只低于平台的安全、权限、工具和�
   内置、依赖 CLI 进程常驻或交互审批的会话级工具（`CronCreate`/`CronDelete`/`CronList`、
   `ScheduleWakeup`、`EnterWorktree`/`ExitWorktree`、`EnterPlanMode`/`ExitPlanMode`）：
   Runner 每轮结束会关闭 CLI，这些承诺会静默丢失，计划模式也等不到审批，因此默认禁用，
-  并设置 `CLAUDE_CODE_DISABLE_CRON=1` 关闭 CLI 自带的定时调度；定时需求走 HappyClaw
+  并设置 `CLAUDE_CODE_DISABLE_CRON=1` 关闭 CLI 自带的定时调度；定时需求走 PulseOps
   的自动化（`automation_*` 工具）。
 - Runner 安装 `canUseTool`（`builtin-tool-policy.ts`），CLI 才会注册
   AskUserQuestion；普通调用仍由 `bypassPermissions` 直接放行，不经过它，其余请求人工
@@ -329,7 +329,7 @@ preset 的身份和默认风格，只低于平台的安全、权限、工具和�
   子代理这个工具。
 - 一次运行绑定的模型配置按固定顺序解析（`container-runner.ts` 的
   `resolveModelBinding`）：会话手选 → 智能体自己的绑定 → 工作区自带的 Provider
-  环境变量 → 所有者的主智能体（默认 profile）→ 系统主 HappyClaw（最早创建的 admin
+  环境变量 → 所有者的主智能体（默认 profile）→ 系统主 PulseOps（最早创建的 admin
   的默认 profile）。未设置的一步跳过；会话手选的连接失效时回到默认；智能体与主智能体
   的绑定一旦设置就是权威，连接已删除或没有凭据时本轮失败并提示，不改用别的连接；
   一步都没有时同样失败，不落到任意连接。没有全局默认、自动池和启用开关；Web 的选择器
@@ -338,12 +338,12 @@ preset 的身份和默认风格，只低于平台的安全、权限、工具和�
   不支持档位的模型不下发；不存在默认 `max`。模型支持哪些档位见
   `resolveModelCapabilities`（`shared/model-providers.ts`）：连接上声明的 → 能力表 →
   同系列推断（如 `gpt-6.1-terra` 取 `gpt-6.1-sol`）→ 无。ChatGPT 订阅连接仍用账号目录。
-- HappyClaw 拥有的 Claude 环境（后端开关、端点、凭据、模型层级、会话的 effort/压缩/
+- PulseOps 拥有的 Claude 环境（后端开关、端点、凭据、模型层级、会话的 effort/压缩/
   上下文，清单在 `shared/claude-provider-env.ts`）不取自宿主进程继承的环境，也从管理员
   的 settings 层剔除（连同 `apiKeyHelper` 等取凭据的命令），不会写进挂载给 Agent 的会话
-  settings。Runner 再把 HappyClaw 设置了的值写进 flag settings，压过管理员、项目和
+  settings。Runner 再把 PulseOps 设置了的值写进 flag settings，压过管理员、项目和
   local 的 settings 文件；后端开关一律写 `0`（除非连接打开），并关闭 `apiKeyHelper`。
-  未被 HappyClaw 设置的键（例如官方连接的 `ANTHROPIC_BASE_URL`）仍可由工作区 cwd 下的
+  未被 PulseOps 设置的键（例如官方连接的 `ANTHROPIC_BASE_URL`）仍可由工作区 cwd 下的
   项目/local settings 文件设置：Host 模式下那是管理员自己的仓库，Container 模式下所有者
   本就能读到该连接的凭据。
 - 连接的 WebFetch 域名检查（`webFetchPreflightPolicy`）：Claude Code 的 WebFetch 会先把

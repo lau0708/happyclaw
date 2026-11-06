@@ -250,7 +250,7 @@ test('an agent menu creates a workspace with that agent preselected', async ({
   await nav.getByRole('button', { name: '新建工作区' }).first().click();
   await expect(
     page.getByRole('dialog').locator('#workspace-agent-profile'),
-  ).toContainText('HappyClaw');
+  ).toContainText('PulseOps');
 });
 
 test('a session row deletes from its hover button after confirmation', async ({

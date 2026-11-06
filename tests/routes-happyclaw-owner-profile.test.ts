@@ -314,7 +314,7 @@ describe('/api/workspaces/:jid/owner-profile', () => {
     const custom = db.createAgentProfile({
       ownerUserId: OWNER_ID,
       name: 'Custom route profile',
-      identityPrompt: 'Remain isolated from HappyClaw Owner Profile.',
+      identityPrompt: 'Remain isolated from PulseOps Owner Profile.',
     });
     const customJid = 'web:route-owner-custom-home';
     db.setRegisteredGroup(customJid, {

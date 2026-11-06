@@ -61,7 +61,7 @@ function persistTurn(
     id,
     chatJid,
     isFromMe ? 'happyclaw' : 'user-1',
-    isFromMe ? 'HappyClaw' : 'Dennis',
+    isFromMe ? 'PulseOps' : 'Dennis',
     content,
     timestamp,
     isFromMe,
@@ -91,7 +91,7 @@ function conversationInput(opts?: {
 /**
  * A Claude SDK session is bound to one OAuth account. Moving a conversation
  * to another connection must start a new session, but the new prompt has to
- * carry HappyClaw's persisted user/assistant turns; otherwise the new
+ * carry PulseOps's persisted user/assistant turns; otherwise the new
  * account sees an empty conversation.
  */
 describe('provider failover keeps conversation context', () => {

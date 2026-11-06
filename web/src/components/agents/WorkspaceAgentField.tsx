@@ -25,7 +25,7 @@ export function useWorkspaceAgentId(groupJid: string | undefined): string {
 
 /**
  * Pick which Agent a Workspace belongs to. The Home Workspace always belongs
- * to the built-in HappyClaw. The caller applies the change on save through
+ * to the built-in PulseOps. The caller applies the change on save through
  * PATCH /api/groups/:jid/agent-profile.
  */
 export function WorkspaceAgentField({
@@ -61,7 +61,7 @@ export function WorkspaceAgentField({
       </label>
       {home ? (
         <p className="text-caption leading-5 text-muted-foreground">
-          Home 工作区固定使用内置 HappyClaw，不能更换。
+          Home 工作区固定使用内置 PulseOps，不能更换。
         </p>
       ) : (
         <>

@@ -44,7 +44,7 @@ export function createWorkspaceMemoryWriteGuard(): HookCallback {
           hookEventName: 'PreToolUse',
           permissionDecision: 'deny',
           permissionDecisionReason: ownerProfile
-            ? 'Owner Profile is private to the actual owner’s top-level HappyClaw turn and is unavailable to sub-agents.'
+            ? 'Owner Profile is private to the actual owner’s top-level PulseOps turn and is unavailable to sub-agents.'
             : 'Sub-agents have read-only Workspace Memory access. Return proposed learnings to the top-level session.',
         },
       };

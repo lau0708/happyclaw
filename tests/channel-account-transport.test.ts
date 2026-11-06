@@ -28,7 +28,7 @@ const { setChannelImplementationLoaderForTest } =
 const CONFLICT = {
   kind: 'conflict' as const,
   message:
-    '该飞书应用的长连接已被其他程序占用（同一 App 同时只应连接一处），消息可能被对方接走。请停用另一处连接，或为 HappyClaw 单独创建应用。',
+    '该飞书应用的长连接已被其他程序占用（同一 App 同时只应连接一处），消息可能被对方接走。请停用另一处连接，或为 PulseOps 单独创建应用。',
 };
 
 function account(id: string, enabled = true) {

@@ -1,5 +1,5 @@
 /**
- * Shared types for HappyClaw Agent Runner.
+ * Shared types for PulseOps Agent Runner.
  *
  * These types are used across index.ts, stream-processor.ts, and mcp-tools.ts.
  */
@@ -17,7 +17,7 @@ export interface ChannelContentLink {
 }
 
 /**
- * Sanitized, per-input-turn channel identity supplied by the HappyClaw host.
+ * Sanitized, per-input-turn channel identity supplied by the PulseOps host.
  *
  * This is deliberately a capability context rather than a credential bag:
  * tokens, app secrets and provider client objects must never cross the runner
@@ -267,7 +267,7 @@ export interface ContainerInput {
     id: string;
     name: string;
     version: number;
-    /** Host-authoritative marker for the built-in HappyClaw AgentProfile. */
+    /** Host-authoritative marker for the built-in PulseOps AgentProfile. */
     isDefault: boolean;
     identityHash: string;
     identityPrompt: string;
@@ -276,7 +276,7 @@ export interface ContainerInput {
     runtimePolicy?: unknown;
   };
   /**
-   * True only for an interactive turn in the built-in HappyClaw Home
+   * True only for an interactive turn in the built-in PulseOps Home
    * Workspace before the owner-preferred-address memory has been established.
    */
   happyClawBootstrapPending?: boolean;
@@ -300,7 +300,7 @@ export interface ContainerInput {
    * cold/warm Owner Profile IPC request. */
   happyClawOwnerProfileEnabled?: boolean;
   /** Host-derived capability flag. True only for an interactive session whose
-   * effective top-level AgentProfile is the built-in main HappyClaw. */
+   * effective top-level AgentProfile is the built-in main PulseOps. */
   agentBuilderEnabled?: boolean;
   agentId?: string;
   agentName?: string;
@@ -313,7 +313,7 @@ export interface ContainerInput {
   plugins?: Array<{ type: 'local'; path: string }>;
   /** Runtime context audit bootstrap from the host/container launcher. */
   contextAudit?: ClaudeContextAudit;
-  /** Canonical effective Skill set resolved by the HappyClaw host. */
+  /** Canonical effective Skill set resolved by the PulseOps host. */
   skillManifest?: { hash: string; selectedSkillIds: string[] };
 }
 

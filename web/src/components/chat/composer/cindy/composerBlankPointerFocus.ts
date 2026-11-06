@@ -1,9 +1,9 @@
 /**
  * Source: cindy apps/desktop/src/renderer/components/new-chat/composerBlankPointerFocus.ts
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
  * Tiptap 3.30.6. The original rationale below refers to cindy's
- * card heights; HappyClaw's card has the same blank areas.
+ * card heights; PulseOps's card has the same blank areas.
  */
 /**
  * Composer 空白区指针守卫 —— 修掉「只有点中文字那一行才能进输入」。

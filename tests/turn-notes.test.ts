@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { resolveAgentTurnAnchor } from '../container/agent-runner/src/agent-turn-contract.js';
 import type {
-  HappyClawOwnerProfileTurnResult,
+  PulseOpsOwnerProfileTurnResult,
   WorkspaceMemorySnapshot,
 } from '../container/agent-runner/src/mcp-tools.js';
 import { HAPPYCLAW_OWNER_PROFILE_WITHDRAWN_BLOCK } from '../container/agent-runner/src/owner-profile-context.js';
@@ -44,7 +44,7 @@ function memory(
 function owner(
   preferredAddress: string,
   revision = 1,
-): HappyClawOwnerProfileTurnResult {
+): PulseOpsOwnerProfileTurnResult {
   return {
     projection: {
       workspaceJid: 'web:home',

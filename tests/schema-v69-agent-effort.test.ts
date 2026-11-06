@@ -15,7 +15,7 @@ fs.mkdirSync(storeDir, { recursive: true });
 fs.mkdirSync(groupsDir, { recursive: true });
 
 vi.mock('../src/config.js', () => ({
-  ASSISTANT_NAME: 'HappyClaw Test',
+  ASSISTANT_NAME: 'PulseOps Test',
   DATA_DIR: dataDir,
   STORE_DIR: storeDir,
   GROUPS_DIR: groupsDir,

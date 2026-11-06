@@ -1,10 +1,10 @@
 /**
- * One-time move of the global default model onto the system main HappyClaw.
+ * One-time move of the global default model onto the system main PulseOps.
  *
  * The global default, the automatic pool and per-connection enable switches
  * are gone; a run's connection now comes from an Agent binding
  * (resolveModelBinding). So that an install upgraded from them keeps running
- * where it ran, the system main HappyClaw (main Agent of the earliest admin)
+ * where it ran, the system main PulseOps (main Agent of the earliest admin)
  * is bound once to what used to be the default, and the legacy pointer is
  * cleared. It runs on the first boot of this release, and again only while a
  * legacy pointer is still in the file; a profile that already has a binding
@@ -43,7 +43,7 @@ export type ModelBindingBackfillResult =
   | { status: 'bound'; modelConfigId: string; model: string | null };
 
 /**
- * The connection the system main HappyClaw inherits: the legacy default if it
+ * The connection the system main PulseOps inherits: the legacy default if it
  * can serve, else the first enabled usable one (the only one, when a single
  * one is enabled), else the first usable one.
  */
@@ -93,7 +93,7 @@ function listedOwnModel(provider: UnifiedProvider): string | null {
 }
 
 /**
- * Bind the system main HappyClaw to a connection just created, when it binds
+ * Bind the system main PulseOps to a connection just created, when it binds
  * none yet, so the first connection of an install is what runs. Returns
  * whether it bound.
  */
@@ -111,7 +111,7 @@ export function bindSystemMainIfUnbound(connectionId: string): boolean {
   });
   logger.info(
     { profileId: profile.id, modelConfigId: provider.id, model },
-    'Bound the system main HappyClaw to the first model connection',
+    'Bound the system main PulseOps to the first model connection',
   );
   return true;
 }
@@ -137,14 +137,14 @@ function bindSystemMain(
   clearLegacyDefaultModelConfigId();
   logger.info(
     { profileId: profile.id, modelConfigId: provider.id, model },
-    'Bound the system main HappyClaw to the former default model connection',
+    'Bound the system main PulseOps to the former default model connection',
   );
   return { status: 'bound', modelConfigId: provider.id, model };
 }
 
 /**
  * Point the host's own Claude calls (titles, recall, a launch nothing chose
- * a connection for) at the system main HappyClaw's binding.
+ * a connection for) at the system main PulseOps's binding.
  */
 export function installSystemMainModelConfigResolver(): void {
   setGlobalModelConfigResolver(() =>

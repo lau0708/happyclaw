@@ -74,7 +74,7 @@ describe('AgentProfile DB model', () => {
 
     expect(profiles).toHaveLength(1);
     expect(profiles[0].is_default).toBe(true);
-    expect(profiles[0].name).toBe('HappyClaw');
+    expect(profiles[0].name).toBe('PulseOps');
     expect(profiles[0].identity_prompt).toBe('');
     expect(profiles[0].include_claude_preset).toBe(true);
     expect(profiles[0].model_config_id).toBeNull();
@@ -89,11 +89,11 @@ describe('AgentProfile DB model', () => {
       mcp: { mode: 'inherit', ids: [] },
     });
     expect(profiles[0].identity_hash).toBe(
-      computeAgentProfileIdentityHash('', true, undefined, 'HappyClaw'),
+      computeAgentProfileIdentityHash('', true, undefined, 'PulseOps'),
     );
   });
 
-  test('persists admin HappyClaw as managed; global host policy is resolved at runtime', () => {
+  test('persists admin PulseOps as managed; global host policy is resolved at runtime', () => {
     const userId = 'agent-profile-admin-context';
     seedUser(userId, 'admin');
 
@@ -158,14 +158,14 @@ describe('AgentProfile DB model', () => {
     expect(legacy?.name).toBe('Default Agent');
 
     const migrated = listAgentProfilesForUser(userId)[0];
-    expect(migrated.name).toBe('HappyClaw');
+    expect(migrated.name).toBe('PulseOps');
     expect(migrated.version).toBe((legacy?.version ?? 0) + 1);
     expect(migrated.identity_hash).toBe(
       computeAgentProfileIdentityHash(
         migrated.identity_prompt,
         migrated.include_claude_preset,
         migrated.runtime_policy,
-        'HappyClaw',
+        'PulseOps',
       ),
     );
 
@@ -227,7 +227,7 @@ describe('AgentProfile DB model', () => {
     );
   });
 
-  test('permanently binds Home Workspace to the built-in HappyClaw', () => {
+  test('permanently binds Home Workspace to the built-in PulseOps', () => {
     const userId = 'agent-profile-home-owner';
     seedUser(userId);
     const homeJid = ensureUserHomeGroup(userId, 'member', userId);
@@ -240,7 +240,7 @@ describe('AgentProfile DB model', () => {
 
     expect(getWorkspaceAgentProfileId(home.folder)).toBe(builtIn.id);
     expect(() => assignWorkspaceAgentProfile(home.folder, custom.id)).toThrow(
-      'Home Workspace must remain bound to the built-in HappyClaw Agent',
+      'Home Workspace must remain bound to the built-in PulseOps Agent',
     );
 
     // Simulate a legacy database written before the invariant existed.

@@ -111,7 +111,7 @@ export function EffectiveCapabilitiesPreview({
   return (
     <AgentSection
       title="最终生效能力"
-      description="按来源展示 HappyClaw、宿主机和工作区能力，并标出同名来源冲突。 系统内置能力始终生效，不进入用户选择器。"
+      description="按来源展示 PulseOps、宿主机和工作区能力，并标出同名来源冲突。 系统内置能力始终生效，不进入用户选择器。"
       actions={
         <>
           <Select value={workspaceJid} onValueChange={setWorkspaceJid}>
@@ -158,7 +158,7 @@ export function EffectiveCapabilitiesPreview({
               <Badge variant="neutral">
                 {preview.context.source === 'host_claude'
                   ? '宿主机 ~/.claude'
-                  : 'HappyClaw 管理'}
+                  : 'PulseOps 管理'}
               </Badge>
               {preview.context.source === 'host_claude' && (
                 <span className="text-caption text-muted-foreground">
@@ -172,7 +172,7 @@ export function EffectiveCapabilitiesPreview({
             </PreviewRow>
             <ModelResolutionRow resolution={resolution} />
             <CapabilityEntriesRow
-              label="HappyClaw Skills"
+              label="PulseOps Skills"
               entries={preview.skills.entries.filter(
                 (entry) =>
                   entry.source !== 'host' && entry.source !== 'workspace',

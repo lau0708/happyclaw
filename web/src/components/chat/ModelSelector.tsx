@@ -142,7 +142,7 @@ export interface SessionModelSelection {
 const DEFAULT_SOURCE_LABELS: Record<DefaultModelSource, string> = {
   agent: '智能体默认',
   owner_main: '跟随主智能体',
-  system_main: '跟随主 HappyClaw',
+  system_main: '跟随主 PulseOps',
   workspace_env: '工作区环境变量',
   none: '未选择模型',
 };

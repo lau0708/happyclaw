@@ -21,7 +21,7 @@ function usage(
     model: 'test-model',
     memoryFiles: [],
     mcpTools: [],
-    systemPromptSections: [{ name: 'HappyClaw', tokens: startupTokens }],
+    systemPromptSections: [{ name: 'PulseOps', tokens: startupTokens }],
     agents: [],
     isAutoCompactEnabled: true,
     apiUsage: null,

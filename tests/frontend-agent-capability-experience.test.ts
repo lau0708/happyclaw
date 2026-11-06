@@ -134,9 +134,9 @@ describe('Agent prompt and capability frontend contract', () => {
     const policy = read('web/src/utils/agent-runtime-policy.ts');
 
     expect(profiles).toContain(
-      'HappyClaw MCP 与宿主机 Skills 由上面的设置独立控制',
+      'PulseOps MCP 与宿主机 Skills 由上面的设置独立控制',
     );
-    // The Agent page and the main HappyClaw settings share one form.
+    // The Agent page and the main PulseOps settings share one form.
     expect(profiles).toContain('<AgentCapabilityForm');
     expect(main).toContain('<AgentCapabilityForm');
     expect(form).toContain('<AgentSkillsPolicyEditor');
@@ -221,7 +221,7 @@ describe('Agent prompt and capability frontend contract', () => {
     const card = read('web/src/components/skills/SkillCard.tsx');
     const store = read('web/src/stores/skills.ts');
 
-    expect(page).toMatch(/我的 Skills[\s\S]*HappyClaw 内置[\s\S]*宿主机/);
+    expect(page).toMatch(/我的 Skills[\s\S]*PulseOps 内置[\s\S]*宿主机/);
     expect(page).toContain('skill.sourceKey');
     expect(card).toContain('isReadonlySkill(skill)');
     expect(card).toContain('skillConflictLabel');

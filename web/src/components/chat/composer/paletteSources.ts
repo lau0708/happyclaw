@@ -1,5 +1,5 @@
 /**
- * Data behind the composer's `/` and `@` palettes: HappyClaw's own commands,
+ * Data behind the composer's `/` and `@` palettes: PulseOps's own commands,
  * the Skills the workspace's Agent can use, and workspace directory listings.
  * Skill lists are cached per workspace for a short while, so switching
  * sessions does not refetch them; listings are read fresh for each `@`.

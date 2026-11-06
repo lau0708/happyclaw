@@ -90,7 +90,7 @@ export function parseAgentProfileExport(
     return {
       ok: false,
       code: 'INVALID_AGENT_EXPORT',
-      error: '不是 HappyClaw 智能体导出文件',
+      error: '不是 PulseOps 智能体导出文件',
     };
   }
   if (document.version !== AGENT_EXPORT_VERSION) {

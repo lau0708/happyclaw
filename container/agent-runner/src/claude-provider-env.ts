@@ -1,8 +1,8 @@
 /**
- * The Claude Code environment HappyClaw owns on every run (names from Claude
+ * The Claude Code environment PulseOps owns on every run (names from Claude
  * CLI 2.1.296): which backend serves the requests, where they go, who they
  * authenticate as, which model each tier runs, and the session's effort,
- * compaction and context. HappyClaw sets these from the bound connection and
+ * compaction and context. PulseOps sets these from the bound connection and
  * the session's choices. So they are never taken from an inherited shell or
  * the admin's settings layer, and the Runner pins the ones it sets above
  * every settings file.

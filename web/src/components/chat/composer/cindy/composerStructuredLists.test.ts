@@ -2,7 +2,7 @@
 /**
  * Source: cindy apps/desktop/src/renderer/__tests__/composerStructuredLists.test.ts
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
  * Tiptap 3.30.6.
  * Dropped: quote, deep-link and agent-reference cases; globals.css source check;
  * pasted-text range assertions (the port serializes text only).

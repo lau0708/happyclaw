@@ -105,7 +105,7 @@ describe('the resolved model', () => {
       />,
     );
     expect(container.textContent).toContain('Claude 官方 · opus');
-    expect(container.textContent).toContain('跟随主 HappyClaw');
+    expect(container.textContent).toContain('跟随主 PulseOps');
     expect(container.querySelector('.text-warning')).toBeNull();
   });
 

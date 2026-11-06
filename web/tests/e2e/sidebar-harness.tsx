@@ -57,7 +57,7 @@ function workspace(
     is_my_home: home,
     can_modify: true,
     execution_mode: 'host',
-    agent_profile_name: 'HappyClaw',
+    agent_profile_name: 'PulseOps',
     lastMessageTime: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
   } as GroupInfo;
 }
@@ -138,7 +138,7 @@ const profile = (id: string, name: string, isDefault = false) =>
   }) as never;
 useAgentProfilesStore.setState({
   profiles: [
-    profile('agent-default', 'HappyClaw', true),
+    profile('agent-default', 'PulseOps', true),
     profile(postAgent.id, postAgent.name),
     profile(billAgent.id, billAgent.name),
   ],
@@ -148,7 +148,7 @@ useAgentProfilesStore.setState({
 });
 useChatStore.setState({
   groups: {
-    'web:main': workspace('main', 'HappyClaw', 30, true),
+    'web:main': workspace('main', 'PulseOps', 30, true),
     'web:alpha': workspace('alpha', 'Alpha 工作区', 10),
     'web:beta': workspace('beta', 'Beta 工作区', 20),
     'web:post': agentWorkspace('post', '邮寄', 40, postAgent),

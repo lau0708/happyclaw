@@ -6,7 +6,7 @@ import type { TeamRole } from './work-items.js';
  * Built-in tools removed from every session because they depend on a Claude
  * Code process that outlives the turn. The runner ends the CLI process a few
  * seconds after each result, so a session-scoped cron or ScheduleWakeup would
- * silently never fire (HappyClaw schedules through mcp__happyclaw__automation_create),
+ * silently never fire (PulseOps schedules through mcp__happyclaw__automation_create),
  * and a worktree would move the session away from the workspace directory
  * whose transcript and IPC paths the runner resolves.
  *
@@ -53,7 +53,7 @@ export function teamDisallowedTools(teamRole: TeamRole | undefined): string[] {
  * tells the step list the question was asked.
  */
 export const ASK_USER_QUESTION_DEFERRED_RESULT =
-  'The question was not answered inside this turn. HappyClaw has shown it ' +
+  'The question was not answered inside this turn. PulseOps has shown it ' +
   'to the user where the channel supports it (a Web card, Feishu buttons), ' +
   "and the user's answer will arrive as their next message. Do not wait " +
   'for an answer and do not ask the same question again with this tool. ' +
@@ -80,7 +80,7 @@ export const SUBAGENT_ASK_USER_QUESTION_RESULT =
  * handler the CLI denied those, and it still does.
  */
 export const APPROVAL_UNAVAILABLE_RESULT =
-  'This call asked for approval, and HappyClaw runs without interactive ' +
+  'This call asked for approval, and PulseOps runs without interactive ' +
   'approval, so it was not run.';
 
 /**

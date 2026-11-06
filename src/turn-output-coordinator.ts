@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 
 /**
- * User-visible delivery semantics are deliberately owned by the HappyClaw
+ * User-visible delivery semantics are deliberately owned by the PulseOps
  * host, not inferred from the fact that an MCP tool happened to run.
  */
 export type TurnMessageDeliveryRole = 'progress' | 'final' | 'separate';

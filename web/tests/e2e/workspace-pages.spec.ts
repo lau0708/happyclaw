@@ -20,7 +20,7 @@ const workspace = {
   interaction_mode: 'assistant',
   can_modify: true,
   updated_at: '2026-07-28T09:00:00.000Z',
-  agent_profile: { id: 'main', name: 'HappyClaw', version: 1 },
+  agent_profile: { id: 'main', name: 'PulseOps', version: 1 },
 };
 
 function memoryItem(n: number, status = 'active') {

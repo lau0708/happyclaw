@@ -222,7 +222,7 @@ describe('resolveModelBinding', () => {
   test('nothing bound is an error only while connections exist', () => {
     const none = runner.resolveModelBinding({}, session);
     expect(none.source).toBe('none');
-    expect(runner.modelBindingError(none)).toMatch(/还没有为主 HappyClaw/);
+    expect(runner.modelBindingError(none)).toMatch(/还没有为主 PulseOps/);
     mocks.providers = [];
     expect(runner.modelBindingError(none)).toBeNull();
   });

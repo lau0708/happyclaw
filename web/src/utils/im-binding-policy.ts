@@ -9,7 +9,7 @@ import { apiErrorBody } from './error';
  */
 export function notBindableMessage(err: unknown): string | null {
   return apiErrorBody(err)?.code === 'session_not_bindable'
-    ? '这个会话不能绑定聊天：团队、自动化和话题会话由 HappyClaw 自己使用，请选择普通会话。'
+    ? '这个会话不能绑定聊天：团队、自动化和话题会话由 PulseOps 自己使用，请选择普通会话。'
     : null;
 }
 

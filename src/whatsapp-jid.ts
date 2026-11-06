@@ -19,7 +19,7 @@ export function isWhatsAppDirectProviderJid(jid: string): boolean {
 
 /**
  * Collapse device/agent suffixes and the legacy `@c.us` PN domain before a
- * WhatsApp conversation becomes a HappyClaw identity. The raw provider target
+ * WhatsApp conversation becomes a PulseOps identity. The raw provider target
  * must remain available to the transport for acknowledgements and immediate
  * replies; this helper defines only the durable logical identity.
  */
@@ -30,7 +30,7 @@ export function canonicalizeWhatsAppProviderConversationJid(
   return jidNormalizedUser(jid) || jid;
 }
 
-/** Canonicalize a HappyClaw WhatsApp conversation JID while preserving scope. */
+/** Canonicalize a PulseOps WhatsApp conversation JID while preserving scope. */
 export function canonicalizeWhatsAppConversationJid(jid: string): string {
   const address = parseChannelAddress(jid);
   if (!address || address.provider !== 'whatsapp') return jid;

@@ -52,7 +52,7 @@ const utterance = (id: string, over: Partial<Message> = {}): Message => ({
   id,
   chat_jid: SESSION,
   sender: 'happyclaw-agent',
-  sender_name: 'HappyClaw',
+  sender_name: 'PulseOps',
   content: '你好。',
   timestamp: '2026-10-12T03:23:01.000Z',
   is_from_me: true,

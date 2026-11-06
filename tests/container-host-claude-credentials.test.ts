@@ -6,7 +6,7 @@ import { afterAll, describe, expect, test, vi } from 'vitest';
 
 /**
  * Container mode with host_claude: the session's .claude directory is
- * mounted read-write at /home/node/.claude, so whatever HappyClaw writes
+ * mounted read-write at /home/node/.claude, so whatever PulseOps writes
  * there is readable by the agent. The admin's own credentials must not be.
  */
 const ROOT =
@@ -99,7 +99,7 @@ function mountSession(folder: string) {
       mount.containerPath === '/home/node/.claude',
   );
   expect(mounted).toMatchObject({ hostPath: sessionDir, readonly: false });
-  // Everything HappyClaw persists from the merged settings lives here.
+  // Everything PulseOps persists from the merged settings lives here.
   return {
     settings: fs.readFileSync(path.join(sessionDir, 'settings.json'), 'utf8'),
     projection: fs.readFileSync(

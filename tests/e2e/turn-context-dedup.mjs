@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // E2E: per-turn context notes reach a Claude session once, over the whole stack.
 //
-// A real HappyClaw server (scratch cwd, data directory and HOME), the real host
+// A real PulseOps server (scratch cwd, data directory and HOME), the real host
 // Runner and Claude CLI, against a scripted Anthropic upstream that records
 // every request. No real model, no credentials, nothing outside the scratch
 // directory; every real provider variable is removed from the environment.

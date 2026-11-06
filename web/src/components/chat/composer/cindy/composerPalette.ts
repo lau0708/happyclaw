@@ -1,7 +1,7 @@
 /**
  * Source: cindy packages/maker-shared/src/composerPalette.ts
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
  * Tiptap 3.30.6. Keeps trigger detection, filtering and ranking; cindy's
  * command tiers, Pi `skill:` aliases and agent resources are dropped, the
  * slash trigger also opens after whitespace on a later line, and an empty

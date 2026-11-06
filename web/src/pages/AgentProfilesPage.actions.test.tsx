@@ -338,7 +338,7 @@ describe('copy, export and import', () => {
       expect.not.objectContaining({ drop_missing: true }),
     );
     expect(document.body.textContent).toContain(
-      'HappyClaw Skills：pdf；MCP：user:github',
+      'PulseOps Skills：pdf；MCP：user:github',
     );
 
     await act(async () => button('去掉这些后创建').click());
@@ -346,7 +346,7 @@ describe('copy, export and import', () => {
       expect.objectContaining({ name: '导入的智能体', drop_missing: true }),
     );
     expect(mocks.toastWarning).toHaveBeenCalledWith(
-      '未导入：HappyClaw Skills：pdf；MCP：user:github',
+      '未导入：PulseOps Skills：pdf；MCP：user:github',
     );
   });
 });

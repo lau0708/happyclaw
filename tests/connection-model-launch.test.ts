@@ -267,7 +267,7 @@ describe('an Agent runs the model it is bound to', () => {
 
   test('nothing bound while connections exist fails instead of picking one', () => {
     expect(() => select({ model: 'glm-5-air' })).toThrow(
-      /还没有为主 HappyClaw 选择模型/,
+      /还没有为主 PulseOps 选择模型/,
     );
   });
 

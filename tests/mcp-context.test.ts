@@ -98,7 +98,7 @@ describe('Claude context MCP layering', () => {
     ).toEqual({ project: { command: 'project' } });
   });
 
-  test('HappyClaw-managed MCP is additive and wins deterministic name collisions', () => {
+  test('PulseOps-managed MCP is additive and wins deterministic name collisions', () => {
     expect(
       mergeMcpServerLayers(
         {

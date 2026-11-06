@@ -1,17 +1,17 @@
 import { describe, expect, test } from 'vitest';
 
 import {
-  buildHappyClawPromptPlan,
+  buildPulseOpsPromptPlan,
   createPromptPlan,
   hasBackgroundTaskTools,
   SESSION_PROMPTS,
 } from '../container/agent-runner/src/prompt-plan.js';
 import { sessionKind } from '../container/agent-runner/src/session-kind.js';
 
-describe('HappyClaw PromptPlan', () => {
+describe('PulseOps PromptPlan', () => {
   test('keeps identity first and includes only capabilities that are active', () => {
-    const plan = buildHappyClawPromptPlan({
-      platformIdentity: 'built-in HappyClaw identity',
+    const plan = buildPulseOpsPromptPlan({
+      platformIdentity: 'built-in PulseOps identity',
       platformBootstrap: 'first wake',
       agentIdentity: '<agent-identity>MAIN_MARKER</agent-identity>',
       interaction: 'interaction',
@@ -60,7 +60,7 @@ describe('HappyClaw PromptPlan', () => {
   });
 
   test('does not inject built-in identity or bootstrap into a custom Agent', () => {
-    const plan = buildHappyClawPromptPlan({
+    const plan = buildPulseOpsPromptPlan({
       agentIdentity: 'custom identity',
       interaction: 'interaction',
       security: 'security',
@@ -83,7 +83,7 @@ describe('HappyClaw PromptPlan', () => {
     );
     expect(hasBackgroundTaskTools(['Bash', 'Read', 'TaskStop'])).toBe(false);
 
-    const plan = buildHappyClawPromptPlan({
+    const plan = buildPulseOpsPromptPlan({
       interaction: 'interaction',
       security: 'security',
       output: 'output',
@@ -251,7 +251,7 @@ describe('session kinds and their prompts', () => {
   });
 
   test("the delegated worker's section is the session's output contract", () => {
-    const plan = buildHappyClawPromptPlan({
+    const plan = buildPulseOpsPromptPlan({
       interaction: 'interaction',
       security: 'security',
       team: { id: 'delegated-worker', text: 'WORKER_MARKER' },

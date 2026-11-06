@@ -1,8 +1,8 @@
 /**
  * Source: cindy apps/desktop/src/renderer/components/new-chat/PastedTextChipNode.tsx
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
- * Tiptap 3.30.6. The chip renders through `renderHTML` with HappyClaw tokens
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
+ * Tiptap 3.30.6. The chip renders through `renderHTML` with PulseOps tokens
  * instead of a React NodeView and cindy's InlineReferenceChip; the native
  * title previews the text. On touch screens only the chip's own expand
  * control unfolds it (a tap on the chip selects it), so placing the caret

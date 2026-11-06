@@ -3,7 +3,7 @@
  * consumer shares.
  *
  * A Runtime Session in a Host workspace whose directory is a git repository
- * can own a worktree: HappyClaw adds it under data/worktrees/<folder>/<id> on
+ * can own a worktree: PulseOps adds it under data/worktrees/<folder>/<id> on
  * a new `happyclaw/<short id>` branch and runs that session there, so
  * parallel sessions stop overwriting each other's files. The host creates
  * and removes worktrees; the Agent never gets EnterWorktree (the CLI is
@@ -112,7 +112,7 @@ function hasGitEntry(dir: string): boolean {
  * checkout's, as the CLI does. `cwd`'s own directory is always last, even
  * before it exists, so callers can show where workspace Skills belong.
  *
- * HappyClaw hands the CLI an exact Skill name list, so the resolver must scan
+ * PulseOps hands the CLI an exact Skill name list, so the resolver must scan
  * these same directories: a native project Skill missing from the list is
  * hidden, while one that is also linked into the session config dir is the
  * same file twice, which the CLI loads once.
@@ -208,7 +208,7 @@ export async function getWorktreeSupport(
   if (!fs.existsSync(dir)) {
     return { available: false, reason: 'directory_missing' };
   }
-  // data/groups/<folder> sits inside the HappyClaw checkout; only its own
+  // data/groups/<folder> sits inside the PulseOps checkout; only its own
   // repository (the one the host initializes there) counts.
   const repo = await locateGitRepo(dir, { requireTopLevel: !group.customCwd });
   if (!repo) return { available: false, reason: 'not_git_repo' };
@@ -948,7 +948,7 @@ async function assessWorktreeRemoval(
   }
   if (fs.existsSync(record.worktree_path)) {
     // Without its .git file git would walk up into an enclosing repository
-    // (data/ lives in the HappyClaw checkout) and report that one.
+    // (data/ lives in the PulseOps checkout) and report that one.
     if (!adminDir || !fs.existsSync(path.join(record.worktree_path, '.git'))) {
       risk.unreadable = true;
     } else {

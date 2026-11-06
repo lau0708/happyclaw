@@ -1,9 +1,9 @@
-"""scheduler.py — 模拟 HappyClaw Cron 定时巡检 Agent（仅标准库）
+"""scheduler.py — 模拟 PulseOps Cron 定时巡检 Agent（仅标准库）
 
 周期性对设备做阈值巡检，检测到异常自动触发「诊断 → 建单 → 推送」，
 并对同一设备的未闭环工单做幂等去重（避免重复建单）。
 
-在真实 HappyClaw 中，等价实现为：一个 Cron 定时任务 + 巡检 Agent，
+在真实 PulseOps 中，等价实现为：一个 Cron 定时任务 + 巡检 Agent，
 对每个设备调用 check_latest_metric，超限则转入诊断/工单 Agent。
 
 用法：

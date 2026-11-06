@@ -95,7 +95,7 @@ describe('worktree support', () => {
   });
 
   test('data/groups/<folder> never borrows an enclosing repository', async () => {
-    // The data dir sits inside a repository, like data/ in a HappyClaw checkout.
+    // The data dir sits inside a repository, like data/ in a PulseOps checkout.
     git(root, 'init', '-q');
     try {
       fs.mkdirSync(path.join(dataDir, 'groups', 'nested'), {

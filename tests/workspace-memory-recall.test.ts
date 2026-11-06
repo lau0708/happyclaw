@@ -369,7 +369,7 @@ describe('duplicates and proposals', () => {
   test('no spelling of the Owner Profile key gets past the reserved check', () => {
     for (const canonicalKey of [
       'happyclaw.owner.preferred_address',
-      'HappyClaw.Owner.Preferred-Address',
+      'PulseOps.Owner.Preferred-Address',
     ]) {
       expect(() => remember('Call me Boss.', { canonicalKey })).toThrow(
         expect.objectContaining({ code: 'reserved_canonical_key' }),

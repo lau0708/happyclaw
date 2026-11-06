@@ -16,9 +16,9 @@
  * adapted from cindy (https://github.com/makecindy/cindy, Apache-2.0, commit
  * 7be4c57d7b: packages/model-providers/catalog/providers.json,
  * packages/model-providers/src/modelDiscovery.ts and
- * apps/desktop/src/shared/providerErrors.ts). Modified for HappyClaw: only the
+ * apps/desktop/src/shared/providerErrors.ts). Modified for PulseOps: only the
  * Anthropic Messages endpoints Claude Code can use are kept, and the copy is
- * HappyClaw's own. See THIRD_PARTY_NOTICES.md.
+ * PulseOps's own. See THIRD_PARTY_NOTICES.md.
  */
 
 // ─── Models of a connection ────────────────────────────────────

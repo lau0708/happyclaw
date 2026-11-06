@@ -39,7 +39,7 @@ export function getAgentBuilderRuntimeRejection(input: {
     return 'Agent Builder is only available to ordinary main-Agent conversations';
   }
   if (!input.sourceProfileIsDefault) {
-    return 'Only the main HappyClaw may use Agent Builder';
+    return 'Only the main PulseOps may use Agent Builder';
   }
   return null;
 }
@@ -74,7 +74,7 @@ export function resolveTrustedDirectOwnerUpgrade(
   currentSource?: string,
 ): string | null {
   // A pre-provenance owner may have crossed a credential transfer under an
-  // older HappyClaw version. Never convert such a historical anchor into
+  // older PulseOps version. Never convert such a historical anchor into
   // Builder trust merely because the same external sender speaks again.
   if (currentOwnerImId) return null;
   if (

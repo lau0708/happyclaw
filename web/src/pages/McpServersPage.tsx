@@ -220,7 +220,7 @@ export function McpServersPage() {
       </CapabilitySectionActions>
 
       <CapabilityNotice>
-        这里管理 HappyClaw 额外提供的 MCP，再由各智能体决定是否允许使用。
+        这里管理 PulseOps 额外提供的 MCP，再由各智能体决定是否允许使用。
         继承宿主机 ~/.claude 的智能体会自动获得宿主机全部 MCP，无需导入或勾选。
         密钥写入后不会再次显示；STDIO 命令会在智能体的实际运行环境中执行。
       </CapabilityNotice>

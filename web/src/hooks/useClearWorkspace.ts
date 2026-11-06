@@ -8,7 +8,7 @@ import {
 import type { GroupInfo } from '../types';
 
 /**
- * What a rebuild deletes, as POST /clear-history does it: HappyClaw's own
+ * What a rebuild deletes, as POST /clear-history does it: PulseOps's own
  * data/groups/<folder> is emptied and session worktrees are removed (their
  * branches stay), but a Host workspace's custom directory is never touched.
  */
@@ -26,7 +26,7 @@ export function workspaceRebuildMessage(
     ? `自定义工作目录 ${group.custom_cwd} 中的文件不会被删除。`
     : '';
   const ignoredFiles = host ? WORKTREE_IGNORED_FILES_NOTE : '';
-  return `确认重建工作区「${name}」吗？这会永久删除所有会话及其聊天记录与上下文、${files}，以及该工作区的全部 Memory（含版本历史、遗忘记录和 HappyClaw 称呼偏好）；Home 还会重置首次唤醒状态。${keptDirectory}${ignoredFiles}持久化目录 (data/extra/) 保留。此操作不可撤销。`;
+  return `确认重建工作区「${name}」吗？这会永久删除所有会话及其聊天记录与上下文、${files}，以及该工作区的全部 Memory（含版本历史、遗忘记录和 PulseOps 称呼偏好）；Home 还会重置首次唤醒状态。${keptDirectory}${ignoredFiles}持久化目录 (data/extra/) 保留。此操作不可撤销。`;
 }
 
 export function useClearWorkspace() {

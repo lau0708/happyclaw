@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest';
-import { buildHappyClawPromptPlan } from '../container/agent-runner/src/prompt-plan.js';
+import { buildPulseOpsPromptPlan } from '../container/agent-runner/src/prompt-plan.js';
 
 describe('agent-runner system prompt composition order', () => {
   test('Agent identity leads platform workspace/context material', () => {
-    const plan = buildHappyClawPromptPlan({
-      platformIdentity: 'HappyClaw',
+    const plan = buildPulseOpsPromptPlan({
+      platformIdentity: 'PulseOps',
       platformBootstrap: 'first wake',
       agentIdentity: 'identity',
       interaction: 'interaction',

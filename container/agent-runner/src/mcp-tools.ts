@@ -1,5 +1,5 @@
 /**
- * MCP Tool Definitions for HappyClaw Agent Runner.
+ * MCP Tool Definitions for PulseOps Agent Runner.
  *
  * Uses SDK's `tool()` helper to define in-process MCP tools.
  * These tools communicate with the host process via IPC files.
@@ -42,9 +42,9 @@ export interface McpContext {
   groupFolder: string;
   isHome: boolean;
   isAdminHome: boolean;
-  /** Whether this runtime is an interactive session of the main HappyClaw. */
+  /** Whether this runtime is an interactive session of the main PulseOps. */
   agentBuilderEnabled: boolean;
-  /** Host admitted Owner Profile capability for built-in HappyClaw in Home. */
+  /** Host admitted Owner Profile capability for built-in PulseOps in Home. */
   ownerProfileEnabled: boolean;
   /** Public reply contract selected by the workspace. */
   interactionMode?: 'assistant' | 'proactive';
@@ -260,7 +260,7 @@ export interface WorkspaceMemoryDirectory {
   total: number;
 }
 
-export interface HappyClawOwnerProfileProjection {
+export interface PulseOpsOwnerProfileProjection {
   workspaceJid: string;
   preferredAddress: string | null;
   revision: number | null;
@@ -274,8 +274,8 @@ export interface HappyClawOwnerProfileProjection {
   };
 }
 
-export interface HappyClawOwnerProfileTurnResult {
-  projection: HappyClawOwnerProfileProjection;
+export interface PulseOpsOwnerProfileTurnResult {
+  projection: PulseOpsOwnerProfileProjection;
   onboardingStatus:
     | 'awaiting'
     | 'known'
@@ -446,7 +446,7 @@ async function callWorkspaceMemory(
   return result;
 }
 
-async function callHappyClawOwnerProfile(
+async function callPulseOpsOwnerProfile(
   ctx: McpContext,
   operation: 'get' | 'set' | 'clear' | 'skip' | 'ack_first_wake',
   payload: Record<string, unknown>,
@@ -497,7 +497,7 @@ async function callHappyClawOwnerProfile(
  * nor invoke it, and the host additionally requires the exact active owner
  * turn plus the signed runner capability.
  */
-export async function acknowledgeHappyClawOwnerProfileFirstWake(
+export async function acknowledgePulseOpsOwnerProfileFirstWake(
   ctx: McpContext,
   leaseToken: number,
   inputTurnId: string,
@@ -512,7 +512,7 @@ export async function acknowledgeHappyClawOwnerProfileFirstWake(
     return false;
   }
   try {
-    const result = await callHappyClawOwnerProfile(
+    const result = await callPulseOpsOwnerProfile(
       ctx,
       'ack_first_wake',
       { leaseToken },
@@ -525,14 +525,14 @@ export async function acknowledgeHappyClawOwnerProfileFirstWake(
   }
 }
 
-export async function fetchHappyClawOwnerProfileTurn(
+export async function fetchPulseOpsOwnerProfileTurn(
   ctx: McpContext,
   timeoutMs: number = 8_000,
   inputTurnId: string | null | undefined = ctx.currentInputTurnId,
-): Promise<HappyClawOwnerProfileTurnResult | null> {
+): Promise<PulseOpsOwnerProfileTurnResult | null> {
   if (!ctx.ownerProfileEnabled || !inputTurnId) return null;
   try {
-    const result = await callHappyClawOwnerProfile(
+    const result = await callPulseOpsOwnerProfile(
       ctx,
       'get',
       {},
@@ -541,7 +541,7 @@ export async function fetchHappyClawOwnerProfileTurn(
     );
     if (!isRecord(result.projection)) return null;
     const projection =
-      result.projection as unknown as HappyClawOwnerProfileProjection;
+      result.projection as unknown as PulseOpsOwnerProfileProjection;
     const onboardingStatus = result.onboardingStatus;
     if (
       typeof projection.workspaceJid !== 'string' ||
@@ -555,7 +555,7 @@ export async function fetchHappyClawOwnerProfileTurn(
     return {
       projection,
       onboardingStatus:
-        onboardingStatus as HappyClawOwnerProfileTurnResult['onboardingStatus'],
+        onboardingStatus as PulseOpsOwnerProfileTurnResult['onboardingStatus'],
       firstWake:
         result.firstWake === true ||
         (result.firstWake === undefined && result.newlyClaimed === true),
@@ -702,7 +702,7 @@ export function buildSendMessageData(
 }
 
 /**
- * Create all HappyClaw MCP tool definitions for in-process SDK MCP server.
+ * Create all PulseOps MCP tool definitions for in-process SDK MCP server.
  */
 export function createMcpTools(ctx: McpContext): SdkMcpToolDefinition<any>[] {
   const MESSAGES_DIR = path.join(ctx.workspaceIpc, 'messages');
@@ -980,7 +980,7 @@ export function createMcpTools(ctx: McpContext): SdkMcpToolDefinition<any>[] {
       'send_message',
       usesProactiveInteractiveContract
         ? "Send user-visible output or update live progress. The Workspace uses Proactive reply mode: your normal SDK final text is not published. Set delivery_role=final for the turn's permanent chat reply (which seals the turn), delivery_role=progress for an acknowledgement or interim update (on the Web it joins the live work process and folds away once final is sent; on an IM channel it is sent as a message of its own), and delivery_role=separate only when an additional standalone chat message is genuinely needed. You may call this tool zero, one, or many times and continue working after each successful progress send. A delivery error is authoritative: do not sleep and retry, switch to a card, or call a raw channel API as a fallback."
-        : "Publish text through HappyClaw's turn-owned delivery coordinator. In an interactive user turn, delivery_role=progress updates the existing reply status and delivery_role=final stages the primary answer on the existing card; neither creates a second text reply. Use delivery_role=separate only when the user explicitly requested another message.",
+        : "Publish text through PulseOps's turn-owned delivery coordinator. In an interactive user turn, delivery_role=progress updates the existing reply status and delivery_role=final stages the primary answer on the existing card; neither creates a second text reply. Use delivery_role=separate only when the user explicitly requested another message.",
       {
         // Trim/min-length at the schema layer: the host guard is `!data.text`,
         // which a whitespace-only string passes, so it reached the chat as an
@@ -1733,7 +1733,7 @@ Returns null if the current chat is a DM (DMs do not belong to a server). Only w
     tools.push(
       tool(
         'agent_profile_list',
-        "List the current user's top-level Agents and resumable ready drafts. Use this before editing or resuming work so you can identify the target, current version, draft ID, and draft revision. The main HappyClaw is returned for context but cannot edit itself with Agent Builder.",
+        "List the current user's top-level Agents and resumable ready drafts. Use this before editing or resuming work so you can identify the target, current version, draft ID, and draft revision. The main PulseOps is returned for context but cannot edit itself with Agent Builder.",
         {},
         async () => {
           const result = await callAgentBuilder('agent_profile_list', {});
@@ -2022,7 +2022,7 @@ Use the skills panel in the UI to find the skill ID (directory name, e.g. "memor
     tools.push(
       tool(
         'happyclaw_owner_profile',
-        'Read or update the actual owner’s preferred form of address in the built-in HappyClaw Home Workspace. This is a dedicated profile field, not generic Workspace Memory. Call get before changing an existing value; set and clear use optimistic concurrency and host-managed idempotency. Use skip only when the owner explicitly declines first-wake onboarding.',
+        'Read or update the actual owner’s preferred form of address in the built-in PulseOps Home Workspace. This is a dedicated profile field, not generic Workspace Memory. Call get before changing an existing value; set and clear use optimistic concurrency and host-managed idempotency. Use skip only when the owner explicitly declines first-wake onboarding.',
         {
           action: z.enum(['get', 'set', 'clear', 'skip']),
           preferred_address: z.string().min(1).max(200).optional(),
@@ -2054,7 +2054,7 @@ Use the skills panel in the UI to find the skill ID (directory name, e.g. "memor
                 `${ctx.currentInputTurnId ?? 'turn'}:owner-profile:${args.action}:${args.expected_revision ?? 0}`,
               );
             }
-            const result = await callHappyClawOwnerProfile(
+            const result = await callPulseOpsOwnerProfile(
               ctx,
               args.action,
               payload,

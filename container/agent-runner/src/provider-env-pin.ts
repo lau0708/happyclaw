@@ -10,9 +10,9 @@ import {
  * workspace's .claude/settings.json could otherwise change the endpoint,
  * the credentials or the effort of a run.
  *
- * Only what HappyClaw set is pinned, so the agent's own tools never see an
+ * Only what PulseOps set is pinned, so the agent's own tools never see an
  * empty ANTHROPIC_BASE_URL or the like. Each backend switch is pinned off
- * ('0') unless the connection turned it on. A key HappyClaw leaves unset
+ * ('0') unless the connection turned it on. A key PulseOps leaves unset
  * stays open to the workspace's own project and local settings; the host
  * strips it from the admin's layer and from an inherited shell.
  */

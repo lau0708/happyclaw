@@ -40,7 +40,7 @@ const UUID_OID_NAMESPACE = Buffer.from(
  * `x-codex-beta-features` the official client sends by default is just
  * `remote_compaction_v2` (session/mod.rs build_model_client_beta_features_header:
  * every experimental feature is off by default). It advertises that the client
- * runs remote compaction and handles `compaction` output items. HappyClaw lets
+ * runs remote compaction and handles `compaction` output items. PulseOps lets
  * Claude Code compact locally and cannot replay compaction items, so it
  * advertises nothing and the header is omitted, as official does for an empty
  * list.
@@ -250,7 +250,7 @@ function headerValue(value: string | null | undefined): value is string {
 
 /**
  * core/src/responses_metadata.rs CodexTurnMetadataPayload, in field order,
- * limited to what HappyClaw knows. Every value is ASCII, so the JSON is the
+ * limited to what PulseOps knows. Every value is ASCII, so the JSON is the
  * official to_ascii_json_string form.
  */
 function turnMetadataJson(fields: {

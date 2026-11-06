@@ -29,7 +29,7 @@ export function feishuAppLabel(brand: FeishuBrand): string {
 
 /** Account status text when Feishu refused the connection as over its limit. */
 export function feishuConnectionConflictMessage(brand: FeishuBrand): string {
-  return `该${feishuAppLabel(brand)}的长连接已被其他程序占用（同一 App 同时只应连接一处），消息可能被对方接走。请停用另一处连接，或为 HappyClaw 单独创建应用。`;
+  return `该${feishuAppLabel(brand)}的长连接已被其他程序占用（同一 App 同时只应连接一处），消息可能被对方接走。请停用另一处连接，或为 PulseOps 单独创建应用。`;
 }
 
 /** Account status text when the connection keeps dropping without a cause. */

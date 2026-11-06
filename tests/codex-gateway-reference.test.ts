@@ -12,7 +12,7 @@ import {
 type Json = Record<string, any>;
 
 // Normalize only documented runtime differences from the pure Go translator:
-// summaries are explicitly enabled by HappyClaw, and the Codex executor removes
+// summaries are explicitly enabled by PulseOps, and the Codex executor removes
 // unused tool fields after translation. Request cases run on a classic-shape
 // model; the official-client differences documented in
 // docs/codex-protocol-compatibility.md (system item id, image detail,
@@ -33,7 +33,7 @@ function requestBusinessPayload(request: Json): Json {
     delete payload.tool_choice;
     delete payload.parallel_tool_calls;
   }
-  // HappyClaw's current model catalog normalizes removed minimal to low.
+  // PulseOps's current model catalog normalizes removed minimal to low.
   if (payload.reasoning.effort === 'minimal') payload.reasoning.effort = 'low';
   if (payload.text) {
     delete payload.text.verbosity;

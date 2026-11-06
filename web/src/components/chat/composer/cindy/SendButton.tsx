@@ -1,10 +1,10 @@
 /**
  * Source: cindy apps/desktop/src/renderer/components/new-chat/SendButton.tsx
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
  * Tiptap 3.30.6. Voice, companion-call and create-agent variants are dropped;
- * HappyClaw adds the queue glyph and a busy spinner to the same stacked,
- * cross-fading icon layers, painted with HappyClaw tokens.
+ * PulseOps adds the queue glyph and a busy spinner to the same stacked,
+ * cross-fading icon layers, painted with PulseOps tokens.
  *
  * Send / Stop button: one round 30px target whose glyph cross-fades in place
  * (send arrow, queue, stop square, spinner) instead of swapping elements.

@@ -1,6 +1,6 @@
 // Codex store=false reasoning continuity travels through thinking.signature.
 // Standard encrypted_content uses CLIProxyAPI's native Fernet-shaped format;
-// legacy codexrs1 envelopes remain readable for existing HappyClaw histories.
+// legacy codexrs1 envelopes remain readable for existing PulseOps histories.
 // Ported from CLIProxyAPI a2976eb8. See docs/licenses/CLIProxyAPI-MIT.txt.
 
 const SIGNATURE_PREFIX = 'codexrs1_';

@@ -354,7 +354,7 @@ async function run() {
     prompt_schema_version: 2,
     prompt_mode: 'append',
     identity_prompt:
-      'You are running an authorized HappyClaw acceptance test. Only work in the current disposable workspace. Follow exact output markers and use tools when requested.',
+      'You are running an authorized PulseOps acceptance test. Only work in the current disposable workspace. Follow exact output markers and use tools when requested.',
     soul_prompt: '',
     agents_prompt: '',
     tools_prompt: '',

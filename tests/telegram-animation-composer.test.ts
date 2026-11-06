@@ -6,7 +6,7 @@ import { yieldTelegramAnimationDocument } from '../src/telegram.js';
 const botInfo = {
   id: 1,
   is_bot: true,
-  first_name: 'HappyClaw',
+  first_name: 'PulseOps',
   username: 'happyclaw_test_bot',
   can_join_groups: true,
   can_read_all_group_messages: false,

@@ -50,7 +50,7 @@ const mocks = vi.hoisted(() => {
   const mainProfile = {
     ...profile,
     id: 'main-profile',
-    name: 'HappyClaw',
+    name: 'PulseOps',
     is_default: true,
   };
   const emptyGovernance = {

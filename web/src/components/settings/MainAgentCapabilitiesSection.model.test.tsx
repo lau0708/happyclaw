@@ -124,7 +124,7 @@ const CONFIGS: ModelConfigOption[] = [
   },
 ];
 
-/** The caller is the system main HappyClaw's owner unless told otherwise. */
+/** The caller is the system main PulseOps's owner unless told otherwise. */
 function inherited(overrides: Partial<InheritedModel> = {}): InheritedModel {
   return {
     owner_main: null,
@@ -138,7 +138,7 @@ function mainProfile(overrides: Partial<AgentProfile> = {}): AgentProfile {
   return {
     id: 'main',
     owner_user_id: 'admin',
-    name: '主 HappyClaw',
+    name: '主 PulseOps',
     identity_prompt: '',
     soul_prompt: '',
     agents_prompt: '',
@@ -213,9 +213,9 @@ async function render() {
   });
 }
 
-const configSelect = () => combobox('主 HappyClaw 模型连接');
-const modelSelect = () => combobox('主 HappyClaw 模型');
-const effortSelect = () => combobox('主 HappyClaw 推理等级');
+const configSelect = () => combobox('主 PulseOps 模型连接');
+const modelSelect = () => combobox('主 PulseOps 模型');
+const effortSelect = () => combobox('主 PulseOps 推理等级');
 
 async function optionsOf(select: HTMLButtonElement): Promise<string[]> {
   await act(async () => select.click());
@@ -241,7 +241,7 @@ async function save() {
   await act(async () => button.click());
 }
 
-describe('the system main HappyClaw', () => {
+describe('the system main PulseOps', () => {
   test('follows nothing: no 跟随 option, 未设置 while empty, with a hint', async () => {
     setStore(mainProfile());
     await render();
@@ -271,7 +271,7 @@ describe('the system main HappyClaw', () => {
 });
 
 describe('a user main Agent', () => {
-  test('follows the system main HappyClaw, named with what it runs', async () => {
+  test('follows the system main PulseOps, named with what it runs', async () => {
     setStore(
       mainProfile({ id: 'mine' }),
       CONFIGS,
@@ -279,11 +279,11 @@ describe('a user main Agent', () => {
     );
     await render();
     expect(configSelect().textContent).toBe(
-      '跟随主 HappyClaw（Claude 官方 · opus）',
+      '跟随主 PulseOps（Claude 官方 · opus）',
     );
     expect(container.textContent).not.toContain('还没有选择模型连接');
     expect((await optionsOf(configSelect()))[0]).toBe(
-      '跟随主 HappyClaw（Claude 官方 · opus）',
+      '跟随主 PulseOps（Claude 官方 · opus）',
     );
     expect(modelSelect().disabled).toBe(true);
     // The followed model's efforts, after its default.
@@ -304,11 +304,11 @@ describe('a user main Agent', () => {
       inherited({ system_main: null, system_main_profile_id: null }),
     );
     await render();
-    expect(configSelect().textContent).toBe('跟随主 HappyClaw（未设置）');
+    expect(configSelect().textContent).toBe('跟随主 PulseOps（未设置）');
   });
 });
 
-describe('主 HappyClaw model within its connection', () => {
+describe('主 PulseOps model within its connection', () => {
   test('picking a connection, then a model, saves both', async () => {
     setStore(mainProfile());
     await render();
@@ -416,7 +416,7 @@ describe('主 HappyClaw model within its connection', () => {
   });
 
   test('saving only the connection leaves the stored host Skills alone', async () => {
-    // An admin's main HappyClaw under host_claude runs with every host Skill.
+    // An admin's main PulseOps under host_claude runs with every host Skill.
     setStore(
       mainProfile({
         runtime_policy: {

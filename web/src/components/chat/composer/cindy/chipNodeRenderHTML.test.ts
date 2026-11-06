@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 /**
- * HappyClaw test for the `renderHTML` / `parseHTML` round trip of
+ * PulseOps test for the `renderHTML` / `parseHTML` round trip of
  * MentionChipNode and PastedTextChipNode, which are adapted from cindy
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md). Cindy renders
  * these chips through React NodeViews and has no counterpart for this test.

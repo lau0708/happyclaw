@@ -80,7 +80,7 @@ import {
   revokeWorkspaceMemoryWriteCapability,
   type WorkspaceMemoryCapabilityScope,
 } from './workspace-memory-capability.js';
-import { releaseHappyClawOwnerIntroductionLease } from './owner-profile-store.js';
+import { releasePulseOpsOwnerIntroductionLease } from './owner-profile-store.js';
 import { applyProviderSwitchToInput } from './provider-switch-context.js';
 import {
   getUserById,
@@ -221,7 +221,7 @@ import {
 /**
  * 宿主机的 ~/.claude.json 路径。
  * 所有工作区共享此文件，确保 deviceId (userID) 一致。
- * 即使 HappyClaw 项目删除重建，此文件始终存在于宿主机上。
+ * 即使 PulseOps 项目删除重建，此文件始终存在于宿主机上。
  */
 function getHostClaudeJsonPath(): string {
   return path.join(os.homedir(), '.claude.json');
@@ -480,7 +480,7 @@ const REQUIRED_SETTINGS_ENV: Record<string, string> = {
 };
 
 /**
- * Keys an older HappyClaw forced into session settings.json and must now be
+ * Keys an older PulseOps forced into session settings.json and must now be
  * removed from it, unless the selected native layer sets them itself.
  *
  * CLAUDE_CODE_DISABLE_ATTACHMENTS was forced to keep the prompt-cache prefix
@@ -701,7 +701,7 @@ export interface ContainerInput {
     id: string;
     name: string;
     version: number;
-    /** Host-authoritative marker for the built-in HappyClaw AgentProfile. */
+    /** Host-authoritative marker for the built-in PulseOps AgentProfile. */
     isDefault: boolean;
     identityHash: string;
     identityPrompt: string;
@@ -716,13 +716,13 @@ export interface ContainerInput {
     runtimePolicy?: AgentProfileRuntimePolicy;
   };
   /**
-   * True only for an interactive turn in the built-in HappyClaw Home
+   * True only for an interactive turn in the built-in PulseOps Home
    * Workspace before the owner-preferred-address memory has been established.
    */
   happyClawBootstrapPending?: boolean;
   /**
    * Host-authoritative initial Owner Profile projection. Present only for an
-   * actual-owner interactive turn of built-in HappyClaw in Home. The runner
+   * actual-owner interactive turn of built-in PulseOps in Home. The runner
    * refreshes it over dedicated IPC before every cold/warm model turn.
    */
   happyClawOwnerProfile?: {
@@ -740,7 +740,7 @@ export interface ContainerInput {
   /** Structural capability only; exact owner authorization is re-evaluated by
    * the host for every dedicated IPC request, including warm turns. */
   happyClawOwnerProfileEnabled?: boolean;
-  /** Host-derived capability flag for main-HappyClaw interactive sessions. */
+  /** Host-derived capability flag for main-PulseOps interactive sessions. */
   agentBuilderEnabled?: boolean;
   /**
    * The session this launch runs: its Claude session, IPC root and
@@ -1354,7 +1354,7 @@ export function bindingFromMainProfile(
 /**
  * The connection a run uses, most specific first: the conversation's pick,
  * the Agent's own binding, the Workspace's own provider environment, the
- * owner's main Agent, the system main HappyClaw (main Agent of the earliest
+ * owner's main Agent, the system main PulseOps (main Agent of the earliest
  * admin), none. A step that binds nothing is skipped. A conversation pick
  * whose connection is gone reads as no pick; any other binding is
  * authoritative, so a deleted or credential-less connection stops there
@@ -1432,11 +1432,11 @@ export function modelBindingError(binding: ModelBinding): string | null {
         ? '智能体'
         : binding.source === 'owner_main'
           ? '主智能体'
-          : '主 HappyClaw';
+          : '主 PulseOps';
     return `agent_profile_unavailable: ${whose}绑定的模型连接已删除或缺少凭据，请在智能体页重新选择`;
   }
   if (binding.source === 'none' && getProviders().length > 0) {
-    return 'agent_profile_unavailable: 还没有为主 HappyClaw 选择模型，请在设置或智能体页选择';
+    return 'agent_profile_unavailable: 还没有为主 PulseOps 选择模型，请在设置或智能体页选择';
   }
   return null;
 }
@@ -2141,7 +2141,7 @@ function prepareVolumeMounts(
   });
   const settingsFile = path.join(groupSessionsDir, 'settings.json');
   ensureSettingsJson(settingsFile, runtimeMcpServers, {
-    // The session settings file is HappyClaw-owned. Always replace this map
+    // The session settings file is PulseOps-owned. Always replace this map
     // with the resolved layers so removed/unselected managed MCP cannot
     // survive from a previous Agent run.
     replaceMcpServers: true,
@@ -2245,7 +2245,7 @@ function prepareVolumeMounts(
 
   // Per-user native feishu-cli state (profiles, token.json, config.yaml).
   // Without this mount, every container restart loses the user's feishu OAuth
-  // authorization, forcing re-auth every IDLE_TIMEOUT (#477). HappyClaw never
+  // authorization, forcing re-auth every IDLE_TIMEOUT (#477). PulseOps never
   // creates or switches profiles here: the CLI keeps ownership of its native
   // config, while a bound Bot's App credentials are overlaid via env below.
   if (ownerId) {
@@ -2667,7 +2667,7 @@ export function detectContainerHostIdentity(
     | null = probeContainerSecurityOptions,
 ): ContainerHostIdentity {
   // Probe every launch. Docker context/daemon security options can change
-  // while HappyClaw is running; reusing an earlier direct result could bypass
+  // while PulseOps is running; reusing an earlier direct result could bypass
   // rootless/userns fail-closed handling, while caching unknown blocks recovery.
   const securityOptions = securityOptionsMatter()
     ? readSecurityOptions()
@@ -3496,7 +3496,7 @@ export async function runContainerAgent(
       workspaceMemoryRunnerInstanceId,
     );
     try {
-      releaseHappyClawOwnerIntroductionLease(workspaceMemoryRunnerInstanceId);
+      releasePulseOpsOwnerIntroductionLease(workspaceMemoryRunnerInstanceId);
     } catch (err) {
       logger.warn(
         { err, runnerInstanceId: workspaceMemoryRunnerInstanceId },
@@ -4069,7 +4069,7 @@ export async function runHostAgent(
   // environment even when this run intentionally resolves to an empty set.
   delete hostEnv['HAPPYCLAW_USER_MCP_SERVERS_JSON'];
   // Provider selection is authoritative. Do not let API settings inherited
-  // from the HappyClaw parent process leak into a host-mode child after the
+  // from the PulseOps parent process leak into a host-mode child after the
   // user switches providers (especially third-party -> official OAuth).
   clearInheritedClaudeProviderEnv(hostEnv);
 
@@ -4767,7 +4767,7 @@ export async function runHostAgent(
       workspaceMemoryRunnerInstanceId,
     );
     try {
-      releaseHappyClawOwnerIntroductionLease(workspaceMemoryRunnerInstanceId);
+      releasePulseOpsOwnerIntroductionLease(workspaceMemoryRunnerInstanceId);
     } catch (err) {
       logger.warn(
         { err, runnerInstanceId: workspaceMemoryRunnerInstanceId },

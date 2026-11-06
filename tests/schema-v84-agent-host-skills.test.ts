@@ -29,7 +29,7 @@ vi.mock('../src/logger.js', () => ({
 
 const db = await import('../src/db.js');
 const { formerMainSession } = await import('./helpers/legacy-main-session.js');
-// Loading the runtime module registers the main HappyClaw settings reader,
+// Loading the runtime module registers the main PulseOps settings reader,
 // as the server does before it initializes the database.
 const runtime = await import('../src/agent-profile-runtime.js');
 const runtimeConfig = await import('../src/runtime-config.js');
@@ -76,7 +76,7 @@ function legacyEffectiveHash(
     profile.name,
   );
   return profile.is_default
-    ? runtime.bindHappyClawPlatformIdentityHash(hash)
+    ? runtime.bindPulseOpsPlatformIdentityHash(hash)
     : hash;
 }
 
@@ -228,7 +228,7 @@ function hostSkills(entry: LegacyCase) {
 }
 
 describe('schema v84 pins host Skill policies', () => {
-  test('system host_claude: admin main HappyClaw and host-context Agents keep every host Skill', () => {
+  test('system host_claude: admin main PulseOps and host-context Agents keep every host Skill', () => {
     runtimeConfig.saveSystemSettings({ mainAgentContextSource: 'host_claude' });
     const [adminMain, adminHost, adminManaged, memberMain, memberHost] =
       buildV83Database([
@@ -333,7 +333,7 @@ describe('schema v84 pins host Skill policies', () => {
     }
   });
 
-  test('system managed: the admin main HappyClaw keeps host Skills off', () => {
+  test('system managed: the admin main PulseOps keeps host Skills off', () => {
     runtimeConfig.saveSystemSettings({ mainAgentContextSource: 'managed' });
     const [adminMain] = buildV83Database([
       {

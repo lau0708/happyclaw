@@ -10,7 +10,7 @@ fs.mkdirSync(tmpStoreDir, { recursive: true });
 fs.mkdirSync(tmpGroupsDir, { recursive: true });
 
 vi.mock('../src/config.js', async () => ({
-  ASSISTANT_NAME: 'HappyClaw',
+  ASSISTANT_NAME: 'PulseOps',
   DATA_DIR: tmpDir,
   STORE_DIR: tmpStoreDir,
   GROUPS_DIR: tmpGroupsDir,
@@ -34,7 +34,7 @@ afterAll(() => {
 });
 
 describe('AgentProfile runtime invalidation', () => {
-  test('default HappyClaw takes its compact threshold from global policy', () => {
+  test('default PulseOps takes its compact threshold from global policy', () => {
     const userId = 'agent-profile-runtime-default-compact';
     const now = new Date().toISOString();
     db.createUser({
@@ -58,7 +58,7 @@ describe('AgentProfile runtime invalidation', () => {
     expect(effective?.runtime_policy.context.auto_compact_window).toBe(0);
     expect(effective?.runtime_policy.context.auto_compact_percentage).toBe(80);
     expect(effective?.identity_hash).toBe(
-      runtime.bindHappyClawPlatformIdentityHash(
+      runtime.bindPulseOpsPlatformIdentityHash(
         db.computeAgentProfileIdentityHash(
           profile,
           effective!.runtime_policy,
@@ -69,7 +69,7 @@ describe('AgentProfile runtime invalidation', () => {
     expect(effective?.identity_hash).not.toBe(profile.identity_hash);
   });
 
-  test('custom Agents do not inherit the protected HappyClaw identity hash', () => {
+  test('custom Agents do not inherit the protected PulseOps identity hash', () => {
     const userId = 'agent-profile-runtime-custom-identity';
     const now = new Date().toISOString();
     db.createUser({
@@ -98,7 +98,7 @@ describe('AgentProfile runtime invalidation', () => {
       ),
     );
     expect(effective.identity_hash).not.toBe(
-      runtime.bindHappyClawPlatformIdentityHash(effective.identity_hash),
+      runtime.bindPulseOpsPlatformIdentityHash(effective.identity_hash),
     );
   });
 
@@ -158,7 +158,7 @@ describe('AgentProfile runtime invalidation', () => {
       must_change_password: false,
     });
     runtimeConfig.saveSystemSettings({ mainAgentContextSource: 'host_claude' });
-    // The main HappyClaw of an admin under host_claude has always run with
+    // The main PulseOps of an admin under host_claude has always run with
     // every host Skill; it is now stored, so the Web form reads the same.
     const mainProfile = db.getOrCreateDefaultAgentProfile(userId);
     expect(mainProfile.runtime_policy.skills.host).toEqual({

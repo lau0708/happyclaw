@@ -87,7 +87,7 @@ describe('changing the Agent of a Workspace', () => {
       'web:research': { agent_profile_id: 'main', is_home: false },
     };
     await renderDialog('web:research');
-    expect(combobox('工作区所属智能体').textContent).toContain('HappyClaw');
+    expect(combobox('工作区所属智能体').textContent).toContain('PulseOps');
 
     await choose(combobox('工作区所属智能体'), '代码助手');
     expect(document.body.textContent).toContain('正在进行的对话会被中断');
@@ -120,11 +120,11 @@ describe('changing the Agent of a Workspace', () => {
     expect(mocks.onClose).not.toHaveBeenCalled();
   });
 
-  test('the Home Workspace stays with HappyClaw', async () => {
+  test('the Home Workspace stays with PulseOps', async () => {
     mocks.groups = { 'web:home': { agent_profile_id: 'main', is_home: true } };
     await renderDialog('web:home');
     expect(document.body.textContent).toContain(
-      'Home 工作区固定使用内置 HappyClaw，不能更换。',
+      'Home 工作区固定使用内置 PulseOps，不能更换。',
     );
     expect(
       document.querySelector('[aria-label="工作区所属智能体"]'),

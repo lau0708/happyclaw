@@ -1,5 +1,5 @@
 /**
- * The `value` payloads HappyClaw puts on Feishu card buttons, and the one
+ * The `value` payloads PulseOps puts on Feishu card buttons, and the one
  * parser `card.action.trigger` uses for them. Cards are built in
  * feishu-cards/ and read back in feishu.ts; both sides use these names, so a
  * button and its handler cannot drift apart.
@@ -47,7 +47,7 @@ export function answerQuestionValue(
   };
 }
 
-/** Reads a button value back; null for anything HappyClaw did not send. */
+/** Reads a button value back; null for anything PulseOps did not send. */
 export function parseCardActionValue(value: unknown): CardActionPayload | null {
   if (!value || typeof value !== 'object') return null;
   const record = value as Record<string, unknown>;

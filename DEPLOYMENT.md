@@ -1,4 +1,4 @@
-# HappyClaw Mac mini 生产部署
+# PulseOps Mac mini 生产部署
 
 本仓库的生产实例运行在用户的 Mac mini 上。代码目录为
 `/Users/riba2534/airepo/happyclaw`，服务由用户级 launchd 单元
@@ -106,7 +106,7 @@ for attempt in {1..30}; do
     break
   fi
   if [ "$attempt" -eq 30 ]; then
-    echo 'HappyClaw did not become healthy.' >&2
+    echo 'PulseOps did not become healthy.' >&2
     exit 1
   fi
   sleep 2
@@ -168,15 +168,15 @@ curl -fsS http://127.0.0.1:3000/api/health
 同时最多 2 个转换、8 个排队，再多返回 503。缓存按源文件内容寻址、跨用户共享，可以随时
 删除，删除后下次打开重新转换。
 
-本机 LibreOffice 的安全前提：`soffice` 在宿主机上以 HappyClaw 服务的身份运行，解析的是
+本机 LibreOffice 的安全前提：`soffice` 在宿主机上以 PulseOps 服务的身份运行，解析的是
 工作区里的文档，包括 member 的 Container 工作区里由 Agent 或其他人写入的不可信文件。
 LibreOffice 的解析漏洞因此会以服务身份执行，能读到服务能读的一切（`data/`、`.env`、
-渠道凭据），越过「非 admin 的工作区在容器里运行」这条边界。HappyClaw 只给它最小环境
+渠道凭据），越过「非 admin 的工作区在容器里运行」这条边界。PulseOps 只给它最小环境
 （`PATH`、指向本次临时目录的 `HOME`/`TMPDIR`、`LANG`/`LC_ALL`），让它在独立进程组里
 运行并在超时时整组杀掉，但这不是沙箱。只有所有能预览文件的人都可信时（例如只有所有者
 自己使用的实例）才设置 `OFFICE_PREVIEW_SOFFICE_BIN`；Mac mini 上的路径是
 `/Applications/LibreOffice.app/Contents/MacOS/soffice`。
 
-多用户部署推荐 Stirling-PDF：把它作为独立容器运行在只有 HappyClaw 能访问的地址上，
+多用户部署推荐 Stirling-PDF：把它作为独立容器运行在只有 PulseOps 能访问的地址上，
 配置 `OFFICE_PREVIEW_STIRLING_URL` 和密钥文件，文档在它的容器里解析。两者都设置时使用
 Stirling。配置后在文件面板打开一个 docx 确认能预览；第二次打开应立即显示（命中缓存）。

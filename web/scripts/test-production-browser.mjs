@@ -225,7 +225,7 @@ async function run() {
     '/api/config/appearance/public',
   );
   requireCondition(typeof publicAppearance.appName === 'string');
-  const appName = publicAppearance.appName.trim() || 'HappyClaw';
+  const appName = publicAppearance.appName.trim() || 'PulseOps';
   const iconUrl = appUrl(
     publicAppearance.brandIconUrl || '/icons/icon-192.png',
   );

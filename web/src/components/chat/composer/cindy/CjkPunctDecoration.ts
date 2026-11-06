@@ -1,8 +1,8 @@
 /**
  * Source: cindy apps/desktop/src/renderer/components/new-chat/CjkPunctDecoration.ts
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
- * Tiptap 3.30.6. HappyClaw keeps lists structural and does not port cindy's
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
+ * Tiptap 3.30.6. PulseOps keeps lists structural and does not port cindy's
  * plain-text list indent decoration, voice drafts or slash roster coupling, so
  * every CJK-context punctuation character gets its own font span.
  */

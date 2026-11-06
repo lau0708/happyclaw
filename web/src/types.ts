@@ -132,12 +132,12 @@ export interface InheritedModelBinding {
 
 /**
  * What an Agent without its own binding follows, for the caller: their own
- * main Agent, and the system's main HappyClaw.
+ * main Agent, and the system's main PulseOps.
  */
 export interface InheritedModel {
   owner_main: InheritedModelBinding | null;
   system_main: InheritedModelBinding | null;
-  /** The system main HappyClaw profile when the caller owns it, else null. */
+  /** The system main PulseOps profile when the caller owns it, else null. */
   system_main_profile_id: string | null;
 }
 

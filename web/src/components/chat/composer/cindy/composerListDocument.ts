@@ -1,9 +1,9 @@
 /**
  * Source: cindy apps/desktop/src/renderer/lib/composerListDocument.ts
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
  * Tiptap 3.30.6. Drops cindy's retired-chip stripping and failed-send restore
- * insertion, which HappyClaw has no use for.
+ * insertion, which PulseOps has no use for.
  */
 import type { JSONContent } from '@tiptap/core';
 

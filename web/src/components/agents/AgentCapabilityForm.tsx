@@ -38,7 +38,7 @@ import { AgentSkillsPolicyEditor } from './AgentSkillsPolicyEditor';
 import { PolicyResourcePicker } from './PolicyResourcePicker';
 
 /**
- * What the Agent page and the main HappyClaw settings both edit: the model
+ * What the Agent page and the main PulseOps settings both edit: the model
  * binding, reasoning effort and every capability source. Both save it the
  * same way, only when the user presses save.
  */
@@ -90,7 +90,7 @@ export function capabilityFormPolicy(
 
 function capabilityFormErrors(value: AgentCapabilityFormValue) {
   return {
-    managed: skillSelectionError(' HappyClaw Skill', value.skills),
+    managed: skillSelectionError(' PulseOps Skill', value.skills),
     host: skillSelectionError('宿主机 Skill', value.hostSkills),
   };
 }
@@ -144,8 +144,8 @@ export function sameCapabilityForm(
 
 /**
  * What an Agent without its own binding follows: an ordinary Agent its
- * owner's main Agent, a user's main Agent the system's main HappyClaw. The
- * system main HappyClaw itself follows nothing (null).
+ * owner's main Agent, a user's main Agent the system's main PulseOps. The
+ * system main PulseOps itself follows nothing (null).
  */
 export type ModelFollow = 'owner_main' | 'system_main' | null;
 
@@ -197,7 +197,7 @@ function followOptionLabel(
   inherited: InheritedModel | null,
 ): string {
   const runs = resolveBinding(FOLLOWING, configs, follow, inherited);
-  const name = follow === 'owner_main' ? '跟随主智能体' : '跟随主 HappyClaw';
+  const name = follow === 'owner_main' ? '跟随主智能体' : '跟随主 PulseOps';
   const label = runs
     ? [runs.config.name, runs.model].filter(Boolean).join(' · ')
     : '未设置';
@@ -247,7 +247,7 @@ export function AgentCapabilityForm({
   profile: Pick<AgentProfile, 'id' | 'is_default'>;
   /** Host Skills can only be granted by an admin. */
   hostAvailable: boolean;
-  /** Names the controls, e.g. "智能体" or "主 HappyClaw ". */
+  /** Names the controls, e.g. "智能体" or "主 PulseOps ". */
   labelPrefix: string;
   modelConfigDescription: string;
 }) {
@@ -430,8 +430,8 @@ export function AgentCapabilityForm({
 
         <section className="min-w-0 space-y-3 px-4 py-4">
           <AgentSubheading
-            title="HappyClaw MCP"
-            description="控制 HappyClaw 额外附加的 MCP；宿主机 MCP 随宿主机 Claude Code 配置加载。"
+            title="PulseOps MCP"
+            description="控制 PulseOps 额外附加的 MCP；宿主机 MCP 随宿主机 Claude Code 配置加载。"
           />
           <div className="max-w-xl space-y-3">
             <Select
@@ -449,20 +449,20 @@ export function AgentCapabilityForm({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="inherit">使用全部 HappyClaw MCP</SelectItem>
-                <SelectItem value="custom">只允许所选 HappyClaw MCP</SelectItem>
-                <SelectItem value="disabled">关闭 HappyClaw MCP</SelectItem>
+                <SelectItem value="inherit">使用全部 PulseOps MCP</SelectItem>
+                <SelectItem value="custom">只允许所选 PulseOps MCP</SelectItem>
+                <SelectItem value="disabled">关闭 PulseOps MCP</SelectItem>
               </SelectContent>
             </Select>
             {value.mcp.mode === 'custom' && (
               <PolicyResourcePicker
-                label="选择 HappyClaw MCP"
+                label="选择 PulseOps MCP"
                 options={mcpOptions}
                 selectedIds={value.mcp.ids}
                 onChange={(ids) => update({ mcp: { ...value.mcp, ids } })}
                 loading={mcpLoading}
                 error={mcpError}
-                emptyText="没有已启用的 HappyClaw MCP"
+                emptyText="没有已启用的 PulseOps MCP"
               />
             )}
           </div>

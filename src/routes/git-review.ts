@@ -104,7 +104,7 @@ async function resolveReviewRoot(scope: ReviewScope): Promise<ReviewRoot> {
   if (session.kind === 'worktree') {
     return { state: 'ok', root: session.worktree.worktree_path };
   }
-  // data/groups/<folder> is nested in the HappyClaw checkout; only its own
+  // data/groups/<folder> is nested in the PulseOps checkout; only its own
   // repository counts, never the enclosing one.
   const repo = await locateGitRepo(resolveWorkspaceProjectRoot(scope.group), {
     requireTopLevel: !scope.group.customCwd,

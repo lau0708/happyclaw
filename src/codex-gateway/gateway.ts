@@ -676,7 +676,7 @@ async function limitRunnerRate(
 ): Promise<Response | void> {
   const grant = c.get('codexGatewayGrant');
   if (providerRateLimiter.isLimited(grant.id)) {
-    // A throttle HappyClaw applies to itself is no verdict on the account;
+    // A throttle PulseOps applies to itself is no verdict on the account;
     // the host reads this verdict to keep the provider out of quarantine.
     grant.lastVerdict = 'local_transient';
     logger.warn(
@@ -687,7 +687,7 @@ async function limitRunnerRate(
       c,
       429,
       'rate_limit_error',
-      'HappyClaw Codex gateway local rate limit exceeded for this runner, retry later',
+      'PulseOps Codex gateway local rate limit exceeded for this runner, retry later',
       {
         'Retry-After': String(
           Math.max(

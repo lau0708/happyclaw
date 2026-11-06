@@ -48,7 +48,7 @@ export interface IncomingMessagePayload {
    */
   backfilledBeforeCursor?: boolean;
   /**
-   * A message HappyClaw composed for the user from a card button, not a
+   * A message PulseOps composed for the user from a card button, not a
    * Feishu message: its id is synthetic, it addresses the Bot without an
    * @mention and is never parsed as a command.
    */

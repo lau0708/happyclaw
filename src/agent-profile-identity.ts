@@ -3,13 +3,13 @@ import { createHash } from 'node:crypto';
 import type { AgentProfile, AgentProfileRuntimePolicy } from './types.js';
 
 /**
- * The built-in HappyClaw identity is code-owned rather than persisted in an
+ * The built-in PulseOps identity is code-owned rather than persisted in an
  * editable AgentProfile field. Bump this version whenever the protected
  * identity contract changes so existing SDK sessions restart under it.
  */
 export const HAPPYCLAW_PLATFORM_IDENTITY_VERSION = 1;
 
-export function bindHappyClawPlatformIdentityHash(
+export function bindPulseOpsPlatformIdentityHash(
   identityHash: string,
 ): string {
   return createHash('sha256')
@@ -20,7 +20,7 @@ export function bindHappyClawPlatformIdentityHash(
     .digest('hex');
 }
 
-/** The system settings the main HappyClaw takes its context from. */
+/** The system settings the main PulseOps takes its context from. */
 export interface MainAgentContextSettings {
   mainAgentContextSource: 'managed' | 'host_claude';
   mainAgentAutoCompactWindow: number;
@@ -29,7 +29,7 @@ export interface MainAgentContextSettings {
 
 /**
  * What a profile's owner and the system settings allow at execution time.
- * The main HappyClaw takes its context source and compaction from system
+ * The main PulseOps takes its context source and compaction from system
  * settings (`mainAgent`, required for it); every other profile uses its own
  * persisted values.
  */
@@ -70,7 +70,7 @@ export function resolveEffectiveAgentRuntimePolicy(
   const policy = profile.runtime_policy;
   const main = profile.is_default ? access.mainAgent : undefined;
   if (profile.is_default && !main) {
-    throw new Error('The main HappyClaw needs the system context settings');
+    throw new Error('The main PulseOps needs the system context settings');
   }
   const contextSource = !access.canUseHostResources
     ? 'managed'

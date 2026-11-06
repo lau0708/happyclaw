@@ -328,7 +328,7 @@ describe('Agent Builder runtime eligibility', () => {
         ...base,
         sourceProfileIsDefault: false,
       }),
-    ).toMatch(/main HappyClaw/);
+    ).toMatch(/main PulseOps/);
     for (const runtimeAgentKind of ['spawn', 'task', null] as const) {
       expect(
         getAgentBuilderRuntimeRejection({ ...base, runtimeAgentKind }),

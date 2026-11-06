@@ -77,7 +77,7 @@ function installHooks(): void {
         id,
         laneJid,
         'happyclaw-agent',
-        'HappyClaw',
+        'PulseOps',
         text,
         new Date().toISOString(),
         true,

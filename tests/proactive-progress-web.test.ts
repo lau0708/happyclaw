@@ -223,7 +223,7 @@ describe('a proactive turn that sent progress and ends without a reply', () => {
       excludeMessageFromHistoryRecovery,
       proactiveClosingNote,
       logger: { warn: vi.fn() },
-      ASSISTANT_NAME: 'HappyClaw',
+      ASSISTANT_NAME: 'PulseOps',
       crypto: { randomUUID: () => 'uuid-1' },
       // No attempt follows: each ending here is the turn's last.
       queue: { willRetryAfterFailure: () => false },
@@ -346,7 +346,7 @@ test('a session turn refused and retried, then given up, gets one closing note',
       excludeMessageFromHistoryRecovery: vi.fn(),
       proactiveClosingNote,
       logger: { warn: vi.fn() },
-      ASSISTANT_NAME: 'HappyClaw',
+      ASSISTANT_NAME: 'PulseOps',
       crypto: { randomUUID: () => 'uuid-1' },
     };
     const harness = createRuntimeSourceHarness(globals);

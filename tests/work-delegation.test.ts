@@ -357,7 +357,7 @@ describe('work_delegate', () => {
     });
     expect(
       gate.teamInputFrameOf({
-        sender_name: 'HappyClaw',
+        sender_name: 'PulseOps',
         attachments: assignment.attachments ?? undefined,
       }),
     ).toEqual({

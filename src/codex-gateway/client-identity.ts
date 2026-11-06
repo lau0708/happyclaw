@@ -70,7 +70,7 @@ function terminalDescription(env: CodexUserAgentHost['env']): string {
  * Official User-Agent (default_client.rs get_codex_user_agent plus the
  * app-server's `{clientInfo.name}; {clientInfo.version}` suffix the TUI sets):
  * `codex-tui/0.162.1 (Mac OS 26.5.2; arm64) iTerm.app/3.6.11 (codex-tui; 0.162.1)`.
- * The OS, architecture and terminal describe the host running HappyClaw.
+ * The OS, architecture and terminal describe the host running PulseOps.
  */
 export function buildCodexUserAgent(host: CodexUserAgentHost): string {
   return headerSafe(

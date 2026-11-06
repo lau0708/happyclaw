@@ -111,7 +111,7 @@ describe('prompts/ files', () => {
     expect(workspaceMemory).toContain('Sub-agents are read-only');
   });
 
-  test('built-in HappyClaw identity and one-shot owner bootstrap are explicit', () => {
+  test('built-in PulseOps identity and one-shot owner bootstrap are explicit', () => {
     const identity = fs.readFileSync(
       path.join(PROMPTS_DIR, 'identity.happyclaw.md'),
       'utf-8',
@@ -121,7 +121,7 @@ describe('prompts/ files', () => {
       'utf-8',
     );
 
-    expect(identity).toContain('你是 **HappyClaw**');
+    expect(identity).toContain('你是 **PulseOps**');
     expect(identity).toContain('AgentProfile');
     expect(identity).toContain('Home Workspace');
     expect(identity).toContain('Agent Builder');

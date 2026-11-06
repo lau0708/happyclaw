@@ -51,7 +51,7 @@ function sessionSettingsFixture() {
   };
 }
 
-test('removes the attachment kill switch an older HappyClaw forced into session settings', () => {
+test('removes the attachment kill switch an older PulseOps forced into session settings', () => {
   const f = sessionSettingsFixture();
   fs.writeFileSync(
     f.target,

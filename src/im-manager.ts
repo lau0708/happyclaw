@@ -2150,7 +2150,7 @@ export class IMConnectionManager {
   }
 
   /**
-   * Sync every connected Feishu bot owned by one HappyClaw user.
+   * Sync every connected Feishu bot owned by one PulseOps user.
    *
    * The binding UI uses this instead of guessing a default account: every bot
    * has a different chat membership inventory, and legacy/default connectors

@@ -20,7 +20,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0F766E?style=for-the-badge" alt="MIT License" /></a>
 </p>
 
-> **关于本项目**：PulseOps（脉巡）基于开源智能体平台 [HappyClaw](https://github.com/riba2534/happyclaw)（MIT License，平台底座版权归原作者）二次开发。平台负责会话、调度、权限与多渠道接入；**设备健康业务层完全自研**：
+> **关于本项目**：PulseOps（脉巡）基于开源智能体平台 [PulseOps](https://github.com/riba2534/happyclaw)（MIT License，平台底座版权归原作者）二次开发。平台负责会话、调度、权限与多渠道接入；**设备健康业务层完全自研**：
 >
 > - `mes-mcp-server/`：模拟 MES 的 MCP Server（FastMCP + SQLite，9 个业务工具：设备台账 / 指标 / 历史故障 / 知识库 / 工单 / 巡检）
 > - `mes-dashboard/` 与 `web/src/pages/`：设备监控 / 工单中心 / 故障知识库 / 智能巡检 四个业务页面（工业深色大屏视觉）
@@ -86,13 +86,13 @@ PulseOps 是一个**给工厂设备当值班医生的智能体系统**：它像�
 
 双触发收敛到同一闭环：**被动**由定时巡检进入，**主动**由人问一句「3 号机振动不对，看下」经由问诊解析节点进入，后续步骤完全一致。
 
-## 平台底座：HappyClaw 是什么
+## 平台底座：PulseOps 是什么
 
-HappyClaw 是一个基于 [Claude Agent SDK for TypeScript](https://github.com/anthropics/claude-agent-sdk-typescript) 的自托管 AI 智能体系统。它把完整的 Claude Code 运行时封装成一个可持续运行的多用户服务，让你可以从浏览器、飞书、Telegram、QQ、钉钉、微信、企业微信、Discord 或 WhatsApp 使用同一套智能体、工作区、能力和自动化任务。
+PulseOps 是一个基于 [Claude Agent SDK for TypeScript](https://github.com/anthropics/claude-agent-sdk-typescript) 的自托管 AI 智能体系统。它把完整的 Claude Code 运行时封装成一个可持续运行的多用户服务，让你可以从浏览器、飞书、Telegram、QQ、钉钉、微信、企业微信、Discord 或 WhatsApp 使用同一套智能体、工作区、能力和自动化任务。
 
-HappyClaw 不是一个简单的聊天 API Wrapper。智能体运行在真实的 Claude Code 环境中，可以读写项目文件、执行终端命令、使用浏览器、调用 MCP、加载 Skills，并在多个独立工作区和会话之间保持清晰的权限与上下文边界。
+PulseOps 不是一个简单的聊天 API Wrapper。智能体运行在真实的 Claude Code 环境中，可以读写项目文件、执行终端命令、使用浏览器、调用 MCP、加载 Skills，并在多个独立工作区和会话之间保持清晰的权限与上下文边界。
 
-### 为什么使用 HappyClaw
+### 为什么使用 PulseOps
 
 - **Claude Code 原生运行时** — 直接使用版本锁定的 Claude Agent SDK 与 Claude Code CLI，不重新实现工具调用和运行循环。
 - **智能体优先工作台** — 智能体管身份和能力，工作区管文件与执行环境，会话管对话上下文，产品层级清晰。
@@ -105,7 +105,7 @@ HappyClaw 不是一个简单的聊天 API Wrapper。智能体运行在真实的 
 
 | 模块           | 主要能力                                                                                                                       |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **智能体**     | 主 HappyClaw 对话式创建/编辑、自定义智能体、内置模板、复制与导入导出、头像、结构化提示词、AI 优化                              |
+| **智能体**     | 主 PulseOps 对话式创建/编辑、自定义智能体、内置模板、复制与导入导出、头像、结构化提示词、AI 优化                              |
 | **工作区**     | 智能体归属、宿主机/容器执行、独立目录、项目环境变量、项目 Claude 上下文、多会话、会话级 git worktree、只读代码 Review          |
 | **能力治理**   | 用户 Skills、系统/用户 MCP、Claude Code Plugins 与最终生效预览；智能体工具权限完整开放                                         |
 | **消息渠道**   | 飞书、Telegram、QQ、钉钉、微信、企业微信、Discord、WhatsApp，多账号、扫码登录、工作区/会话绑定                                 |
@@ -118,7 +118,7 @@ HappyClaw 不是一个简单的聊天 API Wrapper。智能体运行在真实的 
 
 ## 智能体优先工作模型
 
-HappyClaw 使用统一的 `智能体 → Workspace → Runtime Session` 层级：
+PulseOps 使用统一的 `智能体 → Workspace → Runtime Session` 层级：
 
 ```text
 智能体（身份、提示词、Skills、MCP）
@@ -128,18 +128,18 @@ HappyClaw 使用统一的 `智能体 → Workspace → Runtime Session` 层级�
     └── Automation（自动化，每次运行都是某个会话里的一轮）
 ```
 
-- **内置 HappyClaw** 是不可删除的平台主 Agent，拥有代码级固定身份，理解
+- **内置 PulseOps** 是不可删除的平台主 Agent，拥有代码级固定身份，理解
   Workspace、Session、Agent Builder、渠道、任务、Skills/MCP、Provider 和权限
   模型；这些规则不存放在可遗忘的 Memory 中。
-- **首次唤醒** 只面向 Home Workspace 中经过宿主验证的实际 owner。HappyClaw
+- **首次唤醒** 只面向 Home Workspace 中经过宿主验证的实际 owner。PulseOps
   用简短的“刚醒来”话语询问称呼，并通过专用 Owner Profile 保存；并发会话使用
   onboarding lease，后续新 Session 或服务重启不会重复表演。清空称呼也不会重置
   onboarding。
-- **智能体** 保存长期身份和能力策略。主 HappyClaw 智能体始终存在，也可以创建代码审查、研究、运维等自定义智能体。
-- **对话式智能体构建器** 在主 HappyClaw 名下所有 Workspace 的 Runtime Session 中生效，允许用户多轮讨论需求、保存并预览智能体草稿，并在后续人类消息逐字回复一次性确认口令后创建或更新智能体；自动化运行与 Sub-Agent 不能代替用户发布。
-- **Home Workspace** 是不可删除的系统工作区，并永久归属内置 HappyClaw。
+- **智能体** 保存长期身份和能力策略。主 PulseOps 智能体始终存在，也可以创建代码审查、研究、运维等自定义智能体。
+- **对话式智能体构建器** 在主 PulseOps 名下所有 Workspace 的 Runtime Session 中生效，允许用户多轮讨论需求、保存并预览智能体草稿，并在后续人类消息逐字回复一次性确认口令后创建或更新智能体；自动化运行与 Sub-Agent 不能代替用户发布。
+- **Home Workspace** 是不可删除的系统工作区，并永久归属内置 PulseOps。
 - **自定义 Agent** 创建后没有隐式 Workspace、Session 或 Memory；用户需要显式
-  新建 Workspace 或迁移一个非 Home Workspace，避免继承 HappyClaw 上下文。
+  新建 Workspace 或迁移一个非 Home Workspace，避免继承 PulseOps 上下文。
 - **Workspace** 是私有的文件与执行隔离边界。创建时必须选择智能体，非 Home
   Workspace 后续可以迁移归属；文件、Session、渠道绑定和 Memory 会随 Workspace
   保留。
@@ -170,7 +170,7 @@ HappyClaw 使用统一的 `智能体 → Workspace → Runtime Session` 层级�
 - 身份、目标、工作方式和输出要求等结构化提示词。
 - AI 生成和局部优化提示词。
 - 托管 Claude 上下文或管理员宿主机 Claude 上下文。
-- 用户 Skills、HappyClaw MCP 与 Claude Code Plugins；智能体始终拥有完整工具权限。
+- 用户 Skills、PulseOps MCP 与 Claude Code Plugins；智能体始终拥有完整工具权限。
 
 智能体可以从内置模板新建、复制，或导出为 JSON 再导入；导入时引用不到的 Skill 或 MCP
 会逐项列出，由用户确认去掉后再创建。
@@ -179,11 +179,11 @@ HappyClaw 使用统一的 `智能体 → Workspace → Runtime Session` 层级�
 
 ### Skills、MCP 与 Plugins
 
-HappyClaw 区分不同层级的能力来源：
+PulseOps 区分不同层级的能力来源：
 
 | 来源                    | 说明                                                              |
 | ----------------------- | ----------------------------------------------------------------- |
-| **内置能力**            | 随 HappyClaw 或智能体容器提供的基础工具与 Skills                  |
+| **内置能力**            | 随 PulseOps 或智能体容器提供的基础工具与 Skills                  |
 | **用户 Skills**         | 从技能市场、HTTPS Git 仓库或 ZIP 导入，按用户隔离并记录来源与版本 |
 | **项目上下文**          | 工作区目录里的 `CLAUDE.md`、`.claude/skills` 和 MCP 配置          |
 | **用户 MCP**            | 当前用户维护的 MCP Server，只进入允许使用它的智能体               |
@@ -230,8 +230,8 @@ Bot 账号；Web 输入只在对应 Web Session 回复。多个渠道可以共�
 
 ## 模型与提供商
 
-HappyClaw 可以同时配置多个模型连接。一个连接对应一份凭据和一个地址，可以提供多个模型。
-「设置 → 模型配置」只负责添加和维护连接；用哪个模型由智能体决定：主 HappyClaw 和每个
+PulseOps 可以同时配置多个模型连接。一个连接对应一份凭据和一个地址，可以提供多个模型。
+「设置 → 模型配置」只负责添加和维护连接；用哪个模型由智能体决定：主 PulseOps 和每个
 智能体各有自己的默认模型和推理等级，聊天时还可以临时换成任何一个已添加的模型。
 
 点「添加模型连接」，向导会依次选择来源、连接、选择模型、测试并保存：
@@ -323,7 +323,7 @@ make dev
 | `make start`                                    | 构建必要产物并以前台生产模式启动                      |
 | `WEB_PORT=8080 make start`                      | 使用自定义端口启动                                    |
 | `make status`                                   | 查看端口、健康状态、日志文件和 Docker 容器            |
-| `make stop`                                     | 停止当前端口上的 HappyClaw 服务                       |
+| `make stop`                                     | 停止当前端口上的 PulseOps 服务                       |
 | `make docker-pull`                              | 拉取 GitHub Actions 发布的最新 Agent 镜像             |
 | `make install-host-tools`                       | 安装 Host 工具并刷新 Host/Container 共用的内置 Skills |
 | `make backup`                                   | 创建一致性运行数据备份                                |
@@ -352,7 +352,7 @@ build args 在发布工作流中指定精确版本。
 
 ## 配置与数据
 
-HappyClaw 优先通过 Web 设置管理配置，不要求用户维护一组庞大的环境变量。
+PulseOps 优先通过 Web 设置管理配置，不要求用户维护一组庞大的环境变量。
 
 ### Web 设置入口
 
@@ -360,7 +360,7 @@ HappyClaw 优先通过 Web 设置管理配置，不要求用户维护一组庞�
 | ----------------------- | ------------------------------------------------- |
 | **设置 → 模型配置**     | 添加和维护模型连接、每个连接的模型、连接测试      |
 | **设置 → 消息渠道**     | 渠道账号、扫码登录、连接状态和会话绑定            |
-| **设置 → 主 HappyClaw** | 默认智能体的 Skills 与 MCP                        |
+| **设置 → 主 PulseOps** | 默认智能体的 Skills 与 MCP                        |
 | **设置 → 执行与容量**   | 超时、并发、上下文窗口和运行限制                  |
 | **设置 → 宿主机集成**   | 管理员纯宿主机模式、Host 目录与 Claude 上下文来源 |
 | **设置 → 注册策略**     | 开放注册、邀请码注册或关闭注册                    |
@@ -419,7 +419,7 @@ data/
 
 ```mermaid
 flowchart LR
-    Web["Web / PWA"] --> Core["HappyClaw Node Service"]
+    Web["Web / PWA"] --> Core["PulseOps Node Service"]
     IM["8 个 IM 渠道"] --> Core
 
     Core --> Auth["Auth / RBAC"]
@@ -442,7 +442,7 @@ flowchart LR
     Stream --> IM
 ```
 
-主服务始终使用 Node.js 运行，负责认证、路由、队列、调度、渠道连接、Provider 池、用量和持久化。Docker 只用于隔离智能体执行环境，不承载 HappyClaw 主服务。
+主服务始终使用 Node.js 运行，负责认证、路由、队列、调度、渠道连接、Provider 池、用量和持久化。Docker 只用于隔离智能体执行环境，不承载 PulseOps 主服务。
 
 ### 技术栈
 
@@ -457,7 +457,7 @@ flowchart LR
 
 ## 安全模型
 
-HappyClaw 会执行代码和访问第三方消息平台，部署前请理解以下边界：
+PulseOps 会执行代码和访问第三方消息平台，部署前请理解以下边界：
 
 - 用户、渠道账号、工作区及其 Memory、Skills、MCP、Plugin 状态和用量记录按 owner 隔离。
 - Provider 与渠道密钥使用本机 AES-256-GCM 密钥加密，密钥文件权限限制为 `0600`。
@@ -629,7 +629,7 @@ docs: update provider setup guide
 - [Anthropic Claude Code](https://github.com/anthropics/claude-code) 与 [Claude Agent SDK for TypeScript](https://github.com/anthropics/claude-agent-sdk-typescript) 提供完整的智能体运行时。
 - 感谢所有渠道 SDK、开源依赖、Issue 提交者和贡献者。
 
-HappyClaw 是独立开源项目，与 Anthropic 及各消息平台不存在官方隶属、授权或背书关系。相关名称和商标归各自权利人所有。
+PulseOps 是独立开源项目，与 Anthropic 及各消息平台不存在官方隶属、授权或背书关系。相关名称和商标归各自权利人所有。
 
 ## License
 
@@ -638,5 +638,5 @@ HappyClaw 是独立开源项目，与 Anthropic 及各消息平台不存在官�
 ---
 
 <p align="center">
-  如果 HappyClaw 对你有帮助，欢迎点一个 Star ⭐
+  如果 PulseOps 对你有帮助，欢迎点一个 Star ⭐
 </p>

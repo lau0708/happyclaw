@@ -48,7 +48,7 @@
 - 项目声明 `@larksuiteoapi/node-sdk: ^1.58.0`，本地安装版本为 **1.71.1**。
 - npm 调研时最新为 **1.73.3**，发布时间 **2026-09-04**。
 - 对比最新官方发布包与本地类型定义，CardKit 的十个方法签名相同：卡片 create/settings/update/idConvert/batchUpdate，组件 content/create/delete/patch/update。
-- SDK 已有 Channel / CardStreamController 高层封装，但其原生文本流预设单正文骨架，通用 card update 走消息级整卡 patch。现有 HappyClaw 的多区域流、持久化恢复和续卡不宜直接替换为该封装。
+- SDK 已有 Channel / CardStreamController 高层封装，但其原生文本流预设单正文骨架，通用 card update 走消息级整卡 patch。现有 PulseOps 的多区域流、持久化恢复和续卡不宜直接替换为该封装。
 
 建议：SDK 升级单独评估，展示重构不以升级为前置。来源：[官方 SDK 仓库](https://github.com/larksuite/node-sdk)、[npm 发布信息](https://registry.npmjs.org/@larksuiteoapi%2fnode-sdk)。
 

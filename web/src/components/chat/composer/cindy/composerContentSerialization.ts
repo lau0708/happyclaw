@@ -1,8 +1,8 @@
 /**
  * Source: cindy apps/desktop/src/renderer/components/new-chat/composerContentSerialization.ts
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
- * Tiptap 3.30.6. HappyClaw's composer only holds text, structured lists,
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
+ * Tiptap 3.30.6. PulseOps's composer only holds text, structured lists,
  * workspace file/directory chips and long-paste chips, so quote blocks, agent
  * references, deep links and inline ranges are dropped; blocks join with one
  * newline as in cindy's text-only path.

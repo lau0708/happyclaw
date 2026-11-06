@@ -25,7 +25,7 @@ describe('frontend identity ownership', () => {
 
   test('uses the branded avatar as the final global fallback', () => {
     expect(resolveAgentDisplayIdentity()).toMatchObject({
-      name: 'HappyClaw',
+      name: 'PulseOps',
       imageUrl: expect.stringContaining('icons/icon-192.png'),
     });
   });
@@ -126,7 +126,7 @@ describe('frontend identity ownership', () => {
     const register = auth.slice(registerStart, logoutStart);
 
     expect(login).toContain('void fetchAppearance()');
-    expect(login).toContain("appearance?.appName.trim() || 'HappyClaw'");
+    expect(login).toContain("appearance?.appName.trim() || 'PulseOps'");
     expect(login).toContain('appearance?.brandIconUrl');
     expect(login).toContain('src={brandIconUrl}');
     expect(login).toContain('{appName}');

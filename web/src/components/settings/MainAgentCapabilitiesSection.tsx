@@ -105,7 +105,7 @@ export function MainAgentCapabilitiesSection() {
         ...capabilityFormModelChanges(profile, form),
         ...(policyChanged ? { runtime_policy: policy } : {}),
       });
-      toast.success('主 HappyClaw 模型、推理等级与能力已保存');
+      toast.success('主 PulseOps 模型、推理等级与能力已保存');
     } catch (error) {
       toast.error(
         modelBindingErrorMessage(error) ??
@@ -132,7 +132,7 @@ export function MainAgentCapabilitiesSection() {
         role="alert"
         className="rounded-lg bg-error/10 px-3 py-2.5 text-body text-error"
       >
-        无法读取当前管理员的主 HappyClaw 配置。
+        无法读取当前管理员的主 PulseOps 配置。
       </div>
     );
   }
@@ -143,7 +143,7 @@ export function MainAgentCapabilitiesSection() {
         title="模型与系统附加能力"
         description={
           <>
-            为主智能体选择完整模型网关环境，并按来源控制 Skills 与 HappyClaw
+            为主智能体选择完整模型网关环境，并按来源控制 Skills 与 PulseOps
             附加的 MCP。宿主机 Skills 可独立于宿主机 Prompt 与 Rules 启用。
           </>
         }
@@ -155,7 +155,7 @@ export function MainAgentCapabilitiesSection() {
           inheritedModel={inheritedModel}
           profile={profile}
           hostAvailable
-          labelPrefix="主 HappyClaw "
+          labelPrefix="主 PulseOps "
           modelConfigDescription="Home 工作区的会话与自动化都会继承该选择；你创建的其他智能体没有自己的模型时也跟随它。"
         />
 

@@ -92,7 +92,7 @@ function workspace(
     is_my_home: false,
     can_modify: true,
     execution_mode: 'host',
-    agent_profile_name: 'HappyClaw',
+    agent_profile_name: 'PulseOps',
     lastMessageTime: minutesAgo(minutes),
     ...extra,
   } as GroupInfo;
@@ -156,7 +156,7 @@ const profile = (id: string, name: string, isDefault = false) =>
   }) as never;
 useAgentProfilesStore.setState({
   profiles: [
-    profile('agent-default', 'HappyClaw', true),
+    profile('agent-default', 'PulseOps', true),
     profile('agent-post', '地址证明助手'),
     profile('agent-bill', 'AI账单助手'),
   ],
@@ -166,7 +166,7 @@ useAgentProfilesStore.setState({
 });
 
 const groups: Record<string, GroupInfo> = {
-  'web:main': workspace('main', 'HappyClaw', 30, {
+  'web:main': workspace('main', 'PulseOps', 30, {
     is_home: true,
     is_my_home: true,
   }),

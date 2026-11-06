@@ -8,7 +8,7 @@ interface PluginLoadError {
 /**
  * Context-audit warnings for the `plugin_errors` that Claude Code 2.1.283+
  * reports on system/init: a plugin that did not load, or loaded without one
- * of its components. `path` names the plugin directory HappyClaw mounted.
+ * of its components. `path` names the plugin directory PulseOps mounted.
  */
 export function pluginLoadWarnings(initMessage: unknown): string[] {
   const errors = (initMessage as { plugin_errors?: unknown } | null)

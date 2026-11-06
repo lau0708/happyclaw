@@ -62,7 +62,7 @@ export function MainAgentIdentitySection() {
       await fetchAppearance();
       setMode('emoji');
       setStyleEditorOpen(true);
-      toast.success('主 HappyClaw 头像已保存');
+      toast.success('主 PulseOps 头像已保存');
     } catch (error) {
       toast.error(getErrorMessage(error, '保存头像失败'));
     } finally {
@@ -94,7 +94,7 @@ export function MainAgentIdentitySection() {
       await fetchAppearance();
       setMode('emoji');
       setStyleEditorOpen(true);
-      toast.success('主 HappyClaw 头像已更新');
+      toast.success('主 PulseOps 头像已更新');
     } catch (error) {
       toast.error(getErrorMessage(error, '上传头像失败'));
     } finally {
@@ -112,7 +112,7 @@ export function MainAgentIdentitySection() {
       setMode('brand');
       setStyleEditorOpen(false);
       await fetchAppearance();
-      toast.success('已恢复 HappyClaw 默认头像');
+      toast.success('已恢复 PulseOps 默认头像');
     } catch (error) {
       toast.error(getErrorMessage(error, '恢复默认头像失败'));
     }
@@ -132,7 +132,7 @@ export function MainAgentIdentitySection() {
   return (
     <SettingsSection
       title="头像"
-      description="这是全局主 HappyClaw 的头像。未单独设置头像的自定义智能体会自动继承它。"
+      description="这是全局主 PulseOps 的头像。未单独设置头像的自定义智能体会自动继承它。"
     >
       <SettingsGroup>
         <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center">

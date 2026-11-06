@@ -49,7 +49,7 @@ export function SetupChannelsPage() {
             type="button"
             onClick={() => navigate('/chat', { replace: true })}
           >
-            完成并进入 HappyClaw
+            完成并进入 PulseOps
             <ArrowRight />
           </Button>
         </footer>

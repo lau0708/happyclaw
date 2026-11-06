@@ -169,7 +169,7 @@ describe('模型连接 list', () => {
     await flush();
     expect(mocks.setError).toHaveBeenCalledWith(
       expect.stringContaining(
-        '智能体「写作助手」「HappyClaw」绑定了「中转站」',
+        '智能体「写作助手」「PulseOps」绑定了「中转站」',
       ),
     );
     expect(mocks.confirm).not.toHaveBeenCalled();

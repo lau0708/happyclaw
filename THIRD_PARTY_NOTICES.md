@@ -1,6 +1,6 @@
 # Third-party notices
 
-HappyClaw is released under the MIT License (see `LICENSE`). The parts listed
+PulseOps is released under the MIT License (see `LICENSE`). The parts listed
 below are adapted from other projects and remain under their own licenses.
 
 ## Cindy
@@ -16,7 +16,7 @@ below are adapted from other projects and remain under their own licenses.
   This product includes software developed by XD Inc.
   ```
 
-Adapted parts, each modified for HappyClaw (every adapted file says so in its
+Adapted parts, each modified for PulseOps (every adapted file says so in its
 header):
 
 - `shared/model-providers.ts`: the vendor preset catalog, the model

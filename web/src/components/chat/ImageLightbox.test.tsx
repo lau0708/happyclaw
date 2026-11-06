@@ -277,7 +277,7 @@ describe('a long press in a reply on a phone', () => {
     id: 'm2',
     chat_jid: 'web:w#agent:s1',
     sender: 'happyclaw-agent',
-    sender_name: 'HappyClaw',
+    sender_name: 'PulseOps',
     content: '结果如下\n\n![图表](output/图表.png)',
     timestamp: '2026-11-02T00:00:00.000Z',
     is_from_me: true,

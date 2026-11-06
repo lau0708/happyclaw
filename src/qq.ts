@@ -243,7 +243,7 @@ export function getQQMediaFileType(fileName: string): QQMediaFileType {
   return QQMediaFileType.FILE;
 }
 
-/** Inbound QQ attachment fields HappyClaw reads from gateway events. */
+/** Inbound QQ attachment fields PulseOps reads from gateway events. */
 export interface QQInboundAttachment {
   url?: string;
   filename?: string;

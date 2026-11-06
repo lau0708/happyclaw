@@ -56,7 +56,7 @@ useAgentProfilesStore.setState({
   profiles: [
     {
       id: 'agent-default',
-      name: 'HappyClaw',
+      name: 'PulseOps',
       is_default: true,
       runtime_policy: { skills: {} },
     } as never,
@@ -68,7 +68,7 @@ useAgentProfilesStore.setState({
 useChatStore.setState({
   groups: {
     'web:main': {
-      name: 'HappyClaw',
+      name: 'PulseOps',
       folder: 'main',
       added_at: '2026-01-01T00:00:00.000Z',
       kind: 'web',

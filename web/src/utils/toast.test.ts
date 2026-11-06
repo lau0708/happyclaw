@@ -65,7 +65,7 @@ describe('notifyIfHidden', () => {
 
     let stateUpdated = false;
     expect(() => {
-      notifyIfHidden('HappyClaw', 'done');
+      notifyIfHidden('PulseOps', 'done');
       stateUpdated = true;
     }).not.toThrow();
     expect(Throwing).toHaveBeenCalledTimes(1);
@@ -85,7 +85,7 @@ describe('notifyIfHidden', () => {
       ),
     );
     setHidden(true);
-    fresh.notifyIfHidden('HappyClaw');
+    fresh.notifyIfHidden('PulseOps');
 
     (Notification as unknown as { permission: string }).permission = 'default';
     fresh.showNotificationPromptToast();
@@ -111,7 +111,7 @@ describe('notifyIfHidden', () => {
       Object.assign(Ctor, { permission: 'granted' }),
     );
     setHidden(false);
-    notifyIfHidden('HappyClaw');
+    notifyIfHidden('PulseOps');
     expect(Ctor).not.toHaveBeenCalled();
   });
 });

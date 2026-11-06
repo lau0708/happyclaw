@@ -32,7 +32,7 @@ function joinClaudePattern(root: string, ...segments: string[]): string {
 
 /**
  * Claude Code resolves user memory from the operating-system home directory,
- * even when CLAUDE_CONFIG_DIR points at HappyClaw's per-session directory.
+ * even when CLAUDE_CONFIG_DIR points at PulseOps's per-session directory.
  * In managed mode, exclude those host instructions explicitly while keeping
  * the session's selected user-source Skills available.
  */
@@ -66,9 +66,9 @@ export function resolveManagedHostClaudeMdExcludes(options: {
   ]);
 
   // Host agents run inside data/groups/<folder>, which is nested beneath the
-  // HappyClaw git repository. Claude Code therefore discovers the repository's
+  // PulseOps git repository. Claude Code therefore discovers the repository's
   // own CLAUDE.md as Project memory. That file is useful while developing
-  // HappyClaw, but it must not redefine a managed business Agent as a codebase
+  // PulseOps, but it must not redefine a managed business Agent as a codebase
   // assistant. Exclude only the platform repository root; workspace-local
   // CLAUDE.md files inside the group's directory remain available.
   if (options.projectRoot && isAbsolutePortable(options.projectRoot)) {

@@ -32,7 +32,7 @@ function fraction(value: unknown): number | undefined {
 }
 
 /**
- * Convert the SDK's normalized event into HappyClaw's bounded control-plane
+ * Convert the SDK's normalized event into PulseOps's bounded control-plane
  * DTO. The SDK derives utilization from Anthropic's unified headers, whose
  * unit is a 0..1 fraction. Keeping that unit here prevents accidental mixing
  * with `/api/oauth/usage`, where utilization is already a 0..100 percentage.

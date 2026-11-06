@@ -284,7 +284,7 @@ export function SkillDetail({ skillId, onDeleted }: SkillDetailProps) {
                 ? '我的 Skills'
                 : detail.source === 'external'
                   ? '宿主机'
-                  : 'HappyClaw 内置'}
+                  : 'PulseOps 内置'}
             </Badge>
             {detail.userInvocable && <Badge variant="neutral">可调用</Badge>}
           </div>

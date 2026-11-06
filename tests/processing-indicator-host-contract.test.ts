@@ -135,7 +135,7 @@ describe('exact processing indicator host contract', () => {
     }
   });
 
-  test('provider registry keys omit HappyClaw account scoping on attach', () => {
+  test('provider registry keys omit PulseOps account scoping on attach', () => {
     const manager = fs.readFileSync('src/im-manager.ts', 'utf8');
     const attach = sourceBetween(
       manager,

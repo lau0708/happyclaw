@@ -174,7 +174,7 @@ const feishuDualDelivery = new FeishuDualDeliveryCoordinator();
 export interface FeishuConnectionConfig {
   appId: string;
   appSecret: string;
-  /** Optional HappyClaw account id. The scoped source JID remains authoritative. */
+  /** Optional PulseOps account id. The scoped source JID remains authoritative. */
   channelAccountId?: string;
   /** Feishu (default) or Lark: picks the OpenAPI and long-connection host. */
   domain?: FeishuBrand;
@@ -6030,7 +6030,7 @@ export function createFeishuConnection(
         // The Bot's own create/delete calls are echoed as events. Registering
         // no-op handlers prevents the Lark SDK from logging one warning per
         // processing indicator mutation. The same applies to subscribed
-        // events HappyClaw does not act on (read receipts, doc link status,
+        // events PulseOps does not act on (read receipts, doc link status,
         // a user merely opening the P2P chat — which must never claim an
         // owner).
         'im.message.reaction.created_v1': () => undefined,
@@ -6625,7 +6625,7 @@ export function createFeishuConnection(
 
             // chat.list is the authoritative membership inventory for the bot.
             // Register every visible chat, even when the membership event was
-            // missed or the chat has never sent a message to HappyClaw. The
+            // missed or the chat has never sent a message to PulseOps. The
             // account-scoping wrapper makes the JID unique for multi-bot users.
             connectOptions?.onNewChat?.(rawJid, chatName);
             // A rejected principal must not write metadata onto whatever

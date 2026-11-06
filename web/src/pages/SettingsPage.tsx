@@ -219,13 +219,13 @@ export function SettingsPage() {
   };
 
   const sectionDescription: Partial<Record<SettingsTab, string>> = {
-    profile: '用于标识当前登录用户，不会改变 HappyClaw 或自定义智能体的名称。',
+    profile: '用于标识当前登录用户，不会改变 PulseOps 或自定义智能体的名称。',
     preferences: '对话行为、界面外观与通知偏好，只保存在当前浏览器。',
     'my-channels': '连接渠道机器人账号，并管理已接入的群聊与会话。',
     security: '修改密码，查看并撤销其他设备上的登录会话。',
     guests: GUEST_SCOPE_DESCRIPTION,
     appearance:
-      '系统品牌影响站点标题、欢迎文案和侧边栏 Logo，不会改变 HappyClaw 或自定义智能体的名称。',
+      '系统品牌影响站点标题、欢迎文案和侧边栏 Logo，不会改变 PulseOps 或自定义智能体的名称。',
     claude: '添加模型连接和它们提供的模型；用哪个模型在智能体和对话里选。',
     system: '管理工作区运行边界、日志和执行容量。',
     registration: '管理注册入口、邀请码，以及登录与注册请求的认证限流策略。',

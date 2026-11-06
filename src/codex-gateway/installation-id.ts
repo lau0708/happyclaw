@@ -2,7 +2,7 @@
 //
 // 官方客户端在 $CODEX_HOME/installation_id 保存一个稳定 UUID
 // （core/src/installation_id.rs），每个请求的 client_metadata 与 turn metadata
-// 都带上它。HappyClaw 每个安装一个，保存在 data/config 下；它不含账号信息，
+// 都带上它。PulseOps 每个安装一个，保存在 data/config 下；它不含账号信息，
 // 所有 provider 共用。文件不可写时退回进程内 ID，不影响请求。
 
 import { randomUUID } from 'node:crypto';

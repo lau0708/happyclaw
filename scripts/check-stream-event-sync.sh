@@ -40,7 +40,7 @@ check_sync "$ROOT/shared/channel-prefixes.ts" \
   "$ROOT/src/channel-prefixes.ts" \
   "$ROOT/container/agent-runner/src/channel-prefixes.ts"
 
-# Claude environment HappyClaw owns
+# Claude environment PulseOps owns
 check_sync "$ROOT/shared/claude-provider-env.ts" \
   "$ROOT/src/claude-provider-env.ts" \
   "$ROOT/container/agent-runner/src/claude-provider-env.ts"

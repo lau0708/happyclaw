@@ -37,7 +37,7 @@ function axios400(code: number, msg: string) {
 const UNSTABLE_TEXT =
   '飞书长连接反复断开：可能是同一应用在别处也建立了长连接，也可能是网络或平台异常。';
 const CONFLICT_TEXT =
-  '该飞书应用的长连接已被其他程序占用（同一 App 同时只应连接一处），消息可能被对方接走。请停用另一处连接，或为 HappyClaw 单独创建应用。';
+  '该飞书应用的长连接已被其他程序占用（同一 App 同时只应连接一处），消息可能被对方接走。请停用另一处连接，或为 PulseOps 单独创建应用。';
 
 describe('Feishu connection conflict monitor', () => {
   test('reports exceed_conn_limit once per incident and clears on ready', () => {

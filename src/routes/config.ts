@@ -1924,7 +1924,7 @@ configRoutes.delete(
           previous?.codexOAuthCredentials &&
           !getProviders().some((provider) => provider.id === id)
         ) {
-          // Like the official logout, end the ChatGPT grant HappyClaw no
+          // Like the official logout, end the ChatGPT grant PulseOps no
           // longer holds; deletion never waits for or fails on this.
           forgetCodexTransportState(id);
           clearCodexProviderRateLimits(id);
@@ -3065,7 +3065,7 @@ configRoutes.post(
         if (mutation.value) {
           if (plan.accountChanged && previous.codexOAuthCredentials) {
             // The replaced account's grant is no longer reachable from
-            // HappyClaw; revoke it best-effort without delaying the login.
+            // PulseOps; revoke it best-effort without delaying the login.
             forgetCodexTransportState(id);
             // The old account's windows and credits say nothing about the new one.
             clearCodexProviderRateLimits(id);

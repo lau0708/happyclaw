@@ -480,7 +480,7 @@ export function CreateContainerDialog({
                     智能体上下文
                   </dt>
                   <dd className="mt-1 text-label text-foreground">
-                    {inheritsHostClaude ? '继承 ~/.claude' : 'HappyClaw 管理'}
+                    {inheritsHostClaude ? '继承 ~/.claude' : 'PulseOps 管理'}
                   </dd>
                 </div>
                 <div className="min-w-0">
@@ -688,7 +688,7 @@ export function CreateContainerDialog({
                       }}
                       inputId="workspace-custom-cwd"
                       label="宿主机工作目录（可选）"
-                      description="智能体将直接在 HappyClaw 服务器上的这个目录中运行。"
+                      description="智能体将直接在 PulseOps 服务器上的这个目录中运行。"
                       placeholder="默认: data/groups/{folder}/"
                     />
                     <Callout tone="warning">

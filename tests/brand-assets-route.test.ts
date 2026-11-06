@@ -19,8 +19,8 @@ afterEach(() => {
 
 function defaultAppearance(): AppearanceConfig {
   return {
-    appName: 'HappyClaw',
-    aiName: 'HappyClaw',
+    appName: 'PulseOps',
+    aiName: 'PulseOps',
     aiAvatarEmoji: '🐱',
     aiAvatarColor: '#0d9488',
     aiAvatarUrl: null,

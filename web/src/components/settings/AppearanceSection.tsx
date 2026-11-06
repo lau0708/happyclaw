@@ -316,7 +316,7 @@ export function AppearanceSection() {
                 value={appName}
                 onChange={(e) => setAppName(e.target.value)}
                 maxLength={32}
-                placeholder="HappyClaw"
+                placeholder="PulseOps"
                 className="sm:w-64"
               />
             }

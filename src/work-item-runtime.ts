@@ -105,7 +105,7 @@ export function laneJidOf(workspaceJid: string, agentId: string): string {
 }
 
 const TEAM_INPUT_SENDER = 'happyclaw-team';
-const TEAM_INPUT_SENDER_NAME = 'HappyClaw';
+const TEAM_INPUT_SENDER_NAME = 'PulseOps';
 
 /**
  * Store and admit an input the host composed for a team lane. The id is

@@ -256,18 +256,18 @@ import {
 } from './memory-service.js';
 import { type WorkspaceMemoryMutationContext } from './memory-store.js';
 import {
-  isHappyClawBootstrapTurn,
-  isHappyClawOwnerProfileRuntimeStructurallyEligible,
+  isPulseOpsBootstrapTurn,
+  isPulseOpsOwnerProfileRuntimeStructurallyEligible,
 } from './happyclaw-bootstrap.js';
 import {
-  acknowledgeHappyClawOwnerIntroduction,
-  claimHappyClawOwnerIntroduction,
-  clearHappyClawOwnerPreferredAddress,
-  getHappyClawOwnerProfileProjection,
+  acknowledgePulseOpsOwnerIntroduction,
+  claimPulseOpsOwnerIntroduction,
+  clearPulseOpsOwnerPreferredAddress,
+  getPulseOpsOwnerProfileProjection,
   OwnerProfileStoreError,
-  setHappyClawOwnerPreferredAddress,
-  skipHappyClawOwnerIntroduction,
-  type HappyClawOwnerProfileProjection,
+  setPulseOpsOwnerPreferredAddress,
+  skipPulseOpsOwnerIntroduction,
+  type PulseOpsOwnerProfileProjection,
 } from './owner-profile-store.js';
 import {
   buildWorkspaceMemoryUpdateInput,
@@ -1067,7 +1067,7 @@ export function feedStreamEventToCard(
       }
       break;
     case 'context_audit':
-      // Context audits describe HappyClaw/Claude runtime wiring. Keep them in
+      // Context audits describe PulseOps/Claude runtime wiring. Keep them in
       // service logs for operators, but never leak framework internals into a
       // user's conversation or streaming card.
       if (se.contextAudit?.warnings?.length) {
@@ -2773,15 +2773,15 @@ function resolveOwnerHomeFolder(group: RegisteredGroup): string {
   return group.folder;
 }
 
-function resolveHappyClawOwnerProfileForTurn(input: {
+function resolvePulseOpsOwnerProfileForTurn(input: {
   group: RegisteredGroup;
   profile: AgentProfile | undefined;
   turnId?: string;
   runtimeAgentId: string;
   runtimeAgentKind: 'task' | 'conversation' | 'spawn';
-}): HappyClawOwnerProfileProjection | undefined {
+}): PulseOpsOwnerProfileProjection | undefined {
   if (
-    !isHappyClawBootstrapTurn({
+    !isPulseOpsBootstrapTurn({
       turnId: input.turnId,
       isHome: input.group.is_home === true,
       isDefaultProfile: input.profile?.is_default === true,
@@ -2815,18 +2815,18 @@ function resolveHappyClawOwnerProfileForTurn(input: {
   );
   if (!workspaceJid) return undefined;
   try {
-    return getHappyClawOwnerProfileProjection(workspaceJid);
+    return getPulseOpsOwnerProfileProjection(workspaceJid);
   } catch {
     return undefined;
   }
 }
 
-function isHappyClawOwnerProfileRuntimeEligible(input: {
+function isPulseOpsOwnerProfileRuntimeEligible(input: {
   group: RegisteredGroup;
   profile: AgentProfile | undefined;
   runtimeAgentKind: 'task' | 'conversation' | 'spawn';
 }): boolean {
-  return isHappyClawOwnerProfileRuntimeStructurallyEligible({
+  return isPulseOpsOwnerProfileRuntimeStructurallyEligible({
     isHome: input.group.is_home === true,
     isDefaultProfile: input.profile?.is_default === true,
     runtimeAgentKind: input.runtimeAgentKind,
@@ -3876,9 +3876,9 @@ const CHANNEL_RETRY_WAIT_TURN_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const CHANNEL_MANUAL_RECONCILIATION_NOTICE =
   '刚才的回复可能没有完整送达。为避免重复消息，系统未自动重发；如内容不完整，重新发送问题即可。';
 const CHANNEL_DEFINITIVE_REJECTION_NOTICE =
-  '刚才的回复未能送达当前渠道，完整内容已保存在 HappyClaw Web。你可以前往 Web 查看，或稍后重新发送问题。';
+  '刚才的回复未能送达当前渠道，完整内容已保存在 PulseOps Web。你可以前往 Web 查看，或稍后重新发送问题。';
 const CHANNEL_PARTIAL_REJECTION_NOTICE =
-  '刚才的回复仅部分送达当前渠道，完整内容已保存在 HappyClaw Web。为避免重复消息，系统未自动重发。';
+  '刚才的回复仅部分送达当前渠道，完整内容已保存在 PulseOps Web。为避免重复消息，系统未自动重发。';
 
 /**
  * Surface a crash-after-delivery fence to the exact native route. The notice
@@ -5475,7 +5475,7 @@ function handleUnbindCommand(chatJid: string): string {
   if (!unbindImGroup(chatJid, 'IM slash command unbind')) {
     return '解绑失败，请稍后重试。';
   }
-  return '已解绑。后续消息不会触发回复，请在 HappyClaw 中重新绑定后使用。';
+  return '已解绑。后续消息不会触发回复，请在 PulseOps 中重新绑定后使用。';
 }
 
 function isAdminHostOnlyOwner(ownerId: string | null | undefined): boolean {
@@ -7150,7 +7150,7 @@ export function collectMessageImages(
   return images;
 }
 
-/** A paired/registered direct chat is already bound to one HappyClaw user.
+/** A paired/registered direct chat is already bound to one PulseOps user.
  * Learn that chat's provider-native owner identity from its first durable human
  * message so natural-language owner workflows do not require a bootstrap slash
  * command. Group chats remain explicit-claim only. */
@@ -8135,7 +8135,7 @@ function startIpcWatcher(): void {
                             channelRejectionAgentGuidance(rejectionDetail);
                         } else if (!messageDelivered && partialFailure) {
                           messageDeliveryUncertain = true;
-                          messageDeliveryError = `Message delivery is partial: ${partialFailure.deliveredOutputs}/${partialFailure.totalOutputs} physical outputs were acknowledged before the tail was fenced as ${partialFailure.status}. Do not retry; the complete answer remains available in HappyClaw Web.`;
+                          messageDeliveryError = `Message delivery is partial: ${partialFailure.deliveredOutputs}/${partialFailure.totalOutputs} physical outputs were acknowledged before the tail was fenced as ${partialFailure.status}. Do not retry; the complete answer remains available in PulseOps Web.`;
                         }
                       }
                     }
@@ -9259,11 +9259,11 @@ async function processTaskIpc(
     timestamp?: string;
     runnerInstanceId?: string;
     mutationSignature?: string;
-    // Dedicated built-in HappyClaw Owner Profile facade.
+    // Dedicated built-in PulseOps Owner Profile facade.
     preferredAddress?: string;
     expectedOnboardingRevision?: number;
     leaseToken?: number;
-    // For the main HappyClaw's conversational Agent Builder
+    // For the main PulseOps's conversational Agent Builder
     profileId?: string;
     draftId?: string;
     expectedDraftRevision?: number;
@@ -9527,7 +9527,7 @@ async function processTaskIpc(
                 'Owner Profile runner identity is required',
               );
             }
-            const claim = claimHappyClawOwnerIntroduction({
+            const claim = claimPulseOpsOwnerIntroduction({
               workspaceJid: principal.workspaceJid,
               leaseOwner: data.runnerInstanceId,
             });
@@ -9562,7 +9562,7 @@ async function processTaskIpc(
                 'Owner Profile lease token is required',
               );
             }
-            result = acknowledgeHappyClawOwnerIntroduction({
+            result = acknowledgePulseOpsOwnerIntroduction({
               workspaceJid: principal.workspaceJid,
               leaseOwner: data.runnerInstanceId,
               leaseToken: data.leaseToken!,
@@ -9570,7 +9570,7 @@ async function processTaskIpc(
             break;
           }
           case 'set':
-            result = setHappyClawOwnerPreferredAddress({
+            result = setPulseOpsOwnerPreferredAddress({
               workspaceJid: principal.workspaceJid,
               preferredAddress: data.preferredAddress ?? '',
               expectedRevision: data.expectedRevision,
@@ -9585,7 +9585,7 @@ async function processTaskIpc(
                 'expectedRevision is required to clear the Owner Profile',
               );
             }
-            result = clearHappyClawOwnerPreferredAddress({
+            result = clearPulseOpsOwnerPreferredAddress({
               workspaceJid: principal.workspaceJid,
               expectedRevision: data.expectedRevision!,
               idempotencyKey: data.idempotencyKey,
@@ -9593,7 +9593,7 @@ async function processTaskIpc(
             });
             break;
           case 'skip':
-            result = skipHappyClawOwnerIntroduction({
+            result = skipPulseOpsOwnerIntroduction({
               workspaceJid: principal.workspaceJid,
               expectedOnboardingRevision: data.expectedOnboardingRevision,
               context: principal.context,
@@ -9626,7 +9626,7 @@ async function processTaskIpc(
             code,
             error: error instanceof Error ? error.message : String(error),
           },
-          'HappyClaw Owner Profile IPC request failed',
+          'PulseOps Owner Profile IPC request failed',
         );
       }
       break;
@@ -11109,7 +11109,7 @@ async function processAgentConversation(
   );
 
   // Get or use agent-specific session before building the prompt. If the
-  // session was cleared by provider/model switching, inject persisted HappyClaw
+  // session was cleared by provider/model switching, inject persisted PulseOps
   // chat history so the new model does not mistake the fresh SDK session for
   // an empty conversation.
   const sessionId = getSession(effectiveGroup.folder, agentId) || undefined;
@@ -11143,10 +11143,10 @@ async function processAgentConversation(
         limit: 30,
         maxMessageLength: 700,
         intro: resetForAgentProfile
-          ? '检测到当前 workspace 切换或更新了顶层 AgentProfile 身份提示词，当前 agent 的底层模型 session 已重置。以下是 HappyClaw 保存的最近对话记录，供你在新身份下延续上下文。'
+          ? '检测到当前 workspace 切换或更新了顶层 AgentProfile 身份提示词，当前 agent 的底层模型 session 已重置。以下是 PulseOps 保存的最近对话记录，供你在新身份下延续上下文。'
           : capabilityReset
             ? CAPABILITY_CHANGE_HISTORY_INTRO
-            : '检测到当前 agent 的底层模型 session 是新的（可能因为切换 provider/model 或恢复失败）。以下是 HappyClaw 保存的最近对话记录，供你延续上下文。',
+            : '检测到当前 agent 的底层模型 session 是新的（可能因为切换 provider/model 或恢复失败）。以下是 PulseOps 保存的最近对话记录，供你延续上下文。',
       },
     );
     if (historyContext) {
@@ -14077,14 +14077,14 @@ async function processAgentConversation(
       });
     };
 
-    const happyClawOwnerProfile = resolveHappyClawOwnerProfileForTurn({
+    const happyClawOwnerProfile = resolvePulseOpsOwnerProfileForTurn({
       group: effectiveGroup,
       profile: agentProfile,
       turnId: lastProcessed.id,
       runtimeAgentId: agentId,
       runtimeAgentKind: agent.kind,
     });
-    const happyClawOwnerProfileEnabled = isHappyClawOwnerProfileRuntimeEligible(
+    const happyClawOwnerProfileEnabled = isPulseOpsOwnerProfileRuntimeEligible(
       {
         group: effectiveGroup,
         profile: agentProfile,
@@ -15250,7 +15250,7 @@ async function ensureDockerRunning(): Promise<void> {
  * are re-routed to the new user's home folder on first message receipt.
  *
  * In multi-bot setups where the same human talks to multiple bots (each owned
- * by a different HappyClaw user), re-routing is skipped — the chat stays with
+ * by a different PulseOps user), re-routing is skipped — the chat stays with
  * its original owner as long as that owner still has an active connection on
  * the **same channel type** (feishu/telegram/qq/wechat).
  */
@@ -15314,7 +15314,7 @@ function buildOnNewChat(
       //   1. Credential transfer: admin disables their Feishu channel, member
       //      enables the same appId → re-route chat to the new user.
       //   2. Multi-bot setup: same human talks to multiple bots, each owned by
-      //      a different HappyClaw user → do NOT re-route.
+      //      a different PulseOps user → do NOT re-route.
       //
       // Distinguish by checking whether the previous owner still has an active
       // connection on the SAME channel type.  Checking all channel types would
@@ -15349,7 +15349,7 @@ function buildOnNewChat(
             folder: homeFolder,
             created_by: userId,
             executionMode: isAdminHostOnlyOwner(userId) ? 'host' : 'container',
-            // Trust belongs to the previous HappyClaw user's channel binding,
+            // Trust belongs to the previous PulseOps user's channel binding,
             // not merely to the provider chat id. Never carry that trust into
             // the new user's Agent Builder authorization boundary.
             owner_claim_source: 'transfer_reset' as const,
@@ -18222,7 +18222,7 @@ async function main(): Promise<void> {
   try {
     backfillSystemMainModelBinding();
   } catch (err) {
-    logger.warn({ err }, 'Failed to move the default model onto HappyClaw');
+    logger.warn({ err }, 'Failed to move the default model onto PulseOps');
   }
 
   const migratedAutoCompactProfiles = migrateAgentProfileAutoCompactWindow(
@@ -18282,7 +18282,7 @@ async function main(): Promise<void> {
     logger.warn({ err }, 'Failed to prune orphan turn traces at startup');
   }
 
-  // A session whose worktree vanished while HappyClaw was down must fail
+  // A session whose worktree vanished while PulseOps was down must fail
   // clearly on its next run instead of running in the main checkout.
   try {
     reconcileSessionWorktrees();

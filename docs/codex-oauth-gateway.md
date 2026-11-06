@@ -1,7 +1,7 @@
 # ChatGPT/Codex subscriptions: built-in and external gateways
 
-HappyClaw includes a ChatGPT/Codex OAuth gateway. Use the built-in login for
-an account attached to a HappyClaw provider. An external gateway such as
+PulseOps includes a ChatGPT/Codex OAuth gateway. Use the built-in login for
+an account attached to a PulseOps provider. An external gateway such as
 CLIProxyAPI remains an alternative when you need a separately managed
 account pool. These are two independent integrations: the built-in flow does
 not read or update the host's Codex CLI login file.
@@ -16,15 +16,15 @@ not read or update the host's Codex CLI login file.
    with the account whose Codex access you want to use. Access depends on the
    account's current subscription and OpenAI's availability rules.
 3. The OAuth redirect goes to `http://localhost:1455/auth/callback`. This is
-   expected; HappyClaw does not start a callback listener on your browser's
+   expected; PulseOps does not start a callback listener on your browser's
    computer. Copy the complete callback URL from the address bar and paste it
-   into HappyClaw's callback field. The URL contains the one-time code and
+   into PulseOps's callback field. The URL contains the one-time code and
    state; keep it private and finish the flow within ten minutes.
 4. Enable the provider, choose its target Codex model and reasoning effort,
    then select it for the workspace. Use the available model catalog rather
    than a model name copied from an old example.
 
-HappyClaw exchanges the code with PKCE, reads the official namespaced JWT
+PulseOps exchanges the code with PKCE, reads the official namespaced JWT
 identity claims (including `chatgpt_account_is_fedramp`), and saves OAuth
 secrets encrypted in its provider secret store. A callback URL from
 `localhost:1455` or `127.0.0.1:1455` is accepted; an `error=` returned by the
@@ -42,7 +42,7 @@ finish their current query and restart. Logging in with a different ChatGPT
 account, or converting a non-ChatGPT provider, also stops runners and drops
 the provider's saved sessions, because encrypted reasoning from one account
 cannot be replayed to another. When a different account replaces a login, or
-a ChatGPT provider is deleted, HappyClaw revokes the old refresh token in the
+a ChatGPT provider is deleted, PulseOps revokes the old refresh token in the
 background (`POST https://auth.openai.com/oauth/revoke`, the official logout
 request). The revocation is best effort: the login or deletion never waits
 for it or fails because of it. A converted provider gets the catalog default
@@ -59,7 +59,7 @@ requests stay on the provider's model at low effort.
 
 - The model reaches the runner as `ANTHROPIC_MODEL` (the OPUS, SONNET and
   SUBAGENT tiers follow it) when the runner starts. Changing it starts a new
-  SDK session with the latest messages replayed from HappyClaw's history,
+  SDK session with the latest messages replayed from PulseOps's history,
   like switching provider does, because encrypted reasoning only verifies for
   the model that issued it. The gateway's `invalid_encrypted_content` recovery
   works within one request only; without the new session every request after
@@ -86,7 +86,7 @@ requests stay on the provider's model at low effort.
 Claude Agent SDK (host or agent container)
        | Anthropic Messages + runner-scoped gateway token
        v
-HappyClaw /gateway/chatgpt/v1/messages (loopback / private source only)
+PulseOps /gateway/chatgpt/v1/messages (loopback / private source only)
        | OAuth access token + selected ChatGPT account header
        v
 ChatGPT / Codex Responses backend
@@ -103,7 +103,7 @@ internet even though it shares the web port. The upstream OAuth secrets never
 leave the host service. An agent can read its own runner's token while that
 runner lives; that is the remaining exposure.
 
-HappyClaw derives the local gateway address for host and container execution
+PulseOps derives the local gateway address for host and container execution
 automatically and keeps that hop out of any configured HTTP proxy. The saved
 internal URL is a routing placeholder, not an external service to deploy or
 expose separately.
@@ -139,7 +139,7 @@ and `User-Agent`.
 - Interleaved upstream tool arguments are buffered into serial Anthropic
   content blocks. Delta/done snapshots do not duplicate arguments; final
   output snapshots fill missing content. Native encrypted reasoning signatures
-  pass through `thinking.signature`; previous HappyClaw envelopes remain
+  pass through `thinking.signature`; previous PulseOps envelopes remain
   readable. Both streaming and nonstream responses use the same converter.
 - Cached and cache-write Responses input is subtracted from Anthropic
   `input_tokens` and reported separately as `cache_read_input_tokens` and
@@ -147,7 +147,7 @@ and `User-Agent`.
   output usage. Cache and reasoning details must not be counted twice.
 - Source checks and authentication run before body buffering or
   rate-counter allocation. Each runner token has 120 requests per 60-second
-  window; a limited request gets 429 with `Retry-After`. HappyClaw treats its
+  window; a limited request gets 429 with `Retry-After`. PulseOps treats its
   own throttle as transient, so it never quarantines the provider. Rate state
   has a hard capacity of 1,024 active windows; a full table rejects new
   windows until expiry.
@@ -246,14 +246,14 @@ Requests to the Codex backend mirror the official Codex CLI 0.162.1
 - Identity: `originator: codex-tui`, `version: 0.162.1` on every request, and
   the official User-Agent format
   `codex-tui/0.162.1 (<OS> <version>; <arch>) <terminal> (codex-tui; 0.162.1)`
-  describing the host that runs HappyClaw (a service without a terminal
+  describing the host that runs PulseOps (a service without a terminal
   reports `unknown`). The authorization URL uses the same originator.
 - Auth: `ChatGPT-Account-ID`, and `X-OpenAI-Fedramp: true` for FedRAMP
   accounts.
 - Session and turn: the Claude Code session is the official session and the
   session plus Claude Code agent is the thread. Requests send `session-id`,
   `thread-id`, `x-client-request-id` (the thread), `x-codex-window-id`
-  (`{thread}:0`; HappyClaw does not track Claude Code's local compaction
+  (`{thread}:0`; PulseOps does not track Claude Code's local compaction
   windows) and `x-codex-turn-metadata`, plus the body's `client_metadata`
   with a per-install `installation_id` (`data/config/codex-installation-id`),
   session, thread, window and turn ids. `prompt_cache_key` is always sent:
@@ -285,7 +285,7 @@ Requests to the Codex backend mirror the official Codex CLI 0.162.1
   such as one with hosted web search, omits it even on a Lite model.
 - `x-codex-beta-features` is omitted. The official default list is only
   `remote_compaction_v2`, which advertises remote compaction and `compaction`
-  output items; Claude Code compacts locally, so HappyClaw cannot honor it.
+  output items; Claude Code compacts locally, so PulseOps cannot honor it.
 - Request bodies are compressed with zstd (`Content-Encoding: zstd`, level 3)
   like the official ChatGPT-auth default when the Node runtime provides
   `zlib.zstdCompressSync`; otherwise they are sent uncompressed.
@@ -318,9 +318,9 @@ that an account can access the live backend.
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Login callback rejected         | Finish the same user's flow within ten minutes and paste its complete callback URL; do not reuse a consumed code.     |
 | Login says to start over        | The token request may have reached OpenAI (timeout, HTTP error, dropped connection); start a new ChatGPT login.       |
-| 401 or authentication error     | The provider page shows "needs re-login" when the refresh grant was rejected; use its HappyClaw re-login action.      |
-| 403 from HappyClaw gateway      | The request came through a reverse proxy or from a non-local address; runners reach the gateway directly.             |
-| 429 from HappyClaw gateway      | One runner exceeded its 120 requests per minute; it retries after `Retry-After`. Other runners keep their own budget. |
+| 401 or authentication error     | The provider page shows "needs re-login" when the refresh grant was rejected; use its PulseOps re-login action.      |
+| 403 from PulseOps gateway      | The request came through a reverse proxy or from a non-local address; runners reach the gateway directly.             |
+| 429 from PulseOps gateway      | One runner exceeded its 120 requests per minute; it retries after `Retry-After`. Other runners keep their own budget. |
 | 429 usage limit                 | The ChatGPT plan's Codex usage window is exhausted; the message names the reset time and the pool waits for it.       |
 | 413                             | Reduce the request below the 32 MiB envelope, including image base64 overhead.                                        |
 | 400 invalid messages request    | The message names the field path that does not match a supported message/tool shape.                                  |
@@ -329,19 +329,19 @@ that an account can access the live backend.
 
 ## External CLIProxyAPI gateway (optional)
 
-The following deployment is separate from HappyClaw's built-in OAuth login.
-Here CLIProxyAPI owns account credentials, refresh and pooling; HappyClaw
+The following deployment is separate from PulseOps's built-in OAuth login.
+Here CLIProxyAPI owns account credentials, refresh and pooling; PulseOps
 uses it as an ordinary third-party Anthropic-compatible provider.
 
 ### How the external gateway works
 
-HappyClaw's provider system is Anthropic-native. The gateway sits between
-HappyClaw and OpenAI: it owns the Codex OAuth login and token refresh, and
+PulseOps's provider system is Anthropic-native. The gateway sits between
+PulseOps and OpenAI: it owns the Codex OAuth login and token refresh, and
 exposes an Anthropic-compatible `/v1/messages` endpoint (including tool use
 and SSE streaming) that the Claude Agent SDK can consume directly.
 
 ```text
-HappyClaw (Claude Agent SDK)
+PulseOps (Claude Agent SDK)
         │  Anthropic /v1/messages
         ▼
 OAuth gateway (CLIProxyAPI, local Docker)
@@ -353,7 +353,7 @@ ChatGPT / Codex backend
 Two properties make this setup practical:
 
 - The gateway translates between the Anthropic wire format and the Codex
-  backend, so HappyClaw sees an ordinary third-party Anthropic-compatible
+  backend, so PulseOps sees an ordinary third-party Anthropic-compatible
   provider.
 - OAuth access tokens are short-lived; the gateway refreshes them
   automatically using the stored refresh token and rewrites the credential
@@ -366,7 +366,7 @@ Two properties make this setup practical:
   login** for Codex on the account you plan to use. This is an
   account-level switch and must be enabled before the device-code flow
   below will succeed.
-- Docker on the HappyClaw host.
+- Docker on the PulseOps host.
 
 ### 1. Deploy the gateway
 
@@ -391,7 +391,7 @@ debug: false
 ```
 
 Generate the key yourself, for example with `openssl rand -hex 24`. This
-key is what HappyClaw will present as the provider API key — pick a fresh
+key is what PulseOps will present as the provider API key — pick a fresh
 random value per gateway instance.
 
 Start the container:
@@ -409,9 +409,9 @@ Port binding notes (the `172.17.0.1` example is for Linux Docker):
 
 - `172.17.0.1` is the Docker bridge gateway. Binding there keeps the
   service unreachable from the public internet while still reachable from
-  other containers — required when HappyClaw runs Agents in Docker
+  other containers — required when PulseOps runs Agents in Docker
   (container execution mode) and reaches the host through the bridge.
-- If HappyClaw runs Agents directly on the host (host execution mode),
+- If PulseOps runs Agents directly on the host (host execution mode),
   bind to `127.0.0.1` instead.
 
 ### 2. Log in with a device code
@@ -452,7 +452,7 @@ pick one from `/v1/models` (for example `gpt-5.6-sol`). Tool use and SSE
 streaming on `/v1/messages` work as with any Anthropic-compatible
 endpoint.
 
-### 4. Add the provider in HappyClaw
+### 4. Add the provider in PulseOps
 
 In the web UI, go to **Provider setup** (`/setup/providers`), create a
 third-party provider, and fill in:
@@ -464,7 +464,7 @@ third-party provider, and fill in:
 | Model name | A model from `/v1/models`, e.g. `gpt-5.6-sol`               |
 
 Enable the provider and switch the target workspace to it. No other
-HappyClaw configuration changes are needed.
+PulseOps configuration changes are needed.
 
 ### 5. Multiple accounts
 
@@ -476,7 +476,7 @@ Two layouts are supported:
 - **One instance per account.** Run a second container with its own
   `auth-dir`, config file, API key and host port (for example `8318`).
   This gives hard account isolation — useful when different workspaces
-  must be pinned to different accounts, since each HappyClaw provider
+  must be pinned to different accounts, since each PulseOps provider
   points at exactly one instance.
 
 Both layouts refresh tokens independently; keeping the container running
@@ -501,6 +501,6 @@ Both layouts refresh tokens independently; keeping the container running
 | Symptom                                                 | Likely cause / fix                                                                                      |
 | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | Device login rejected, asks to enable device code login | Enable the account-level switch (see Prerequisites) on the exact account being signed in, then retry    |
-| HappyClaw suddenly reports 401/403                      | The stored refresh token was revoked — re-run device-code login; verify with the curl checks in step 3  |
+| PulseOps suddenly reports 401/403                      | The stored refresh token was revoked — re-run device-code login; verify with the curl checks in step 3  |
 | Model list works but requests fail                      | Confirm the model name exists in `/v1/models` for your account type                                     |
-| Gateway unreachable from HappyClaw containers           | Check the port binding: containers reach the host via the Docker bridge (`172.17.0.1`), not `127.0.0.1` |
+| Gateway unreachable from PulseOps containers           | Check the port binding: containers reach the host via the Docker bridge (`172.17.0.1`), not `127.0.0.1` |

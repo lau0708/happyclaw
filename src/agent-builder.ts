@@ -284,7 +284,7 @@ export function prepareAgentBuilderDraft(
     throw new Error('Target Agent not found');
   if (target?.is_default) {
     throw new Error(
-      'The main HappyClaw cannot edit itself through Agent Builder',
+      'The main PulseOps cannot edit itself through Agent Builder',
     );
   }
   // Tell the model now rather than at publication (which checks again).
@@ -481,7 +481,7 @@ export async function publishAgentBuilderDraft(
         }
         if (target?.is_default) {
           throw new Error(
-            'The main HappyClaw cannot edit itself through Agent Builder',
+            'The main PulseOps cannot edit itself through Agent Builder',
           );
         }
         if (target && target.version !== currentDraft.base_agent_version) {

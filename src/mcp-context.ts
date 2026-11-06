@@ -70,9 +70,9 @@ export function loadHostClaudeMcpServers(
 }
 
 /**
- * Claude-native MCP is project/host context, not a HappyClaw-managed user MCP
+ * Claude-native MCP is project/host context, not a PulseOps-managed user MCP
  * grant.  Materialize it explicitly so strict Agent MCP filtering cannot hide
- * it (and cannot accidentally re-enable unselected HappyClaw user servers).
+ * it (and cannot accidentally re-enable unselected PulseOps user servers).
  * Later/more-local sources win, matching Claude settings precedence.
  */
 export function loadClaudeContextMcpServers(options: {
@@ -104,7 +104,7 @@ export function loadClaudeContextMcpServers(options: {
   };
 }
 
-/** HappyClaw-managed MCP is an additive final layer. */
+/** PulseOps-managed MCP is an additive final layer. */
 export function mergeMcpServerLayers(
   contextServers: McpServerMap,
   managedUserServers: McpServerMap,

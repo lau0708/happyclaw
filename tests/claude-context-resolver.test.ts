@@ -134,7 +134,7 @@ describe('ClaudeContextResolver', () => {
     );
   });
 
-  test('the native layer keeps nothing HappyClaw owns', () => {
+  test('the native layer keeps nothing PulseOps owns', () => {
     const external = path.join(tmp, 'external-claude');
     writeFile(
       path.join(external, 'settings.json'),

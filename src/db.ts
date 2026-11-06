@@ -73,7 +73,7 @@ import {
   promptModeFromLegacyPreset,
 } from './agent-profile-prompts.js';
 import {
-  bindHappyClawPlatformIdentityHash,
+  bindPulseOpsPlatformIdentityHash,
   canOwnerUseHostResources,
   legacyHostSkillPolicy,
   resolveEffectiveAgentRuntimePolicy,
@@ -96,7 +96,7 @@ import {
   bindWorkspaceMemoryDatabase,
   createWorkspaceMemorySchema,
   deleteWorkspaceMemoryData,
-  enforceHappyClawOwnerAddressCanonicalInvariant,
+  enforcePulseOpsOwnerAddressCanonicalInvariant,
   resetWorkspaceMemoryData,
 } from './memory-store.js';
 import {
@@ -1030,7 +1030,7 @@ export function initDatabase(
 
   initSessionWorktreeStore(db);
 
-  // v65 -> v66: HappyClaw Owner Profile remains a reserved Workspace Memory
+  // v65 -> v66: PulseOps Owner Profile remains a reserved Workspace Memory
   // item; this table tracks only its one-shot onboarding lifecycle. Duplicate
   // legacy items must be reconciled before the reserved-key unique index is
   // installed.
@@ -1044,7 +1044,7 @@ export function initDatabase(
   } else {
     // Fresh and already-v66 databases need the structural invariant, but must
     // not re-run legacy sentinel inference on every normal restart.
-    enforceHappyClawOwnerAddressCanonicalInvariant();
+    enforcePulseOpsOwnerAddressCanonicalInvariant();
   }
 
   // Sub-agents table for multi-agent parallel execution
@@ -1553,7 +1553,7 @@ export function initDatabase(
   ensureColumn('registered_groups', 'owner_im_id', 'TEXT');
   ensureColumn('registered_groups', 'owner_claim_source', 'TEXT');
   // Existing owner anchors predate provenance and may include credentials that
-  // were transferred between HappyClaw users. Keep them usable for legacy
+  // were transferred between PulseOps users. Keep them usable for legacy
   // owner-only commands, but never let an ordinary DM silently turn them into
   // Agent Builder trust; the user must re-pair or configure the owner in Web.
   prepareCached(`UPDATE registered_groups
@@ -2172,13 +2172,13 @@ export function initDatabase(
 
   // v39 → v40: Track the top-level AgentProfile identity used by each Claude
   // session. When a profile prompt changes, callers can detect the hash mismatch
-  // and start a fresh SDK session without losing HappyClaw message history.
+  // and start a fresh SDK session without losing PulseOps message history.
   ensureColumn('sessions', 'agent_profile_id', 'TEXT');
   ensureColumn('sessions', 'identity_hash', 'TEXT');
   ensureColumn('sessions', 'agent_profile_version', 'INTEGER');
 
   // v40 → v41: Allow each AgentProfile to opt out of the Claude Code
-  // built-in system prompt preset and use only HappyClaw/Agent prompts.
+  // built-in system prompt preset and use only PulseOps/Agent prompts.
   ensureColumn(
     'agent_profiles',
     'include_claude_preset',
@@ -2193,7 +2193,7 @@ export function initDatabase(
     "TEXT NOT NULL DEFAULT '{}'",
   );
   // v46 → v47: profile-level avatar overrides. Null means inherit the
-  // globally configured main HappyClaw avatar.
+  // globally configured main PulseOps avatar.
   ensureColumn('agent_profiles', 'avatar_emoji', 'TEXT');
   ensureColumn('agent_profiles', 'avatar_color', 'TEXT');
   ensureColumn('agent_profiles', 'avatar_url', 'TEXT');
@@ -2523,7 +2523,7 @@ export function initDatabase(
   // rows predate event IDs, so each row becomes one explicitly marked legacy
   // event; we do not guess which old model rows belonged to the same run.
   // v55 -> v56: Kaboo-compatible reasoning is a fifth, independently visible
-  // token class. Historical HappyClaw rows kept Claude thinking folded into
+  // token class. Historical PulseOps rows kept Claude thinking folded into
   // output, so they remain reasoning=0 rather than being guessed retroactively.
   ensureColumn(
     'usage_records',
@@ -4638,7 +4638,7 @@ function queryUsageAttribution(
       ? `COALESCE(
           (SELECT a.name FROM agents a WHERE a.id = r.agent_id LIMIT 1),
           (SELECT ap.name FROM agent_profiles ap WHERE ap.id = r.agent_id LIMIT 1),
-          CAST(r.agent_id AS TEXT), 'HappyClaw')`
+          CAST(r.agent_id AS TEXT), 'PulseOps')`
       : column === 'group_folder'
         ? `COALESCE(
             (SELECT rg.name FROM registered_groups rg
@@ -6264,14 +6264,14 @@ export function computeEffectiveAgentProfileIdentityHash(
     profile.name,
   );
   return profile.is_default
-    ? bindHappyClawPlatformIdentityHash(identityHash)
+    ? bindPulseOpsPlatformIdentityHash(identityHash)
     : identityHash;
 }
 
 let readMainAgentContextSettings: (() => MainAgentContextSettings) | undefined;
 
 /**
- * The main HappyClaw's context comes from system settings. runtime-config
+ * The main PulseOps's context comes from system settings. runtime-config
  * reads DATA_DIR as it loads, so db.ts does not import it; the module that
  * resolves Agent runtime policy registers the reader when it loads, before
  * the server calls initDatabase.
@@ -6299,14 +6299,14 @@ export function resolveAgentProfileHostAccess(
 ): AgentProfileHostAccess {
   const access = knownAgentProfileHostAccess(profile);
   if (!access) {
-    throw new Error('Main HappyClaw context settings reader is not registered');
+    throw new Error('Main PulseOps context settings reader is not registered');
   }
   return access;
 }
 
 /**
  * The host Skill policy a profile saved without one has been running with,
- * or undefined while the main HappyClaw's settings cannot be read (a
+ * or undefined while the main PulseOps's settings cannot be read (a
  * maintenance tool); the next server start pins it then.
  */
 function effectiveLegacyHostSkillPolicy(
@@ -6326,8 +6326,8 @@ function effectiveLegacyHostSkillPolicy(
 /**
  * Pin `skills.host` on every active profile saved without one. The runner
  * resolved a missing value from the effective context source (the main
- * HappyClaw's comes from system settings) while the Web form read the
- * persisted one, so saving only the main HappyClaw's model silently turned
+ * PulseOps's comes from system settings) while the Web form read the
+ * persisted one, so saving only the main PulseOps's model silently turned
  * its host Skills off. The pinned value is what the runner resolved, so runs
  * behave as before; SDK sessions recorded under the old identity hash move to
  * the new one and the revision stays, so no conversation restarts.
@@ -6392,7 +6392,7 @@ export function pinAgentProfileHostSkillPolicies(): number {
   if (pinnedCount < pending.length) {
     logger.warn(
       { deferred: pending.length - pinnedCount },
-      'Main HappyClaw settings unavailable; host Skill policies are pinned at the next server start',
+      'Main PulseOps settings unavailable; host Skill policies are pinned at the next server start',
     );
   }
   if (pinnedCount > 0) {
@@ -6677,7 +6677,7 @@ function storedModelName(model: string | null | undefined): string | null {
   return (model && splitOneMillionSuffix(model).model) || null;
 }
 
-const DEFAULT_AGENT_PROFILE_NAME = 'HappyClaw';
+const DEFAULT_AGENT_PROFILE_NAME = 'PulseOps';
 const LEGACY_DEFAULT_AGENT_PROFILE_NAME = 'Default Agent';
 
 export function getOrCreateDefaultAgentProfile(userId: string): AgentProfile {
@@ -7049,7 +7049,7 @@ export class AgentProfileNameTakenError extends Error {
     readonly conflict: { id: string | null; name: string },
   ) {
     super(
-      `Agent name "${requestedName}" is already used by the Agent "${conflict.name}"; names compare case-insensitively after Unicode normalization and the built-in HappyClaw counts. Ask the user for a different name.`,
+      `Agent name "${requestedName}" is already used by the Agent "${conflict.name}"; names compare case-insensitively after Unicode normalization and the built-in PulseOps counts. Ask the user for a different name.`,
     );
     this.name = 'AgentProfileNameTakenError';
   }
@@ -7070,7 +7070,7 @@ function assertAgentProfileNameAvailable(
 }
 
 /**
- * The active profile of `ownerUserId` (the built-in HappyClaw included)
+ * The active profile of `ownerUserId` (the built-in PulseOps included)
  * whose name collides with `name`, other than `excludeProfileId`.
  */
 export function findAgentProfileNameConflict(
@@ -7120,7 +7120,7 @@ export function assignWorkspaceAgentProfile(
       const defaultProfile = getOrCreateDefaultAgentProfile(home.created_by);
       if (profileId !== defaultProfile.id) {
         throw new Error(
-          'Home Workspace must remain bound to the built-in HappyClaw Agent',
+          'Home Workspace must remain bound to the built-in PulseOps Agent',
         );
       }
     }
@@ -7370,7 +7370,7 @@ export function peekWorkspaceOwnerMainAgentProfile(
 }
 
 /**
- * The system main HappyClaw: the main Agent of the earliest-created admin. Every Agent that binds no connection, directly or through its
+ * The system main PulseOps: the main Agent of the earliest-created admin. Every Agent that binds no connection, directly or through its
  * owner's main Agent, falls back to its binding.
  */
 export function peekSystemMainAgentProfile(): AgentProfile | undefined {

@@ -61,7 +61,7 @@ const reply = (over: Partial<Message> = {}): Message => ({
   id: 'm1',
   chat_jid: SESSION_JID,
   sender: 'happyclaw-agent',
-  sender_name: 'HappyClaw',
+  sender_name: 'PulseOps',
   content: '最终答案在这里。',
   timestamp: '2026-10-10T00:00:00.000Z',
   is_from_me: true,

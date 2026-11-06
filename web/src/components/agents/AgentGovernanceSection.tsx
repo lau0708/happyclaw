@@ -144,7 +144,7 @@ export function AgentGovernanceSection({
                       </div>
                     )}
                     {workspace.is_home ? (
-                      <Badge variant="outline">Home · 固定归属 HappyClaw</Badge>
+                      <Badge variant="outline">Home · 固定归属 PulseOps</Badge>
                     ) : (
                       <div className="flex items-center gap-2">
                         <Select

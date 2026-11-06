@@ -1,7 +1,7 @@
 /**
  * Source: cindy apps/desktop/src/renderer/components/new-chat/__tests__/composerRenderGate.test.ts
  * (commit 7be4c57d7b, Apache-2.0; see THIRD_PARTY_NOTICES.md).
- * Modified for HappyClaw: adapted against cindy 7be4c57d7b and runs on
+ * Modified for PulseOps: adapted against cindy 7be4c57d7b and runs on
  * Tiptap 3.30.6.
  * Dropped: the `$` slash sigil fields and assertions, and the test-only
  * defaults export.

@@ -1,4 +1,4 @@
-# HappyClaw 权限矩阵
+# PulseOps 权限矩阵
 
 本文档描述当前授权边界。具体中间件和条件分支以代码为准：
 
@@ -68,7 +68,7 @@ token（Runner/查询退出即吊销），并拒绝带 `Forwarded`、`X-Forwarde
 | `/api/skills/*`                                     | Login，仅本人用户 Skills                      |
 | 用户级 `/api/mcp-servers/*`                         | Login，仅本人配置                             |
 | Workspace Memory v2                                 | Login + Workspace owner ACL，见 4.5           |
-| HappyClaw Owner Profile                             | Home actual owner + runtime exact-turn gate   |
+| PulseOps Owner Profile                             | Home actual owner + runtime exact-turn gate   |
 | `/api/usage/*`                                      | Login；普通用户只见本人，管理视图再按角色过滤 |
 | `/api/billing/my/*`                                 | Login，仅本人                                 |
 
@@ -102,7 +102,7 @@ Agent 不含宿主机上下文与宿主机 Skills。渠道账号删除、登出�
 - 打开 Web 终端前的资源检查
 
 Home 的 AgentProfile 归属也是系统不变量：只能绑定同一 owner 的 `is_default`
-HappyClaw。路由在进入 Runtime quiesce 前拒绝迁移，数据库绑定函数再次校验；启动
+PulseOps。路由在进入 Runtime quiesce 前拒绝迁移，数据库绑定函数再次校验；启动
 backfill 会修复旧数据中的错误 Home 绑定。
 
 Host Workspace 在 Access 之外还要求 admin。
@@ -225,18 +225,18 @@ owner 输入的判定在宿主：Web 输入的 sender 等于 owner 用户 id；I
 只有 owner 在 Web 确认后才生效。Sub-Agent 的只读限制由 PreToolUse hook 与主进程
 IPC broker 共同执行，不能由模型参数扩大权限。
 
-### 4.6 HappyClaw Owner Profile
+### 4.6 PulseOps Owner Profile
 
 `GET|PATCH /api/workspaces/:jid/owner-profile` 只接受当前登录用户自己的 Home
-Workspace，且目标必须绑定内置默认 HappyClaw。admin 不具有跨 owner bypass。
+Workspace，且目标必须绑定内置默认 PulseOps。admin 不具有跨 owner bypass。
 
 Runtime 的权限更严格：
 
 | 上下文                                       | 投影                | 修改                  |
 | -------------------------------------------- | ------------------- | --------------------- |
-| Home 内置 HappyClaw + actual owner turn      | 允许                | 当前 active turn 允许 |
-| Home 内置 HappyClaw + 非 owner 群成员 turn   | 拒绝                | 拒绝                  |
-| Home 内置 HappyClaw 普通 Runtime Session     | actual owner 时允许 | 当前 active turn 允许 |
+| Home 内置 PulseOps + actual owner turn      | 允许                | 当前 active turn 允许 |
+| Home 内置 PulseOps + 非 owner 群成员 turn   | 拒绝                | 拒绝                  |
+| Home 内置 PulseOps 普通 Runtime Session     | actual owner 时允许 | 当前 active turn 允许 |
 | 自定义 AgentProfile / Scheduled / Task/Spawn | 拒绝                | 拒绝                  |
 | SDK Sub-Agent                                | 拒绝                | 拒绝                  |
 

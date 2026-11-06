@@ -12,7 +12,7 @@ const mocks = vi.hoisted(() => {
     checkStatus: vi.fn(),
     appearance: {
       appName: 'Team Claw',
-      aiName: 'HappyClaw',
+      aiName: 'PulseOps',
       aiAvatarEmoji: '🐱',
       aiAvatarColor: '#0d9488',
       aiAvatarUrl: null,

@@ -23,7 +23,7 @@ vi.mock('../src/config.js', async () => ({
   STORE_DIR: tmpStoreDir,
   GROUPS_DIR: tmpGroupsDir,
   DATA_DIR: tmpDataDir,
-  ASSISTANT_NAME: 'HappyClaw Test',
+  ASSISTANT_NAME: 'PulseOps Test',
 }));
 
 vi.mock('../src/logger.js', () => ({
@@ -151,7 +151,7 @@ afterAll(() => {
 });
 
 describe('Agent names', () => {
-  test('are unique per owner after NFKC folding and case, the built-in HappyClaw included', async () => {
+  test('are unique per owner after NFKC folding and case, the built-in PulseOps included', async () => {
     const created = await call('/', {
       method: 'POST',
       body: { name: 'Reviewer' },
@@ -223,7 +223,7 @@ describe('Agent names', () => {
       db.createAgentProfile({ ownerUserId: MEMBER, name: 'GUARDED' }),
     ).toThrow(db.AgentProfileNameTakenError);
     expect(() =>
-      db.createAgentProfile({ ownerUserId: MEMBER, name: 'HappyClaw' }),
+      db.createAgentProfile({ ownerUserId: MEMBER, name: 'PulseOps' }),
     ).toThrow(db.AgentProfileNameTakenError);
     const other = db.createAgentProfile({
       ownerUserId: MEMBER,
@@ -269,7 +269,7 @@ describe('Agent names', () => {
     ).toMatchObject({ id: target.id });
     expect(
       db.findAgentProfileNameConflict(MEMBER, 'Happy\u200bClaw'),
-    ).toMatchObject({ name: 'HappyClaw' });
+    ).toMatchObject({ name: 'PulseOps' });
   });
 });
 

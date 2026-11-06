@@ -433,7 +433,7 @@ describe('channel format guidance', () => {
     );
     // The system prompt no longer depends on which channel an input came from.
     const planStart = runner.indexOf(
-      'const promptPlan = buildHappyClawPromptPlan(',
+      'const promptPlan = buildPulseOpsPromptPlan(',
     );
     const planEnd = runner.indexOf('const systemPromptAppend', planStart);
     expect(planStart).toBeGreaterThanOrEqual(0);

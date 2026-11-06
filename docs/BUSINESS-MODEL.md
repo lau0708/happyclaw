@@ -1,4 +1,4 @@
-# HappyClaw 业务模型
+# PulseOps 业务模型
 
 本文记录用户确认的业务规则，作为实现、界面与验收的依据。历史字段名、自动绑定行为和旧设计文档不能覆盖这些规则。
 
@@ -30,7 +30,7 @@ flowchart TB
     W3 --> S3["Session · kind=conversation"]
 ```
 
-`SubAgent` 的 task/spawn 等执行角色也不能与顶层 `AgentProfile` 混称。Home Workspace 固定属于同一用户的内置 HappyClaw Agent。
+`SubAgent` 的 task/spawn 等执行角色也不能与顶层 `AgentProfile` 混称。Home Workspace 固定属于同一用户的内置 PulseOps Agent。
 
 ## 飞书绑定规则
 

@@ -36,7 +36,7 @@ type SourceFilter = 'all' | 'user' | 'project' | 'external';
 const SOURCE_FILTERS: Array<{ value: SourceFilter; label: string }> = [
   { value: 'all', label: '全部' },
   { value: 'user', label: '我的' },
-  { value: 'project', label: 'HappyClaw 内置' },
+  { value: 'project', label: 'PulseOps 内置' },
   { value: 'external', label: '宿主机' },
 ];
 
@@ -147,13 +147,13 @@ export function SkillsPage() {
       </CapabilitySectionActions>
 
       <CapabilityNotice>
-        “我的 Skills”可安装和管理；HappyClaw 内置与宿主机 Skills
+        “我的 Skills”可安装和管理；PulseOps 内置与宿主机 Skills
         只读。智能体可以独立选择不使用、使用部分或使用全部宿主机
         Skills，不必同时继承宿主机 Prompt 或 Rules。不同来源的同名项会并列显示。
       </CapabilityNotice>
 
       <CapabilityToolbar
-        summary={`我的 ${skills.filter((item) => item.source === 'user').length} · HappyClaw 内置 ${skills.filter((item) => item.source === 'project').length} · 宿主机 ${skills.filter((item) => item.source === 'external').length} · 启用 ${enabledCount}`}
+        summary={`我的 ${skills.filter((item) => item.source === 'user').length} · PulseOps 内置 ${skills.filter((item) => item.source === 'project').length} · 宿主机 ${skills.filter((item) => item.source === 'external').length} · 启用 ${enabledCount}`}
       >
         <SearchInput
           value={searchQuery}
@@ -221,7 +221,7 @@ export function SkillsPage() {
 
               {projectSkills.length > 0 && (
                 <CapabilityListSection
-                  title={`HappyClaw 内置 (${projectSkills.length})`}
+                  title={`PulseOps 内置 (${projectSkills.length})`}
                 >
                   {renderRows(projectSkills)}
                 </CapabilityListSection>

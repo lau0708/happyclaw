@@ -3,7 +3,7 @@
  *
  * Anthropic rotates the refresh token on every refresh, so two holders of the
  * same refresh token can never both succeed: the loser receives invalid_grant
- * and the provider is dead until someone logs in again. HappyClaw therefore
+ * and the provider is dead until someone logs in again. PulseOps therefore
  * owns refresh on the host:
  *
  * - One in-flight exchange per provider (single-flight); concurrent callers

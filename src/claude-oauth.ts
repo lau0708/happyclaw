@@ -4,7 +4,7 @@
  * bodies and the identity fields Anthropic returns next to the tokens.
  *
  * Values mirror the Claude Code CLI bundled in node_modules (2.1.296) — the
- * same client Anthropic expects on these endpoints — so HappyClaw logs in and
+ * same client Anthropic expects on these endpoints — so PulseOps logs in and
  * refreshes exactly like `claude /login` does. Everything here is pure;
  * persistence and network ownership live in claude-oauth-refresh.ts.
  */
@@ -383,7 +383,7 @@ export type ParsedClaudeCredentialInput =
 /**
  * Epoch milliseconds from a `.credentials.json` expiresAt: epoch ms or epoch
  * seconds (number or numeric string), or an ISO timestamp. A missing value is
- * 0 — already expired — so HappyClaw refreshes it before first use.
+ * 0 — already expired — so PulseOps refreshes it before first use.
  */
 function parseCredentialExpiresAt(value: unknown): number {
   if (value === undefined || value === null || value === '') return 0;

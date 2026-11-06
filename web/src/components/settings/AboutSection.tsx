@@ -42,7 +42,7 @@ export function AboutSection() {
           <div className="min-w-0">
             <h2 className="text-title-sm text-foreground">PulseOps · 脉巡</h2>
             <p className="mt-0.5 text-caption text-balance text-muted-foreground">
-              设备异常工单闭环 Agent（基于 HappyClaw 二次开发）
+              设备异常工单闭环 Agent（基于 PulseOps 二次开发）
             </p>
             <p className="text-caption text-faint-foreground tabular-nums">
               版本 1.0.0 · MIT License
@@ -104,7 +104,7 @@ export function AboutSection() {
                 OpenClaw
               </ExternalAnchor>
             }
-            description="自托管个人智能体产品方向的重要参考。HappyClaw 选择复用 Claude Agent SDK，并在此基础上构建工作区、渠道与多智能体管理能力。"
+            description="自托管个人智能体产品方向的重要参考。PulseOps 选择复用 Claude Agent SDK，并在此基础上构建工作区、渠道与多智能体管理能力。"
           />
         </SettingsGroup>
       </SettingsSection>

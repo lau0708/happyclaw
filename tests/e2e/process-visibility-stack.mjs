@@ -2,7 +2,7 @@
 // E2E: process visibility, reconnect snapshots and persisted turn traces, over
 // the whole stack.
 //
-// A real HappyClaw server (scratch cwd, data directory and HOME), the real host
+// A real PulseOps server (scratch cwd, data directory and HOME), the real host
 // Runner and Claude CLI, and real WebSocket clients, against a scripted
 // Anthropic upstream: thinking -> Bash tool call -> thinking -> answer (or, in a
 // proactive workspace, a send_message call). No real model, no credentials,

@@ -26,15 +26,15 @@ import {
   type WorkspaceRecord,
 } from '../db.js';
 import {
-  HappyClawOwnerProfileMutationSchema,
+  PulseOpsOwnerProfileMutationSchema,
   ChannelMountInteractionModePatchSchema,
 } from '../schemas.js';
 import {
-  clearHappyClawOwnerPreferredAddress,
-  getHappyClawOwnerProfileProjection,
+  clearPulseOpsOwnerPreferredAddress,
+  getPulseOpsOwnerProfileProjection,
   OwnerProfileStoreError,
-  setHappyClawOwnerPreferredAddress,
-  skipHappyClawOwnerIntroduction,
+  setPulseOpsOwnerPreferredAddress,
+  skipPulseOpsOwnerIntroduction,
 } from '../owner-profile-store.js';
 
 const workspaceRoutes = new Hono<{ Variables: Variables }>();
@@ -235,7 +235,7 @@ workspaceRoutes.get('/:jid/owner-profile', authMiddleware, (c) => {
   if (!access) return c.json({ error: 'Owner Profile not found' }, 404);
   try {
     return c.json({
-      profile: getHappyClawOwnerProfileProjection(access.workspace.jid),
+      profile: getPulseOpsOwnerProfileProjection(access.workspace.jid),
     });
   } catch (error) {
     return ownerProfileError(c, error);
@@ -247,7 +247,7 @@ workspaceRoutes.patch('/:jid/owner-profile', authMiddleware, async (c) => {
   const access = resolveOwnerProfileAccess(user, c.req.param('jid'));
   if (!access) return c.json({ error: 'Owner Profile not found' }, 404);
   const body = await c.req.json().catch(() => null);
-  const parsed = HappyClawOwnerProfileMutationSchema.safeParse(body);
+  const parsed = PulseOpsOwnerProfileMutationSchema.safeParse(body);
   if (!parsed.success) {
     return c.json(
       { error: 'Invalid request', details: parsed.error.format() },
@@ -264,7 +264,7 @@ workspaceRoutes.patch('/:jid/owner-profile', authMiddleware, async (c) => {
     switch (parsed.data.action) {
       case 'set':
         return c.json(
-          setHappyClawOwnerPreferredAddress({
+          setPulseOpsOwnerPreferredAddress({
             workspaceJid: access.workspace.jid,
             preferredAddress: parsed.data.preferredAddress,
             expectedRevision: parsed.data.expectedRevision,
@@ -274,7 +274,7 @@ workspaceRoutes.patch('/:jid/owner-profile', authMiddleware, async (c) => {
         );
       case 'clear':
         return c.json(
-          clearHappyClawOwnerPreferredAddress({
+          clearPulseOpsOwnerPreferredAddress({
             workspaceJid: access.workspace.jid,
             expectedRevision: parsed.data.expectedRevision,
             idempotencyKey: parsed.data.idempotencyKey,
@@ -283,7 +283,7 @@ workspaceRoutes.patch('/:jid/owner-profile', authMiddleware, async (c) => {
         );
       case 'skip':
         return c.json(
-          skipHappyClawOwnerIntroduction({
+          skipPulseOpsOwnerIntroduction({
             workspaceJid: access.workspace.jid,
             expectedOnboardingRevision: parsed.data.expectedOnboardingRevision,
             context,

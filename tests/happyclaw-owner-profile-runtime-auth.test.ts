@@ -18,7 +18,7 @@ const ownerWebInput: AgentBuilderPersistedInput = {
   automation_run_id: null,
 };
 
-describe('HappyClaw Owner Profile exact active-turn authorization', () => {
+describe('PulseOps Owner Profile exact active-turn authorization', () => {
   test('a queued future owner turn cannot authorize the current non-owner call', () => {
     const registry = new AgentBuilderTurnRegistry();
     registry.startBatch('home', [
@@ -229,7 +229,7 @@ describe('HappyClaw Owner Profile exact active-turn authorization', () => {
   });
 });
 
-describe('HappyClaw Owner Profile actual sender identity', () => {
+describe('PulseOps Owner Profile actual sender identity', () => {
   test('accepts only a canonical sender with strong IM owner provenance', () => {
     const sourceJid =
       'feishu:shared-home#account:bot-a#thread:thread-1#root:root-1';
@@ -277,7 +277,7 @@ describe('HappyClaw Owner Profile actual sender identity', () => {
   });
 });
 
-describe('HappyClaw Owner Profile home-anchored sender identity', () => {
+describe('PulseOps Owner Profile home-anchored sender identity', () => {
   const registered = (jid: string) =>
     jid.startsWith('feishu:') ? { created_by: 'owner-1' } : undefined;
   const homeFeishuOwner = (provider: string) =>
@@ -365,7 +365,7 @@ describe('HappyClaw Owner Profile home-anchored sender identity', () => {
   });
 });
 
-describe('HappyClaw Owner Profile runtime isolation', () => {
+describe('PulseOps Owner Profile runtime isolation', () => {
   const base = {
     runtimeAgentKind: 'conversation',
     runtimeAgentFolder: 'home-folder',

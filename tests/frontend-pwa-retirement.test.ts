@@ -6,7 +6,7 @@ import { Navigate, matchRoutes } from 'react-router-dom';
 import { afterAll, describe, expect, test } from 'vitest';
 import { createAppRouter } from '../web/src/App';
 import {
-  isLegacyHappyClawRegistration,
+  isLegacyPulseOpsRegistration,
   isLegacyPwaCacheName,
 } from '../web/src/utils/legacyPwaCleanup';
 
@@ -112,7 +112,7 @@ describe('PWA cache retirement', () => {
     expect(worker).not.toMatch(/addEventListener\(['"]fetch|cache\.put|addAll/);
   });
 
-  test('recognizes only HappyClaw legacy caches and registrations', () => {
+  test('recognizes only PulseOps legacy caches and registrations', () => {
     expect(
       isLegacyPwaCacheName('workbox-precache-v2-https://example.com/'),
     ).toBe(true);
@@ -129,10 +129,10 @@ describe('PWA cache retirement', () => {
       installing: null,
     };
     expect(
-      isLegacyHappyClawRegistration(registration, appScope, scriptUrl),
+      isLegacyPulseOpsRegistration(registration, appScope, scriptUrl),
     ).toBe(true);
     expect(
-      isLegacyHappyClawRegistration(
+      isLegacyPulseOpsRegistration(
         {
           ...registration,
           scope: 'https://example.com/other/',

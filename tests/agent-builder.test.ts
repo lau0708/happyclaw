@@ -337,7 +337,7 @@ describe('conversational Agent Builder', () => {
 });
 
 describe('Agent Builder names', () => {
-  test('refuses a name another Agent of the owner (or HappyClaw) uses', () => {
+  test('refuses a name another Agent of the owner (or PulseOps) uses', () => {
     db.createAgentProfile({ ownerUserId: userId, name: 'Taken Builder Name' });
     for (const name of ['happyclaw', 'TAKEN builder name']) {
       expect(() =>

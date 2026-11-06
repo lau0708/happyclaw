@@ -525,7 +525,7 @@ function ConnectionSettings({
                 </div>
               )}
               <div>
-                HappyClaw 会在过期前自动续期
+                PulseOps 会在过期前自动续期
                 {provider.claudeOAuthLastRefreshAt
                   ? `，上次续期 ${formatTime(provider.claudeOAuthLastRefreshAt)}`
                   : ''}

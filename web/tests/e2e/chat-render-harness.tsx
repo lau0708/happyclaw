@@ -182,7 +182,7 @@ const msg = (
   id,
   chat_jid: sessionJid,
   sender: fromAgent ? 'happyclaw-agent' : userId,
-  sender_name: fromAgent ? 'HappyClaw' : 'riba2534',
+  sender_name: fromAgent ? 'PulseOps' : 'riba2534',
   content,
   timestamp: at(minutesAgo),
   is_from_me: fromAgent,
@@ -206,7 +206,7 @@ const wideHeader = Array.from({ length: 12 }, (_, i) => `列 ${i + 1} Column`);
 
 const markdownKitchenSink = `# 一级标题：Markdown 渲染全量样例
 
-这是一段中英文混排的长段落，用来检查正文字号、行高与 CJK 标点间距。HappyClaw 是基于 Claude Agent SDK 的自托管 Agent 工作台，支持 Web 与飞书、Telegram、QQ 等渠道；它在 Host 模式下直接使用 \`customCwd\` 作为工作目录，而 Container 模式则通过只读/读写挂载访问资源。The quick brown fox jumps over the lazy dog, and then keeps running across a very long English sentence to test wrapping behaviour inside the message column.
+这是一段中英文混排的长段落，用来检查正文字号、行高与 CJK 标点间距。PulseOps 是基于 Claude Agent SDK 的自托管 Agent 工作台，支持 Web 与飞书、Telegram、QQ 等渠道；它在 Host 模式下直接使用 \`customCwd\` 作为工作目录，而 Container 模式则通过只读/读写挂载访问资源。The quick brown fox jumps over the lazy dog, and then keeps running across a very long English sentence to test wrapping behaviour inside the message column.
 
 ## 二级标题 Heading 2
 
@@ -371,7 +371,7 @@ ${FENCE}
 
 ![数据 URL 图片](data:image/svg+xml;base64,${swatch})
 
-![本地静态资源](/icons/icon-192.png "HappyClaw 图标")
+![本地静态资源](/icons/icon-192.png "PulseOps 图标")
 
 ![工作区相对路径图片](output/chart.png)
 
@@ -1214,7 +1214,7 @@ useChatStore.setState({
       is_my_home: false,
       can_modify: true,
       execution_mode: 'host',
-      agent_profile_name: 'HappyClaw',
+      agent_profile_name: 'PulseOps',
     },
   },
   currentGroup: groupJid,

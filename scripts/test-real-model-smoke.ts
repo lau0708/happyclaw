@@ -9,7 +9,7 @@ async function main(): Promise<void> {
   const config = getClaudeProviderConfig();
   const startedAt = Date.now();
   const response = await sdkQuery(
-    `这是 HappyClaw 的真实模型连通性测试。请只回复下面这一行，不要添加标点、解释或代码块：\n${EXPECTED}`,
+    `这是 PulseOps 的真实模型连通性测试。请只回复下面这一行，不要添加标点、解释或代码块：\n${EXPECTED}`,
     { timeout: 90_000 },
   );
   const completed = typeof response === 'string' && response.length > 0;

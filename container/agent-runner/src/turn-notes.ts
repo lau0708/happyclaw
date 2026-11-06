@@ -4,12 +4,12 @@ import {
   type AgentTurnAnchor,
 } from './agent-turn-contract.js';
 import type {
-  HappyClawOwnerProfileTurnResult,
+  PulseOpsOwnerProfileTurnResult,
   WorkspaceMemorySnapshot,
 } from './mcp-tools.js';
 import {
   HAPPYCLAW_OWNER_PROFILE_WITHDRAWN_BLOCK,
-  renderHappyClawOwnerProfileBlock,
+  renderPulseOpsOwnerProfileBlock,
 } from './owner-profile-context.js';
 import type { ChannelTurnContext } from './types.js';
 import {
@@ -33,7 +33,7 @@ const REPEAT_EVERY_TURNS = 10;
 /** What one user turn may carry ahead of its text, before deduplication. */
 export interface TurnNoteSources {
   memory: WorkspaceMemorySnapshot | null;
-  ownerProfile: HappyClawOwnerProfileTurnResult | null;
+  ownerProfile: PulseOpsOwnerProfileTurnResult | null;
   channelContext: ChannelTurnContext | undefined;
   /** Format guidance of the channel the input came from, if it has any. */
   channelFormat?: string;
@@ -234,7 +234,7 @@ function planTurnNotes(
   state: NoteState,
   sources: TurnNoteSources,
 ): { notes: TurnNotes; after: NoteState } {
-  const ownerBlock = renderHappyClawOwnerProfileBlock(sources.ownerProfile);
+  const ownerBlock = renderPulseOpsOwnerProfileBlock(sources.ownerProfile);
   // Without a block of its own, a turn withdraws the one still in context.
   const ownerTarget =
     ownerBlock ||

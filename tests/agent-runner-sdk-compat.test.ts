@@ -3,14 +3,14 @@ import fs from 'node:fs';
 import { describe, expect, test } from 'vitest';
 
 import {
-  buildHappyClawSystemPrompt,
+  buildPulseOpsSystemPrompt,
   HAPPYCLAW_SUBAGENT_RUNTIME_CONTRACT,
-  withHappyClawSubagentContract,
+  withPulseOpsSubagentContract,
 } from '../container/agent-runner/src/sdk-compat.js';
 
 describe('Claude SDK compatibility adapter', () => {
   test('adds only the short subagent contract and required CLI feature flag', () => {
-    const result = withHappyClawSubagentContract(
+    const result = withPulseOpsSubagentContract(
       {
         systemPrompt: 'MAIN_MARKER',
         skills: ['review'],
@@ -46,7 +46,7 @@ describe('Claude SDK compatibility adapter', () => {
     const runnerPackage = JSON.parse(
       fs.readFileSync('container/agent-runner/package.json', 'utf8'),
     ) as { dependencies: Record<string, string> };
-    const { audit } = withHappyClawSubagentContract({}, {});
+    const { audit } = withPulseOpsSubagentContract({}, {});
 
     expect(audit.sdkCompatibility).toBe(
       `claude-agent-sdk-${runnerPackage.dependencies['@anthropic-ai/claude-agent-sdk']}`,
@@ -57,13 +57,13 @@ describe('Claude SDK compatibility adapter', () => {
   });
 
   test('renders the rebuilt system prompt on every request instead of the SDK snapshot', () => {
-    expect(buildHappyClawSystemPrompt('PLAN_MARKER', true)).toEqual({
+    expect(buildPulseOpsSystemPrompt('PLAN_MARKER', true)).toEqual({
       type: 'preset',
       preset: 'claude_code',
       append: 'PLAN_MARKER',
       snapshot: false,
     });
-    expect(buildHappyClawSystemPrompt('PLAN_MARKER', false)).toEqual({
+    expect(buildPulseOpsSystemPrompt('PLAN_MARKER', false)).toEqual({
       type: 'custom',
       prompt: 'PLAN_MARKER',
       snapshot: false,

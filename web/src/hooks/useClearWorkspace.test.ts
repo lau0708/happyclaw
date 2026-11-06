@@ -17,7 +17,7 @@ describe('workspaceRebuildMessage', () => {
     expect(message).toContain('被 .gitignore 忽略的文件');
   });
 
-  it('deletes the HappyClaw-managed directory otherwise', () => {
+  it('deletes the PulseOps-managed directory otherwise', () => {
     expect(
       workspaceRebuildMessage('Box', { execution_mode: 'container' }),
     ).toContain('工作目录文件');

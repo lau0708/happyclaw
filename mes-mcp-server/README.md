@@ -1,6 +1,6 @@
 # mcp-server-mes · 模拟 MES 脚手架
 
-面向 **HappyClaw 设备异常工单闭环 Agent** 的可运行脚手架：把模拟 MES 封装为 Agent 可调用的 MCP 工具，跑通「报警 → 诊断 → 工单 → 处置 → 复盘 → 经验回流」完整闭环。
+面向 **PulseOps 设备异常工单闭环 Agent** 的可运行脚手架：把模拟 MES 封装为 Agent 可调用的 MCP 工具，跑通「报警 → 诊断 → 工单 → 处置 → 复盘 → 经验回流」完整闭环。
 
 ## 目录结构
 
@@ -8,9 +8,9 @@
 mes-mcp-server/
 ├── db.py          # 数据访问层（仅标准库 sqlite3）
 ├── init_db.py     # 建表 + 种子数据（幂等，可重复运行）
-├── server.py      # MCP Server（FastMCP），供 HappyClaw 接入
+├── server.py      # MCP Server（FastMCP），供 PulseOps 接入
 ├── demo.py        # 端到端闭环演示（不依赖 mcp 包）
-├── scheduler.py   # 定时巡检 Agent（模拟 HappyClaw Cron，自动建单 + 幂等）
+├── scheduler.py   # 定时巡检 Agent（模拟 PulseOps Cron，自动建单 + 幂等）
 ├── workorder_flow.py  # 工单闭环：经 MCP 协议跑通 建单→处置→复盘→经验回流
 ├── health_check.py    # 主动查询触发：人让 Agent 查设备健康状态并判定
 ├── api.py         # 轻量 HTTP JSON API（标准库），供看板取数
@@ -39,14 +39,14 @@ python3 health_check.py       # 主动查询：人让 Agent 查设备健康判�
 > `workorder_flow.py` / `health_check.py` 走**标准 MCP Client**（`pip install mcp`），
 > 主动查询触发是闭环的另一种起点：由人先问 Agent 查设备，判定异常后进入同一诊断/工单流程。
 
-## 定时巡检（模拟 HappyClaw Cron）
+## 定时巡检（模拟 PulseOps Cron）
 
 ```bash
 python3 scheduler.py --once            # 单次巡检（演示）
 python3 scheduler.py --interval 30     # 每 30 秒巡检，异常自动诊断+建单
 python3 scheduler.py --devices CNC-03,INJ-01   # 指定设备
 ```
-对同一设备未闭环工单做幂等去重，避免重复建单。真实 HappyClaw 中由 Cron 定时任务 + 巡检 Agent 等价实现。
+对同一设备未闭环工单做幂等去重，避免重复建单。真实 PulseOps 中由 Cron 定时任务 + 巡检 Agent 等价实现。
 
 ## 工单看板（Vue3 + TS）
 
@@ -69,22 +69,22 @@ npm run build      # 生产构建
 - ④ 工单Agent 建单并推送 → ⑤ 人工处置回填 → ⑥ 复盘沉淀
 - 场景二再次报警时，**经验回流命中**历史处置方案（越用越准）。
 
-## 接入 HappyClaw（MCP Server）
+## 接入 PulseOps（MCP Server）
 
 ```bash
 pip install -r requirements.txt
-python server.py --transport sse --host 0.0.0.0 --port 18080   # SSE，供 Docker 部署的 HappyClaw 接入
+python server.py --transport sse --host 0.0.0.0 --port 18080   # SSE，供 Docker 部署的 PulseOps 接入
 # 或
-python server.py                                               # stdio（HappyClaw 直接跑在宿主机时用）
+python server.py                                               # stdio（PulseOps 直接跑在宿主机时用）
 ```
 
-### Docker 部署的 HappyClaw（Agent 跑在沙箱容器里）
+### Docker 部署的 PulseOps（Agent 跑在沙箱容器里）
 
-HappyClaw 的 Agent 在 **Docker 沙箱容器**内执行 MCP 工具，容器里看不到宿主机路径，
+PulseOps 的 Agent 在 **Docker 沙箱容器**内执行 MCP 工具，容器里看不到宿主机路径，
 所以 **stdio 方式（command/args 指向宿主机文件）不可用**。改用 SSE：MCP 服务由宿主机提供，
 容器经 `host.docker.internal` 发 HTTP 请求，不依赖容器内文件。
 
-在 HappyClaw「能力治理 → MCP」注册：
+在 PulseOps「能力治理 → MCP」注册：
 
 | 字段 | 值 |
 |---|---|

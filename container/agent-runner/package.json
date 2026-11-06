@@ -2,7 +2,7 @@
   "name": "happyclaw-agent-runner",
   "version": "1.0.0",
   "type": "module",
-  "description": "Container-side agent runner for HappyClaw",
+  "description": "Container-side agent runner for PulseOps",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",

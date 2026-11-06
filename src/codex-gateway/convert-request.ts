@@ -1123,7 +1123,7 @@ export function normalizeCodexEffort(effort: string | undefined): string {
 /**
  * Reference (CLIProxyAPI) mapping of the SDK's thinking intent to a Responses
  * effort, used by the pure translator. An explicit override wins. The gateway
- * applies HappyClaw's precedence first via resolveGatewayReasoningEffort and
+ * applies PulseOps's precedence first via resolveGatewayReasoningEffort and
  * passes the final value in as that override.
  */
 export function resolveCodexRequestEffort(
@@ -1187,7 +1187,7 @@ export function isCodexBackgroundRequest(
 }
 
 /**
- * HappyClaw's effort precedence for one gateway request, already clamped to
+ * PulseOps's effort precedence for one gateway request, already clamped to
  * the model's supported levels:
  * 1. thinking disabled → the lowest level the model supports (never `none`,
  *    which the current catalog rejects);

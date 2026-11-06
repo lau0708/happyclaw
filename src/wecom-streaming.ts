@@ -22,7 +22,7 @@
  *
  * Transient status vs final text
  * ──────────────────────────────
- * HappyClaw pushes transient runtime status (e.g. "上下文压缩中") via
+ * PulseOps pushes transient runtime status (e.g. "上下文压缩中") via
  * setSystemStatus()/setThinking(). WeCom's replace semantics let us render that
  * as a blockquote status line ABOVE the streamed body while `finish=false`, and
  * then drop it entirely on the DONE chunk — so the status never leaks into the

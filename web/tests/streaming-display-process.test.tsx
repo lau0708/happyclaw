@@ -439,7 +439,7 @@ describe('StreamingDisplay, after cindy', () => {
             id: 'final-swap',
             chat_jid: SESSION_JID,
             sender: 'happyclaw-agent',
-            sender_name: 'HappyClaw',
+            sender_name: 'PulseOps',
             content: '最终答案正文',
             timestamp: '2026-10-10T00:00:00.000Z',
             is_from_me: true,

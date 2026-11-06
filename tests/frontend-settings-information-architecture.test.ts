@@ -15,7 +15,7 @@ describe('settings information architecture', () => {
     expect(nav).toContain("label: '账户设置'");
     expect(nav).toContain("label: '系统配置'");
     expect(nav).toContain("label: '管理后台'");
-    expect(nav).toContain("label: '关于 HappyClaw'");
+    expect(nav).toContain("label: '关于 PulseOps'");
     expect(nav).toContain("key: 'my-channels'");
     expect(nav).toContain("key: 'security'");
     expect(nav).toContain("key: 'main-agent'");

@@ -129,7 +129,7 @@ export function listCapabilityMutationRuntimeTargets(
 
 /** Intro of the history re-injected into a session reset by this module. */
 export const CAPABILITY_CHANGE_HISTORY_INTRO =
-  '检测到当前 workspace 可用的 Skill / MCP 已更新，底层模型 session 已重置以加载新的能力。以下是 HappyClaw 保存的最近对话记录，供你延续上下文。';
+  '检测到当前 workspace 可用的 Skill / MCP 已更新，底层模型 session 已重置以加载新的能力。以下是 PulseOps 保存的最近对话记录，供你延续上下文。';
 
 /**
  * A capability change must start new SDK sessions, but the conversation

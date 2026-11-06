@@ -15,7 +15,7 @@ import { pathToFileURL } from 'node:url';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 
 import { RUNNER_DISALLOWED_BUILTIN_TOOLS } from '../container/agent-runner/src/builtin-tool-policy.js';
-import { buildHappyClawSystemPrompt } from '../container/agent-runner/src/sdk-compat.js';
+import { buildPulseOpsSystemPrompt } from '../container/agent-runner/src/sdk-compat.js';
 
 const runnerRoot = path.resolve('container/agent-runner');
 const runnerRequire = createRequire(path.join(runnerRoot, 'package.json'));
@@ -157,7 +157,7 @@ function fakeProviderEnv(): Record<string, string> {
   };
 }
 
-/** The preset text ahead of HappyClaw's append, with run-specific values masked. */
+/** The preset text ahead of PulseOps's append, with run-specific values masked. */
 function presetOf(system: string): string {
   const markerAt = system.indexOf(APPEND_MARKER);
   expect(markerAt).toBeGreaterThan(0);
@@ -213,7 +213,7 @@ beforeAll(async () => {
       cwd,
       model: 'claude-sonnet-4-5-20250929',
       env: fakeProviderEnv(),
-      systemPrompt: buildHappyClawSystemPrompt(APPEND_MARKER, true),
+      systemPrompt: buildPulseOpsSystemPrompt(APPEND_MARKER, true),
       disallowedTools: [...RUNNER_DISALLOWED_BUILTIN_TOOLS],
       permissionMode: 'bypassPermissions',
       allowDangerouslySkipPermissions: true,
@@ -230,7 +230,7 @@ afterAll(async () => {
   fs.rmSync(scratch, { recursive: true, force: true });
 });
 
-describe('Claude Code preset under the HappyClaw append', () => {
+describe('Claude Code preset under the PulseOps append', () => {
   test('matches the reviewed snapshot for the bundled CLI', async () => {
     expect(systems.length).toBeGreaterThan(0);
     const header = `Claude Code ${runnerSdkPackage.claudeCodeVersion ?? '?'} (claude-agent-sdk ${runnerSdkPackage.version}) preset, auto memory off.\n\n`;

@@ -36,7 +36,7 @@ export interface ChannelSetupGuide {
   nextStep: string;
 }
 
-/** Events HappyClaw handles over the Feishu long connection. */
+/** Events PulseOps handles over the Feishu long connection. */
 export const FEISHU_EVENT_SUBSCRIPTIONS: ChannelSetupChecklistItem[] = [
   {
     name: 'im.message.receive_v1',
@@ -56,7 +56,7 @@ export const FEISHU_EVENT_SUBSCRIPTIONS: ChannelSetupChecklistItem[] = [
   {
     name: 'im.chat.member.bot.added_v1',
     label: '机器人进群',
-    effect: '缺失时把 Bot 拉进群后，HappyClaw 不会自动登记这个群。',
+    effect: '缺失时把 Bot 拉进群后，PulseOps 不会自动登记这个群。',
   },
   {
     name: 'im.chat.member.bot.deleted_v1',
@@ -70,7 +70,7 @@ export const FEISHU_EVENT_SUBSCRIPTIONS: ChannelSetupChecklistItem[] = [
   },
 ];
 
-/** Scopes behind the calls HappyClaw makes; optional ones are marked. */
+/** Scopes behind the calls PulseOps makes; optional ones are marked. */
 export const FEISHU_PERMISSIONS: ChannelSetupChecklistItem[] = [
   {
     name: 'im:message',
@@ -211,7 +211,7 @@ export const CHANNEL_PROVIDER_OPTIONS: ChannelProviderOption[] = [
         url: feishuDeveloperConsoleUrl('feishu'),
       },
       nextStep:
-        '发布后在飞书里给 Bot 发起私聊，HappyClaw 会自动识别账号 Owner。',
+        '发布后在飞书里给 Bot 发起私聊，PulseOps 会自动识别账号 Owner。',
     },
     supportsTest: true,
     supportsPairing: false,
@@ -300,8 +300,8 @@ export const CHANNEL_PROVIDER_OPTIONS: ChannelProviderOption[] = [
       title: '创建后使用微信扫码',
       steps: [
         '填写账号名称，连接后再选择渠道会话的绑定目标。',
-        '点击“创建并扫码”，HappyClaw 会生成微信登录二维码。',
-        '用手机微信扫码确认；如微信要求验证码，直接在 HappyClaw 中输入。',
+        '点击“创建并扫码”，PulseOps 会生成微信登录二维码。',
+        '用手机微信扫码确认；如微信要求验证码，直接在 PulseOps 中输入。',
       ],
       nextStep:
         '扫码授权只建立渠道账号；连接后还需要生成配对码，授权具体微信会话。',
@@ -429,7 +429,7 @@ export const CHANNEL_PROVIDER_OPTIONS: ChannelProviderOption[] = [
       title: '创建后关联 WhatsApp 设备',
       steps: [
         '填写账号名称，连接后再选择渠道会话的绑定目标。',
-        '点击“创建并扫码”，等待 HappyClaw 生成关联设备二维码。',
+        '点击“创建并扫码”，等待 PulseOps 生成关联设备二维码。',
         '在手机 WhatsApp 中打开“已关联设备”（iOS 在设置中，Android 在右上角菜单中），点击“关联设备”扫码。',
       ],
       nextStep:

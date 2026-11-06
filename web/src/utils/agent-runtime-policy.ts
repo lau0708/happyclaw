@@ -20,7 +20,7 @@ export const DEFAULT_HOST_SKILL_POLICY: SkillSourcePolicy = {
 /**
  * The host Skill grant a profile runs with. The server stores it on every
  * profile; one from an older server without it followed the context source
- * the runner actually uses, which for the main HappyClaw is the system
+ * the runner actually uses, which for the main PulseOps is the system
  * setting reflected in `effective`, not its persisted `managed`.
  */
 export function getHostSkillPolicy(

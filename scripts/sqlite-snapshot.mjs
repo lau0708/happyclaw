@@ -44,7 +44,7 @@ try {
 
   // better-sqlite3's online backup API reads a transactionally consistent
   // snapshot from SQLite itself. Committed pages still resident in WAL are
-  // therefore included without stopping the running HappyClaw process.
+  // therefore included without stopping the running PulseOps process.
   await source.backup(snapshotPath);
   source.close();
   source = undefined;
