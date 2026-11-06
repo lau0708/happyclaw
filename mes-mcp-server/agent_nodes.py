@@ -11,7 +11,7 @@
   - 未配置 LLM_API_KEY 时自动降级为知识库关键词命中（零依赖可跑通全链路）
   - 响应强制 JSON；解析失败重试一次后降级，不让坏输出污染工单
 
-配置（环境变量）：
+配置（环境变量，或 mes-mcp-server/.env 文件——从 .env.example 复制填写）：
   LLM_BASE_URL  默认 https://api.deepseek.com/v1（任何 OpenAI 兼容端点均可）
   LLM_API_KEY   必填才启用真实模型；为空则降级
   LLM_MODEL     默认 deepseek-chat
@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import os
 import urllib.request
+from pathlib import Path
 from typing import Any, Callable
 
 import db
@@ -28,6 +29,23 @@ import db
 # --------------------------------------------------------------------------- #
 # 配置与传输层（可注入，便于单测）
 # --------------------------------------------------------------------------- #
+def _load_dotenv() -> None:
+    """加载同目录 .env（KEY=VALUE，# 注释；已存在的环境变量不覆盖）"""
+    env_path = Path(__file__).resolve().parent / ".env"
+    if not env_path.is_file():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip()
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv()
+
 LLM_BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.deepseek.com/v1")
 LLM_API_KEY = os.environ.get("LLM_API_KEY", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "deepseek-chat")
@@ -144,15 +162,19 @@ def diagnose(equipment_id: str, transport: Transport | None = None) -> dict:
     if llm_enabled():
         transport = transport or _http_transport
         user = json.dumps(fact_pack, ensure_ascii=False)
-        raw = _chat(transport, DIAGNOSE_SYSTEM, user)
-        plan = _parse_plan(raw)
-        if plan is None:  # 重试一次
-            raw = _chat(transport, DIAGNOSE_SYSTEM, user + "\n注意：上一次输出不是合法 JSON。")
+        try:
+            raw = _chat(transport, DIAGNOSE_SYSTEM, user)
             plan = _parse_plan(raw)
+            if plan is None:  # 重试一次
+                raw = _chat(transport, DIAGNOSE_SYSTEM, user + "\n注意：上一次输出不是合法 JSON。")
+                plan = _parse_plan(raw)
+        except OSError:
+            # 网络/鉴权失败（HTTPError/URLError 均为 OSError 子类）→ 降级，不阻断巡检
+            plan = None
         if plan is not None:
             plan["fact_pack"] = fact_pack
             return plan
-        # 模型输出两次都不合法 → 降级，不让坏输出进工单
+        # 模型输出两次都不合法或调用失败 → 降级，不让坏输出进工单
 
     plan = _fallback_diagnose(fact_pack)
     plan["fact_pack"] = fact_pack
@@ -173,8 +195,11 @@ def parse_inquiry(text: str, equipment_ids: list[str], transport: Transport | No
     if llm_enabled():
         transport = transport or _http_transport
         user = f"设备清单: {equipment_ids}\n问询: {text}"
-        raw = _chat(transport, PARSE_SYSTEM, user)
-        result = _parse_plan(raw)  # 同样的 JSON 宽松解析
+        try:
+            raw = _chat(transport, PARSE_SYSTEM, user)
+            result = _parse_plan(raw)  # 同样的 JSON 宽松解析
+        except OSError:
+            result = None
         if result is not None:
             if result.get("equipment_id") not in equipment_ids:
                 result["equipment_id"] = None

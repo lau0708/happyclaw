@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+.env
+mes-mcp-server/.env
 
 # Build output
 dist/
