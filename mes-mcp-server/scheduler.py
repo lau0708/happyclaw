@@ -17,6 +17,7 @@ import argparse
 import sys
 import time
 
+import agent_nodes
 import db
 
 
@@ -51,15 +52,17 @@ def inspect_device(equipment_id: str) -> None:
         print(f"    ↳ 已有未闭环工单，幂等跳过（避免重复建单）")
         return
 
-    # 诊断Agent：命中历史经验
-    hits = db.search_knowledge("振动" if "vibration" in over else "温度" if "temp" in over else "")
-    root = hits[0]["root_cause"] if hits else "待现场排查"
-    resolution = hits[0]["resolution"] if hits else "停机检查并定位故障"
+    # 诊断节点：LLM 可用时走模型（事实包喂入，数字可对账），
+    # 未配置 LLM_API_KEY 自动降级为知识库命中
+    plan = agent_nodes.diagnose(equipment_id)
+    root = plan["root_cause"]
+    resolution = plan["resolution"]
 
     # 工单Agent：建单 + 推送（模拟飞书）
     wo = db.create_work_order(equipment_id, f"巡检发现{list(over.keys())}超限，疑似{root}",
                               severity="high")
-    print(f"    ↳ 诊断: {root}")
+    print(f"    ↳ 诊断: {root}（置信度 {plan['confidence']}，"
+          f"{'LLM' if agent_nodes.llm_enabled() else '知识库降级'}）")
     print(f"    ↳ 处置: {resolution}")
     print(f"    ↳ 工单 {wo['wo_id']} 已创建（severity=high），推送飞书维修班 📋")
 

@@ -14,6 +14,10 @@ mes-mcp-server/
 ├── workorder_flow.py  # 工单闭环：经 MCP 协议跑通 建单→处置→复盘→经验回流
 ├── health_check.py    # 主动查询触发：人让 Agent 查设备健康状态并判定
 ├── api.py         # 轻量 HTTP JSON API（标准库），供看板取数
+├── agent_nodes.py # LLM 节点：诊断 / 问诊解析（OpenAI 兼容端点，无 key 自动降级）
+├── test_state_machine.py  # 状态机 + 数据口径回归（15 用例）
+├── test_closed_loop.py    # 闭环 Eval：幂等 / 经验回流 / 双触发收敛（8 用例）
+├── test_agent_nodes.py    # LLM 节点单测（假传输层，不联网不耗 token）
 ├── web/           # Vue3 + TS 工单看板（Vite）
 ├── requirements.txt
 ├── README.md
@@ -105,11 +109,36 @@ HappyClaw 的 Agent 在 **Docker 沙箱容器**内执行 MCP 工具，容器里�
 | `save_knowledge` | 诊断Agent | 沉淀经验（复盘） |
 | `check_latest_metric` | 巡检 | 最新指标超阈值判定 |
 
-### 工单状态机
+## 工单状态机
 
 `open → assigned → done → closed`（允许 `open → done` 直接回填；跳级 / 回退 / 终态再流转会被拒绝，
 `update_work_order` 抛 `WorkOrderError`，HTTP API 关单端点返回 409）。看板「一键关单」不再绕过状态机，
 而是沿合法路径补全中间环节并逐步写 `work_order_log`，全程可审计。
+
+## LLM 诊断节点（agentic workflow）
+
+确定性骨架（巡检/阈值/幂等/建单/状态机）保持普通代码，只在诊断节点引入模型：
+
+```bash
+export LLM_BASE_URL=https://api.deepseek.com/v1   # 任意 OpenAI 兼容端点
+export LLM_API_KEY=sk-xxx
+export LLM_MODEL=deepseek-chat
+python3 scheduler.py --once   # 诊断走真实 LLM（事实包喂入，数字可对账）
+```
+
+- 未配置 `LLM_API_KEY` 时**自动降级**为知识库关键词命中，全链路零依赖可跑通
+- 事实包（fact_pack）只含模型需要的数据：最新指标 + 超限项 + 3 条历史故障 + 知识命中，控制 token
+- 模型输出强制 JSON，解析失败重试 1 次后降级，坏输出不进工单
+- 问诊解析节点 `parse_inquiry()`：把「3号机振动不对，看下」解析成 equipment_id + 意图，路由进同一闭环
+
+## 回归测试（交付标准验收）
+
+```bash
+python3 init_db.py
+python3 test_state_machine.py   # 状态机 9 + 数据契约 6
+python3 test_closed_loop.py     # 幂等 / 经验回流 / 双触发收敛
+python3 test_agent_nodes.py     # LLM 节点（假传输层，不联网）
+```
 
 ## 数据模型
 
