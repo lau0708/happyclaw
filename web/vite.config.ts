@@ -8,6 +8,10 @@ const API_PROXY_TARGET =
   process.env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:3000';
 const WS_PROXY_TARGET =
   process.env.VITE_WS_PROXY_TARGET || 'ws://127.0.0.1:3000';
+// 设备业务数据：自研 MES HTTP API（api.py），默认 8002（与 api.py 保持一致），可用 MES_API_PORT 覆盖
+const MES_API_TARGET =
+  process.env.MES_API_TARGET ||
+  `http://127.0.0.1:${process.env.MES_API_PORT || '8002'}`;
 
 const APP_BASE = (() => {
   const raw = (process.env.VITE_BASE_PATH || '/').trim();
@@ -97,6 +101,12 @@ export default defineConfig({
     },
     proxy: {
       '/api': API_PROXY_TARGET,
+      // 设备业务数据走自研 MES API（避免与 HappyClaw 后端 /api 冲突）
+      '/mes-api': {
+        target: MES_API_TARGET,
+        changeOrigin: true,
+        rewrite: (p: string) => p.replace(/^\/mes-api/, '/api'),
+      },
       '/ws': {
         target: WS_PROXY_TARGET,
         ws: true,

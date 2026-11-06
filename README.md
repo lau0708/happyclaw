@@ -20,6 +20,11 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0F766E?style=for-the-badge" alt="MIT License" /></a>
 </p>
 
+> **关于本项目**：这是「设备异常工单闭环系统」的开发仓库——基于开源智能体平台 [HappyClaw](https://github.com/riba2534/happyclaw)（MIT License，平台底座版权归原作者）二次开发，在其上自研设备健康业务层：
+> - `mes-mcp-server/`：模拟 MES 的 MCP Server（设备/指标/工单/知识库，FastMCP + SQLite）
+> - 设备监控 / 工单中心 / 故障知识库 / 智能巡检 四个业务页面
+> - 报警 → 诊断 → 建单 → 处置 → 经验回流 的完整业务闭环
+
 <p align="center">
   <a href="#happyclaw-是什么">介绍</a> ·
   <a href="#功能总览">功能</a> ·

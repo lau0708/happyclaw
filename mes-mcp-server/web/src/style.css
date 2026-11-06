@@ -1,0 +1,11 @@
+:root {
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #f1f5f9; color: #0f172a; }
+.app { max-width: 1200px; margin: 0 auto; padding: 24px 20px 48px; }
+.topbar { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+.topbar h1 { font-size: 22px; margin: 0; }
+.topbar .sub { color: #64748b; font-size: 13px; }
+.err { background: #fee2e2; color: #b91c1c; padding: 10px 14px; border-radius: 8px; font-size: 14px; }

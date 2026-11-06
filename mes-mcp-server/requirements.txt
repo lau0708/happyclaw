@@ -1,0 +1,5 @@
+# 仅 MCP Server（server.py）需要；demo.py / init_db.py / db.py 仅用标准库
+# 注意：锁定 mcp<2（2.x 已把 FastMCP 改名 MCPServer，API 不兼容）
+mcp>=1.2,<2
+# 若用 SSE transport 接入 HTTP，需要：
+uvicorn>=0.30.0

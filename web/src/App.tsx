@@ -129,6 +129,28 @@ const CapabilitiesPage = lazy(() =>
   })),
 );
 
+// 设备异常工单闭环系统 · 业务页面
+const DeviceMonitorPage = lazy(() =>
+  import('./pages/DeviceMonitorPage').then((m) => ({
+    default: m.DeviceMonitorPage,
+  })),
+);
+const WorkOrderCenterPage = lazy(() =>
+  import('./pages/WorkOrderCenterPage').then((m) => ({
+    default: m.WorkOrderCenterPage,
+  })),
+);
+const FaultKnowledgePage = lazy(() =>
+  import('./pages/FaultKnowledgePage').then((m) => ({
+    default: m.FaultKnowledgePage,
+  })),
+);
+const SmartInspectionPage = lazy(() =>
+  import('./pages/SmartInspectionPage').then((m) => ({
+    default: m.SmartInspectionPage,
+  })),
+);
+
 function UsageRouteFallback() {
   return (
     <div
@@ -234,6 +256,38 @@ const appRoutes = createRoutesFromElements(
     >
       <Route path="/chat/:groupFolder?" element={<ChatPage />} />
       <Route path="/groups" element={<Navigate to="/chat" replace />} />
+      <Route
+        path="/devices"
+        element={
+          <Suspense fallback={null}>
+            <DeviceMonitorPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/work-orders"
+        element={
+          <Suspense fallback={null}>
+            <WorkOrderCenterPage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/faults"
+        element={
+          <Suspense fallback={null}>
+            <FaultKnowledgePage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/inspection"
+        element={
+          <Suspense fallback={null}>
+            <SmartInspectionPage />
+          </Suspense>
+        }
+      />
       <Route
         path="/agent-profiles"
         element={

@@ -1,0 +1,100 @@
+"""scheduler.py — 模拟 HappyClaw Cron 定时巡检 Agent（仅标准库）
+
+周期性对设备做阈值巡检，检测到异常自动触发「诊断 → 建单 → 推送」，
+并对同一设备的未闭环工单做幂等去重（避免重复建单）。
+
+在真实 HappyClaw 中，等价实现为：一个 Cron 定时任务 + 巡检 Agent，
+对每个设备调用 check_latest_metric，超限则转入诊断/工单 Agent。
+
+用法：
+    python3 scheduler.py --once          # 单次巡检（演示用）
+    python3 scheduler.py --interval 30   # 每 30 秒巡检一次（持续运行）
+    python3 scheduler.py --devices CNC-03,INJ-01   # 指定设备
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+
+import db
+
+
+def has_open_work_order(equipment_id: str) -> bool:
+    """幂等：该设备若已有未闭环工单，则本次跳过，避免重复建单"""
+    with db.get_db() as conn:
+        row = conn.execute(
+            "SELECT wo_id FROM work_order WHERE equipment_id = ? "
+            "AND status NOT IN ('done','closed') LIMIT 1",
+            (equipment_id,),
+        ).fetchone()
+    return row is not None
+
+
+def inspect_device(equipment_id: str) -> None:
+    """巡检单个设备：取最新指标，超阈值则诊断并建单"""
+    res = db.check_latest_metric(equipment_id)
+    if not res:
+        print(f"[{db.now()}] {equipment_id}: 无最新指标，跳过")
+        return
+    over = res["over_threshold"]
+    m = res["metric"]
+    if not over:
+        print(f"[{db.now()}] {equipment_id}: 正常 振动={m['vibration']} 温度={m['temp']} "
+              f"压力={m['pressure']} ✔")
+        return
+
+    # 超阈值 → Agent 处理
+    print(f"[{db.now()}] ⚠ {equipment_id}: 超限项={list(over.keys())} "
+          f"振动={m['vibration']} 温度={m['temp']}")
+    if has_open_work_order(equipment_id):
+        print(f"    ↳ 已有未闭环工单，幂等跳过（避免重复建单）")
+        return
+
+    # 诊断Agent：命中历史经验
+    hits = db.search_knowledge("振动" if "vibration" in over else "温度" if "temp" in over else "")
+    root = hits[0]["root_cause"] if hits else "待现场排查"
+    resolution = hits[0]["resolution"] if hits else "停机检查并定位故障"
+
+    # 工单Agent：建单 + 推送（模拟飞书）
+    wo = db.create_work_order(equipment_id, f"巡检发现{list(over.keys())}超限，疑似{root}",
+                              severity="high")
+    print(f"    ↳ 诊断: {root}")
+    print(f"    ↳ 处置: {resolution}")
+    print(f"    ↳ 工单 {wo['wo_id']} 已创建（severity=high），推送飞书维修班 📋")
+
+
+def run_once(devices: list[str]) -> None:
+    print(f"===== 定时巡检 · {db.now()} · 设备 {devices} =====")
+    for eq in devices:
+        inspect_device(eq)
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--once", action="store_true", help="单次巡检后退出")
+    parser.add_argument("--interval", type=int, default=30, help="巡检间隔（秒）")
+    parser.add_argument("--devices", default=None, help="设备列表，逗号分隔，默认全部")
+    args = parser.parse_args()
+
+    if args.devices:
+        devices = [d.strip() for d in args.devices.split(",") if d.strip()]
+    else:
+        devices = [e["equipment_id"] for e in db.query_equipment()]
+
+    if args.once:
+        run_once(devices)
+        return
+
+    print(f"持续巡检模式：每 {args.interval}s 巡检 {devices}（Ctrl+C 退出）")
+    while True:
+        try:
+            run_once(devices)
+            time.sleep(args.interval)
+        except KeyboardInterrupt:
+            print("\n已停止巡检。")
+            break
+
+
+if __name__ == "__main__":
+    sys.exit(main())

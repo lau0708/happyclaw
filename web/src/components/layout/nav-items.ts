@@ -8,6 +8,9 @@ import {
   Brain,
   Wallet,
   Settings,
+  Gauge,
+  BookOpen,
+  Radar,
 } from 'lucide-react';
 
 interface NavItem {
@@ -21,6 +24,11 @@ interface NavItem {
 }
 
 export const baseNavItems: NavItem[] = [
+  // 设备异常工单闭环系统 · 业务导航
+  { path: '/devices', icon: Gauge, label: '设备监控' },
+  { path: '/work-orders', icon: ClipboardList, label: '工单中心' },
+  { path: '/faults', icon: BookOpen, label: '故障知识库' },
+  { path: '/inspection', icon: Radar, label: '智能巡检' },
   { path: '/chat', icon: MessageCircle, label: '工作台', guestVisible: true },
   { path: '/agent-profiles', icon: Bot, label: '智能体' },
   { path: '/capabilities', icon: Puzzle, label: '能力库' },
