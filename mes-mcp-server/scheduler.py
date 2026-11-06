@@ -19,6 +19,7 @@ import time
 
 import agent_nodes
 import db
+import feishu
 
 
 def has_open_work_order(equipment_id: str) -> bool:
@@ -58,13 +59,24 @@ def inspect_device(equipment_id: str) -> None:
     root = plan["root_cause"]
     resolution = plan["resolution"]
 
-    # 工单Agent：建单 + 推送（模拟飞书）
+    # 工单Agent：建单 + 推送
     wo = db.create_work_order(equipment_id, f"巡检发现{list(over.keys())}超限，疑似{root}",
                               severity="high")
     print(f"    ↳ 诊断: {root}（置信度 {plan['confidence']}，"
           f"{'LLM' if agent_nodes.llm_enabled() else '知识库降级'}）")
     print(f"    ↳ 处置: {resolution}")
-    print(f"    ↳ 工单 {wo['wo_id']} 已创建（severity=high），推送飞书维修班 📋")
+    # 飞书推送：卡片消息（未配置 webhook 时跳过，不阻断）
+    equip = db.query_equipment(equipment_id)
+    equip_name = f"{equipment_id} {equip[0]['name']}" if equip else equipment_id
+    ok, note = feishu.send_work_order_card(
+        wo_id=wo["wo_id"], equipment=equip_name, root_cause=root,
+        resolution=resolution, severity="high",
+        confidence=plan["confidence"], over_items=list(over.keys()),
+    )
+    if ok:
+        print(f"    ↳ 工单 {wo['wo_id']} 已创建（severity=high），飞书卡片已推送 📋")
+    else:
+        print(f"    ↳ 工单 {wo['wo_id']} 已创建（severity=high），飞书未推送（{note}）")
 
 
 def run_once(devices: list[str]) -> None:

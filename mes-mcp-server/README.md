@@ -15,6 +15,7 @@ mes-mcp-server/
 ├── health_check.py    # 主动查询触发：人让 Agent 查设备健康状态并判定
 ├── api.py         # 轻量 HTTP JSON API（标准库），供看板取数
 ├── agent_nodes.py # LLM 节点：诊断 / 问诊解析（OpenAI 兼容端点，无 key 自动降级）
+├── feishu.py      # 飞书群机器人推送（Webhook + 可选签名校验，未配置自动跳过）
 ├── test_state_machine.py  # 状态机 + 数据口径回归（15 用例）
 ├── test_closed_loop.py    # 闭环 Eval：幂等 / 经验回流 / 双触发收敛（8 用例）
 ├── test_agent_nodes.py    # LLM 节点单测（假传输层，不联网不耗 token）
@@ -148,6 +149,20 @@ LLM  模式: 根因=主轴轴承磨损复发，导致振动值12.7 mm/s超过8.0
 - 健康设备（CNC-01）LLM 正确输出"无异常证据，不编造根因"，置信度回落至 0.5——
   验证了「数字全部来自事实包，模型只做判断」的防幻觉约束有效
 - LLM 调用失败/超时/key 无效时自动降级，巡检不中断
+
+## 飞书报警推送
+
+巡检建单后自动推送**工单报警卡片**到飞书群（设备 / 超限项 / 根因 / 处置方案 / 置信度）：
+
+1. 飞书群里：`设置 → 群机器人 → 添加自定义机器人`，复制 Webhook 地址
+2. 填入 `.env`（安全设置选了「签名校验」就同时填 secret）：
+   ```
+   FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/xxx
+   FEISHU_WEBHOOK_SECRET=
+   ```
+3. `python3 scheduler.py --once` → 工单建好后群里收到红色报警卡片
+
+未配置 webhook 时自动跳过推送，不影响巡检；推送失败也只告警不阻断。
 
 ## 回归测试（交付标准验收）
 
