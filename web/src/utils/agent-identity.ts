@@ -1,6 +1,6 @@
 import type { AppearanceConfig } from '../stores/auth';
 
-const DEFAULT_AGENT_NAME = 'HappyClaw';
+const DEFAULT_AGENT_NAME = 'PulseOps';
 
 export interface AgentDisplayIdentity {
   name: string;

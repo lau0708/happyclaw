@@ -40,9 +40,9 @@ export function AboutSection() {
             className="size-10 shrink-0 rounded-lg"
           />
           <div className="min-w-0">
-            <h2 className="text-title-sm text-foreground">HappyClaw</h2>
+            <h2 className="text-title-sm text-foreground">PulseOps · 脉巡</h2>
             <p className="mt-0.5 text-caption text-balance text-muted-foreground">
-              基于 Claude Agent SDK 的自托管多智能体工作平台
+              设备异常工单闭环 Agent（基于 HappyClaw 二次开发）
             </p>
             <p className="text-caption text-faint-foreground tabular-nums">
               版本 1.0.0 · MIT License

@@ -96,7 +96,7 @@ export function UnifiedSidebar() {
     name: '',
   });
 
-  const appName = appearance?.appName || 'HappyClaw';
+  const appName = appearance?.appName || 'PulseOps';
   const userInitial = (user?.display_name ||
     user?.username ||
     '?')[0].toUpperCase();

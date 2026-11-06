@@ -1,12 +1,14 @@
 {
-  "name": "HappyClaw",
-  "short_name": "HappyClaw",
-  "description": "Personal Claude Assistant",
+  "name": "PulseOps · 脉巡",
+  "short_name": "PulseOps",
+  "description": "设备异常工单闭环 Agent：巡检 → 诊断 → 建单 → 闭环 → 经验回流",
   "start_url": "./chat",
   "display": "standalone",
-  "display_override": ["standalone"],
-  "background_color": "#faf9f5",
-  "theme_color": "#faf9f5",
+  "display_override": [
+    "standalone"
+  ],
+  "background_color": "#0B1220",
+  "theme_color": "#0B1220",
   "lang": "zh-CN",
   "scope": "./",
   "id": "./",
@@ -35,7 +37,10 @@
     }
   ],
   "launch_handler": {
-    "client_mode": ["focus-existing", "auto"]
+    "client_mode": [
+      "focus-existing",
+      "auto"
+    ]
   },
   "shortcuts": [
     {

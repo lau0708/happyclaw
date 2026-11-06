@@ -1,52 +1,92 @@
 <p align="center">
-  <a href="https://happyclaw.cc/">
-    <img src="web/public/icons/logo-1024.png" alt="HappyClaw Logo" width="128" />
-  </a>
+  <img src="web/public/icons/logo-1024.png" alt="PulseOps Logo" width="120" />
 </p>
 
-<h1 align="center">HappyClaw</h1>
+<h1 align="center">PulseOps · 脉巡</h1>
 
 <p align="center">
-  <strong>自托管、多用户、智能体优先的 Claude Code 工作台</strong>
+  <strong>设备异常工单闭环 Agent</strong>
   <br />
-  让 Claude Code 通过 Web 与 8 种消息渠道长期在线，在宿主机或 Docker 沙箱中安全执行任务。
+  定时巡检设备指标 → 阈值判异 → LLM 根因诊断 → 幂等建单 → 飞书报警 → 处置回填 → 经验回流
+  <br />
+  一条闭环全自动跑完：异常不会漏、工单不会重、经验越用越准。
 </p>
 
 <p align="center">
-  <a href="https://happyclaw.cc/"><img src="https://img.shields.io/badge/Website-happyclaw.cc-F97316?style=for-the-badge" alt="Website" /></a>
   <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%3E%3D20-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" /></a>
   <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <a href="https://github.com/riba2534/happyclaw"><img src="https://img.shields.io/github/stars/riba2534/happyclaw?style=for-the-badge&color=f5a623" alt="GitHub Stars" /></a>
+  <img src="https://img.shields.io/badge/Python-FastMCP-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/Tests-40%20passed-34D399?style=for-the-badge" alt="Tests" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0F766E?style=for-the-badge" alt="MIT License" /></a>
 </p>
 
-> **关于本项目**：这是「设备异常工单闭环系统」的开发仓库——基于开源智能体平台 [HappyClaw](https://github.com/riba2534/happyclaw)（MIT License，平台底座版权归原作者）二次开发，在其上自研设备健康业务层：
-> - `mes-mcp-server/`：模拟 MES 的 MCP Server（设备/指标/工单/知识库，FastMCP + SQLite）
-> - 设备监控 / 工单中心 / 故障知识库 / 智能巡检 四个业务页面
-> - 报警 → 诊断 → 建单 → 处置 → 经验回流 的完整业务闭环
+> **关于本项目**：PulseOps（脉巡）基于开源智能体平台 [HappyClaw](https://github.com/riba2534/happyclaw)（MIT License，平台底座版权归原作者）二次开发。平台负责会话、调度、权限与多渠道接入；**设备健康业务层完全自研**：
+>
+> - `mes-mcp-server/`：模拟 MES 的 MCP Server（FastMCP + SQLite，9 个业务工具：设备台账 / 指标 / 历史故障 / 知识库 / 工单 / 巡检）
+> - `mes-dashboard/` 与 `web/src/pages/`：设备监控 / 工单中心 / 故障知识库 / 智能巡检 四个业务页面（工业深色大屏视觉）
+> - **确定性骨架 + 两个 LLM 节点**：巡检、判异、幂等、状态机、推送全部是确定性代码；只有「根因诊断」「自然语言问诊解析」交给模型，无 API Key 时自动降级到知识库命中
+> - 40 个回归用例覆盖阈值边界、幂等去重、状态机非法流转、经验回流溯源、飞书推送与 LLM 降级
 
 <p align="center">
-  <a href="#happyclaw-是什么">介绍</a> ·
+  <a href="#pulseops-是什么">介绍</a> ·
+  <a href="#业务闭环">闭环</a> ·
   <a href="#功能总览">功能</a> ·
   <a href="#快速开始">快速开始</a> ·
   <a href="#渠道接入">渠道</a> ·
   <a href="#系统架构">架构</a> ·
-  <a href="#开发与测试">开发</a> ·
-  <a href="#贡献">贡献</a>
+  <a href="#开发与测试">开发</a>
 </p>
 
 <p align="center">
-  <a href="https://happyclaw.cc/"><strong>访问官网</strong></a> ·
   <a href="docs/API.md">API 文档</a> ·
   <a href="docs/RUNTIME-ARCHITECTURE.md">运行时架构</a> ·
   <a href="docs/ACL-MATRIX.md">权限矩阵</a> ·
   <a href="DEPLOYMENT.md">生产部署</a> ·
-  <a href="https://github.com/riba2534/happyclaw/issues">问题反馈</a>
+  <a href="https://github.com/riba2534/happyclaw/issues">上游问题反馈</a>
 </p>
 
 ---
 
-## HappyClaw 是什么
+## PulseOps 是什么
+
+PulseOps 是一个**给工厂设备当值班医生的智能体系统**：它像医生查房一样定时巡一遍产线设备，测出「脉搏」异常（振动 / 温度 / 压力超阈值）就当场开单、诊断根因、把报警推到维修班群里，处置完成后自动复盘、把这次经验写进病例库，下次遇到同类症状直接给出高置信方案。
+
+它不是一个只读的监控大屏。判断链路里每一环的性质不同，所以设计上做了明确的切分：
+
+| 环节 | 性质 | 实现方式 |
+|---|---|---|
+| 定时巡检、阈值判异 | 可穷举 | 确定性代码（严格大于阈值，边界值判健康） |
+| 未闭环工单幂等拦截 | 可穷举 | 确定性代码（同设备有未闭环单则跳过） |
+| 工单状态流转 | 可穷举 | 状态机校验（`open→assigned→done→closed`，跳级/回退/终态再流转一律拒绝） |
+| 根因假设与处置方案 | 不可穷举 | **LLM 诊断节点**（结构化事实包 → 根因/方案/置信度，强制 JSON） |
+| 「3 号机振动不对」这类问询 | 不可穷举 | **LLM 问诊解析节点**（自然语言 → 设备号 + 意图） |
+| 报警推送、复盘沉淀 | 可穷举 | 确定性调用（飞书卡片、知识库写入带 `source_wo_id` 溯源） |
+
+这样切的收益很直接：**模型只做判断，不碰写操作**——建单、改状态、推送都由代码执行，Agent 输出的每个数字都能在 `mes.db` 里对账；模型挂了、key 失效或返回坏 JSON，系统自动降级到知识库命中，巡检循环不中断。
+
+## 业务闭环
+
+```
+① 定时巡检（Cron / 手动触发）
+      ↓ 最新指标 vs 阈值（振动 8.0 / 温度 75.0 / 压力 5.5）
+② 判异 → 有超限项
+      ↓ 幂等检查：该设备已有未闭环工单？→ 跳过，不重复建单
+③ 组事实包（最新指标 + 超限项 + 3 条历史故障 + 知识库命中）
+      ↓
+④ LLM 诊断节点 → 根因假设 / 处置方案 / 置信度 / 依据
+      ↓ 输出非法或调用失败 → 降级为知识库命中
+⑤ 建单（状态机 open）→ 飞书报警卡片推送维修班
+      ↓
+⑥ 人工派单（assigned，必须带 operator）→ 回填处置（done）→ 闭环（closed）
+      ↓
+⑦ 复盘：save_knowledge 写入经验，带 source_wo_id 溯源
+      ↓
+⑧ 下次同类异常 → 知识库命中 → 诊断置信度更高（越用越准）
+```
+
+双触发收敛到同一闭环：**被动**由定时巡检进入，**主动**由人问一句「3 号机振动不对，看下」经由问诊解析节点进入，后续步骤完全一致。
+
+## 平台底座：HappyClaw 是什么
 
 HappyClaw 是一个基于 [Claude Agent SDK for TypeScript](https://github.com/anthropics/claude-agent-sdk-typescript) 的自托管 AI 智能体系统。它把完整的 Claude Code 运行时封装成一个可持续运行的多用户服务，让你可以从浏览器、飞书、Telegram、QQ、钉钉、微信、企业微信、Discord 或 WhatsApp 使用同一套智能体、工作区、能力和自动化任务。
 

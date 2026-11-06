@@ -1,7 +1,7 @@
 {
-  "name": "happyclaw",
+  "name": "pulseops",
   "version": "1.0.0",
-  "description": "Self-hosted, multi-user Claude Code agent workspace.",
+  "description": "PulseOps — 设备异常工单闭环 Agent（基于 HappyClaw 二次开发）",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {

@@ -32,7 +32,7 @@ export function LoginPage() {
   const appearance = useAuthStore((state) => state.appearance);
   const fetchAppearance = useAuthStore((state) => state.fetchAppearance);
 
-  const appName = appearance?.appName.trim() || 'HappyClaw';
+  const appName = appearance?.appName.trim() || 'PulseOps';
   const brandIconUrl = withBasePath(
     appearance?.brandIconUrl || '/icons/icon-192.png',
   );

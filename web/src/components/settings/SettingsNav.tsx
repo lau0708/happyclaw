@@ -131,7 +131,7 @@ const systemItems: NavItem[] = [
   },
   {
     key: 'main-agent',
-    label: '主 HappyClaw',
+    label: '主 PulseOps',
     icon: Bot,
     keywords: ['主智能体', '头像', 'Skills', 'MCP', '推理', '上下文压缩'],
   },
@@ -186,7 +186,7 @@ const managementItems: NavItem[] = [
 
 export const aboutItem: NavItem = {
   key: 'about',
-  label: '关于 HappyClaw',
+  label: '关于 PulseOps',
   icon: Info,
   keywords: ['版本', '开源', '作者', '反馈', 'GitHub'],
 };

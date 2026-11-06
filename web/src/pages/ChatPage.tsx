@@ -120,7 +120,7 @@ export function ChatPage() {
   const user = useAuthStore((s) => s.user);
   const isGuest = useIsGuest();
   const appearance = useAuthStore((s) => s.appearance);
-  const appName = appearance?.appName || 'HappyClaw';
+  const appName = appearance?.appName || 'PulseOps';
   const [showBugReport, setShowBugReport] = useState(false);
   const bugReportMounted = useOpenedOnce(showBugReport);
   const userInitial = (user?.display_name ||
@@ -502,7 +502,7 @@ export function ChatPage() {
               />
             </EmptyMedia>
             <EmptyTitle className="text-title">
-              欢迎使用 {appearance?.appName || 'HappyClaw'}
+              欢迎使用 {appearance?.appName || 'PulseOps'}
             </EmptyTitle>
             <EmptyDescription>
               {isGuest

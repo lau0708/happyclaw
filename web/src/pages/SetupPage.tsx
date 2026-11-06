@@ -50,12 +50,12 @@ export function SetupPage() {
         <header className="text-center">
           <img
             src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
-            alt="HappyClaw"
+            alt="PulseOps"
             className="mx-auto size-11 rounded-xl object-cover"
           />
           <p className="mt-4 text-caption text-muted-foreground">步骤 1/2</p>
           <h1 className="mt-1 text-title-lg text-foreground">
-            HappyClaw 初始设置
+            PulseOps 初始设置
           </h1>
           <p className="mt-1.5 text-body text-muted-foreground">
             先创建管理员账号，完成后进入后台继续配置飞书 Token 与 Claude Key

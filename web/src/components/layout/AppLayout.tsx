@@ -178,7 +178,7 @@ export function AppLayout() {
   );
   const appearance = useAuthStore((s) => s.appearance);
   useEffect(() => {
-    const appName = appearance?.appName || 'HappyClaw';
+    const appName = appearance?.appName || 'PulseOps';
     document.title = totalUnread > 0 ? `(${totalUnread}) ${appName}` : appName;
   }, [totalUnread, appearance?.appName]);
   // 同一个未读数也挂到安装后应用的图标上；离开已登录外壳（退出登录）时清掉

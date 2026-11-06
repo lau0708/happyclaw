@@ -7,7 +7,9 @@ import { CronExpressionParser } from 'cron-parser';
 
 import { parseContainerMemoryLimit } from './container-memory-limit.js';
 
-export const ASSISTANT_NAME = process.env.ASSISTANT_NAME || 'HappyClaw';
+// 产品品牌名：PulseOps（脉巡）。同时作为站点标题、侧边栏 Logo 文案、
+// 欢迎语与助手发言名的默认值；可用环境变量 ASSISTANT_NAME 覆盖。
+export const ASSISTANT_NAME = process.env.ASSISTANT_NAME || 'PulseOps';
 export const POLL_INTERVAL = 2000;
 export const SCHEDULER_POLL_INTERVAL = 60000;
 // Conversation/spawn sessions with no activity for this long are archived to
