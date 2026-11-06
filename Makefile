@@ -149,6 +149,19 @@ status: ## 查看服务运行状态
 	@echo "=== Docker 容器 ==="
 	@docker ps --filter "name=happyclaw" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "   Docker 未运行或无 PulseOps 容器"
 
+# ─── MES 采集与巡检 ──────────────────────────────────────────
+
+mes-api: ## 启动 MES 数据 API（端口 8002，含指标上报端点）
+	cd mes-mcp-server && python3 api.py
+
+mes-sim: ## 启动车间工况模拟器（回填 24h 历史后持续采样；透传参数：make mes-sim ARGS="--no-fault --interval 30"）
+	cd mes-mcp-server && python3 simulator.py --backfill 24 --backfill-interval 300 --interval 10 $(ARGS)
+
+mes-test: ## 运行 MES 全部单元测试（状态机/闭环/LLM 节点/飞书/采集入库；自动备份并恢复演示数据，因为闭环测试会重建种子库）
+	cd mes-mcp-server && cp data/mes.db /tmp/mes-demo-keep.db && \
+	python3 -W ignore -m unittest discover -s . -p "test_*.py"; \
+	status=$$?; cp /tmp/mes-demo-keep.db data/mes.db && echo "✔ 演示数据已恢复"; exit $$status
+
 # ─── Quality ─────────────────────────────────────────────────
 
 typecheck: sync-types typecheck-backend typecheck-web typecheck-agent-runner ## 全量类型检查

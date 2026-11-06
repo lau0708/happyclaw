@@ -1,14 +1,25 @@
-"""api.py — 轻量 HTTP JSON API（仅标准库 http.server），供 Vue 工单看板取数
+"""api.py — 轻量 HTTP JSON API（仅标准库 http.server），供看板取数 + 网关上报
 
-暴露只读查询端点 + 一个工单闭环端点，端口默认 8002。
+端点分两类：
+  只读查询：equipment / metric / work_orders / knowledge / latest_status
+  写入接口：
+    POST /api/metric            采集网关上报单条指标（需 X-API-Key）
+    POST /api/metric/batch      网关批量补传（需 X-API-Key）
+    POST /api/work_orders/...   工单派单 / 回填 / 闭环
+    POST /api/knowledge/create  经验沉淀
+
+鉴权：设置了环境变量 INGEST_API_KEY 时，上报必须带同值 X-API-Key 头；
+未设置时只接受本机（127.0.0.1）上报，便于本地联调，跨机上报请务必配置密钥。
 
 用法：python3 api.py [--port 8002]
-看板通过 vite proxy 将 /api 转发到本服务。
+看板通过 vite proxy 将 /mes-api 转发到本服务。
 """
 from __future__ import annotations
 
 import argparse
+import hmac
 import json
+import os
 import socket
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -16,8 +27,11 @@ from urllib.parse import parse_qs, urlparse
 
 import db
 
+db.load_env()
 
 PORT = 8002
+INGEST_KEY_HEADER = "X-API-Key"
+LOOPBACK = {"127.0.0.1", "::1", "localhost"}
 
 
 def _read_json(handler: BaseHTTPRequestHandler) -> dict:
@@ -91,6 +105,87 @@ def _inspect(equipment_id: str) -> tuple[int, object]:
     }
 
 
+def _ingest_auth(headers: dict | None, client_ip: str) -> tuple[bool, int, str]:
+    """上报鉴权：已配密钥则严格比对；未配密钥只放行本机
+
+    返回 (是否放行, 失败状态码, 失败原因)。用 hmac.compare_digest 避免时序侧信道。
+    """
+    expected = (os.environ.get("INGEST_API_KEY") or "").strip()
+    provided = ""
+    for key, value in (headers or {}).items():
+        if str(key).lower() == INGEST_KEY_HEADER.lower():
+            provided = (value or "").strip()
+            break
+    if expected:
+        if provided and hmac.compare_digest(provided, expected):
+            return True, 200, ""
+        return False, 401, f"{INGEST_KEY_HEADER} 缺失或不匹配"
+    if client_ip in LOOPBACK:
+        return True, 200, ""
+    return False, 403, (
+        "服务端未配置 INGEST_API_KEY，仅接受本机上报；"
+        "网关跨机上报请在 .env 设置 INGEST_API_KEY"
+    )
+
+
+def _ingest_one(item: dict) -> dict:
+    """单条指标入库（校验失败抛 db.MetricError 子类）"""
+    return db.insert_metric(
+        item.get("equipment_id"),
+        ts=item.get("ts"),
+        temp=item.get("temp"),
+        vibration=item.get("vibration"),
+        pressure=item.get("pressure"),
+        rpm=item.get("rpm"),
+        run_hours=item.get("run_hours"),
+    )
+
+
+def _ingest_single(body: dict | None, headers: dict | None, client_ip: str) -> tuple[int, object]:
+    ok, code, reason = _ingest_auth(headers, client_ip)
+    if not ok:
+        return code, {"error": reason}
+    try:
+        return 200, _ingest_one(body or {})
+    except db.EquipmentNotFound as e:
+        return 404, {"error": str(e)}
+    except db.MetricError as e:
+        return 400, {"error": str(e)}
+
+
+def _ingest_batch(body: dict | None, headers: dict | None, client_ip: str) -> tuple[int, object]:
+    """批量补传：逐条校验，坏点不影响好点（断网恢复后的续传场景）"""
+    ok, code, reason = _ingest_auth(headers, client_ip)
+    if not ok:
+        return code, {"error": reason}
+    items = (body or {}).get("metrics")
+    if not isinstance(items, list) or not items:
+        return 400, {"error": '请求体需为 {"metrics": [ {...}, ... ]}'}
+
+    accepted = duplicates = 0
+    errors: list[dict] = []
+    for index, item in enumerate(items):
+        if not isinstance(item, dict):
+            errors.append({"index": index, "error": "条目必须是对象"})
+            continue
+        try:
+            row = _ingest_one(item)
+        except db.MetricError as e:
+            errors.append({"index": index, "error": str(e)})
+            continue
+        if row.get("duplicate"):
+            duplicates += 1
+        else:
+            accepted += 1
+    return 200, {
+        "received": len(items),
+        "accepted": accepted,
+        "duplicates": duplicates,
+        "rejected": len(errors),
+        "errors": errors[:20],
+    }
+
+
 def find_free_port(preferred: int = PORT, tries: int = 30) -> int:
     """指定端口被占用时，自动顺延找下一个空闲端口（规避 Docker 等占用冲突）"""
     for p in range(preferred, preferred + tries):
@@ -103,13 +198,32 @@ def find_free_port(preferred: int = PORT, tries: int = 30) -> int:
     raise OSError(f"端口 {preferred}~{preferred + tries - 1} 均被占用")
 
 
-def handle(path: str, query: dict, body: dict | None = None) -> tuple[int, object]:
+def handle(
+    path: str,
+    query: dict,
+    body: dict | None = None,
+    headers: dict | None = None,
+    client_ip: str = "127.0.0.1",
+) -> tuple[int, object]:
     """纯函数路由：返回 (状态码, JSON可序列化数据)。可独立测试。
 
-    GET：只读查询；POST：状态推进 / 知识沉淀 / 手动巡检。
+    GET：只读查询；POST：指标上报 / 状态推进 / 知识沉淀 / 手动巡检。
     """
     if path == "/api/health":
-        return 200, {"ok": True, "db": str(db.DB_PATH)}
+        return 200, {
+            "ok": True,
+            "db": str(db.DB_PATH),
+            "ingest_auth": "api-key" if os.environ.get("INGEST_API_KEY") else "loopback-only",
+        }
+    if path == "/api/metric" and body is not None:
+        return _ingest_single(body, headers, client_ip)
+    if path == "/api/metric/batch":
+        return _ingest_batch(body, headers, client_ip)
+    if path == "/api/metric":
+        return 405, {
+            "error": "用法：POST /api/metric 上报单条指标；"
+                     "查询请用 GET /api/metric/{equipment_id}?hours=24"
+        }
     if path == "/api/equipment":
         return 200, db.query_equipment(query.get("equipment_id"))
     if path == "/api/work_orders":
@@ -164,7 +278,13 @@ class Handler(BaseHTTPRequestHandler):
         query = {k: v[0] for k, v in parse_qs(parsed.query).items()}
         body = _read_json(self) if self.command == "POST" else None
         try:
-            code, data = handle(parsed.path, query, body)
+            code, data = handle(
+                parsed.path,
+                query,
+                body,
+                headers=dict(self.headers),
+                client_ip=self.client_address[0],
+            )
         except Exception as e:  # noqa: BLE001
             code, data = 500, {"error": str(e)}
         body = json.dumps(data, ensure_ascii=False).encode("utf-8")
@@ -179,7 +299,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-API-Key")
         self.end_headers()
 
     do_GET = do_POST = _respond
@@ -195,6 +315,8 @@ def main() -> None:
     actual = server.server_address[1]
     print(f"✔ HTTP API 已启动: http://localhost:{actual}/api/health")
     print(f"  前端 vite proxy 请指向该端口：MES_API_PORT={actual} npm run dev")
+    auth_mode = "X-API-Key" if os.environ.get("INGEST_API_KEY") else "仅本机(未配置 INGEST_API_KEY)"
+    print(f"  采集上报: POST /api/metric（鉴权: {auth_mode}）")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

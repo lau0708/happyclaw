@@ -13,12 +13,14 @@ mes-mcp-server/
 ├── scheduler.py   # 定时巡检 Agent（模拟 PulseOps Cron，自动建单 + 幂等）
 ├── workorder_flow.py  # 工单闭环：经 MCP 协议跑通 建单→处置→复盘→经验回流
 ├── health_check.py    # 主动查询触发：人让 Agent 查设备健康状态并判定
-├── api.py         # 轻量 HTTP JSON API（标准库），供看板取数
+├── api.py         # 轻量 HTTP JSON API（标准库）：看板取数 + 网关指标上报（/api/metric）
 ├── agent_nodes.py # LLM 节点：诊断 / 问诊解析（OpenAI 兼容端点，无 key 自动降级）
 ├── feishu.py      # 飞书群机器人推送（Webhook + 可选签名校验，未配置自动跳过）
+├── simulator.py   # 车间工况模拟器：基线+日周期+噪声+劣化，走真实上报入口写库
 ├── test_state_machine.py  # 状态机 + 数据口径回归（15 用例）
 ├── test_closed_loop.py    # 闭环 Eval：幂等 / 经验回流 / 双触发收敛（8 用例）
 ├── test_agent_nodes.py    # LLM 节点单测（假传输层，不联网不耗 token）
+├── test_ingest.py         # 采集入库 + 模拟器（29 用例，用临时库不污染演示数据）
 ├── web/           # Vue3 + TS 工单看板（Vite）
 ├── requirements.txt
 ├── README.md
@@ -47,6 +49,48 @@ python3 scheduler.py --interval 30     # 每 30 秒巡检，异常自动诊断+�
 python3 scheduler.py --devices CNC-03,INJ-01   # 指定设备
 ```
 对同一设备未闭环工单做幂等去重，避免重复建单。真实 PulseOps 中由 Cron 定时任务 + 巡检 Agent 等价实现。
+
+## 数据采集：真实设备数据怎么进来
+
+页面的设备数据有两条写入路径，都汇到 `db.insert_metric()`（物理量校验 + 同秒幂等）：
+
+**① 采集上报（对应真实车间的网关）**
+
+```bash
+# 单条上报
+curl -X POST http://localhost:8002/api/metric \
+  -H "Content-Type: application/json" \
+  -d '{"equipment_id":"CNC-03","temp":61.2,"vibration":8.6,"pressure":4.1,"rpm":3250}'
+
+# 批量补传（断网恢复后续传；坏点不阻断好点）
+curl -X POST http://localhost:8002/api/metric/batch \
+  -H "Content-Type: application/json" \
+  -d '{"metrics":[{"equipment_id":"CNC-01","ts":"2026-11-06T10:00:00Z","vibration":6.2}, ...]}'
+```
+
+- 鉴权：`.env` 配置 `INGEST_API_KEY` 后，上报必须带同名请求头 `X-API-Key`；
+  未配置时仅接受本机上报（403 提示），网关跨机部署务必配置
+- 校验：设备编码必须已登记（404）、数值必须在物理区间内（400）、时间戳自动归一（兼容 ISO8601）
+- 幂等：同设备同秒重复上报返回 `duplicate: true`，网关重试不会把点数翻倍
+
+**② 工况模拟器（让看板"活"起来）**
+
+`init_db.py` 的种子数据是冻结的；模拟器按「基线 + 日周期负载 + 随机噪声 + 缓慢劣化」
+持续生成数据，并**走同一个上报端点**（与将来网关同一条路），前端/巡检/诊断/飞书全链路被真实驱动：
+
+```bash
+python3 simulator.py --backfill 24 --interval 10   # 回填 24h 历史 + 每 10s 持续采样
+python3 simulator.py --once                        # 只生成一轮
+python3 simulator.py --no-fault                    # 关闭故障注入
+python3 simulator.py --direct                      # 跳过 HTTP 直连写库（离线调试）
+make mes-sim ARGS="--interval 30"                  # Makefile 入口
+```
+
+默认注入 CNC-03 振动缓慢劣化（6 mm/s·h，约十几分钟越过 8.0 阈值），自动触发
+巡检 → LLM 诊断 → 建单 → 飞书推送的完整闭环；`--fault-rate 0.3` 更接近真实磨损速度。
+
+**③ 接入真实车间**：把网关/既有 MES 的数据对接到 ① 的上报端点即可，上层零改动；
+若厂里已有 MES 数据库，也可直接改 `db.py` 的 `query_*` 查对方视图。
 
 ## 工单看板（Vue3 + TS）
 
@@ -167,10 +211,12 @@ LLM  模式: 根因=主轴轴承磨损复发，导致振动值12.7 mm/s超过8.0
 ## 回归测试（交付标准验收）
 
 ```bash
+make mes-test    # 或逐个运行：
 python3 init_db.py
 python3 test_state_machine.py   # 状态机 9 + 数据契约 6
 python3 test_closed_loop.py     # 幂等 / 经验回流 / 双触发收敛
 python3 test_agent_nodes.py     # LLM 节点（假传输层，不联网）
+python3 test_ingest.py          # 采集入库 + 模拟器（29 用例，临时库不污染演示数据）
 ```
 
 ## 数据模型
@@ -191,5 +237,6 @@ python3 test_agent_nodes.py     # LLM 节点（假传输层，不联网）
 
 ## 说明
 
-- 数据为**模拟演示**用途；接入真实 MES 时，替换 `db.py` 中的查询为真实 MES API 即可，`server.py` 与 Agent 编排层无需改动。
+- 种子/模拟数据为**演示**用途；接入真实设备时，让车间网关对接 `/api/metric` 上报端点，
+  或替换 `db.py` 中的查询为真实 MES API，`server.py` 与 Agent 编排层无需改动。
 - 指标类数值请在实测后填写，代码中阈值（振动 8.0 / 温度 75 / 压力 5.5）为示例。

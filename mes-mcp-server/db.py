@@ -1,4 +1,9 @@
-"""db.py — 模拟 MES 数据访问层（仅标准库 sqlite3，无第三方依赖）"""
+"""db.py — MES 数据访问层（仅标准库 sqlite3，无第三方依赖）
+
+两类写入路径：
+  1. 人工/巡检业务写入：工单、知识库（create_work_order / save_knowledge …）
+  2. 设备采集写入：insert_metric（网关 HTTP 上报 → 本函数），带物理量校验与幂等
+"""
 from __future__ import annotations
 
 import os
@@ -12,6 +17,33 @@ DB_PATH = DATA_DIR / "mes.db"
 
 # 振动/温度/压力阈值（模拟，用于巡检异常判定）
 THRESHOLDS = {"vibration": 8.0, "temp": 75.0, "pressure": 5.5}
+
+# 采集上报的物理合理区间：超出即视为脏数据 / 单位错误，直接拒绝
+# 宁可丢一条脏点，也不能让它写进时序后误触发一张工单
+METRIC_RANGES: dict[str, tuple[float, float]] = {
+    "temp": (-40.0, 500.0),        # ℃
+    "vibration": (0.0, 200.0),     # mm/s（振动烈度）
+    "pressure": (0.0, 100.0),      # MPa
+    "rpm": (0.0, 60_000.0),        # r/min
+    "run_hours": (0.0, 10_000_000.0),
+}
+METRIC_FIELDS = ("temp", "vibration", "pressure", "rpm", "run_hours")
+
+
+def load_env(path: Path | None = None) -> None:
+    """加载同目录 .env（不覆盖已有环境变量），供 api / simulator 复用"""
+    env_path = path or (SERVER_ROOT / ".env")
+    if not env_path.exists():
+        return
+    for raw in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key, value = key.strip(), value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
 
 # --------------------------------------------------------------------------- #
 # 工单状态机：合法流转表（跳级 / 回退 / 终态再流转一律拒绝）
@@ -29,6 +61,14 @@ WORK_ORDER_TRANSITIONS: dict[str, set[str]] = {
 
 class WorkOrderError(ValueError):
     """工单状态机校验失败（非法状态 / 非法流转 / 工单不存在）"""
+
+
+class MetricError(ValueError):
+    """指标上报校验失败（数值非法 / 时间格式错误 / 无有效指标）"""
+
+
+class EquipmentNotFound(MetricError):
+    """上报的 equipment_id 不在设备台账中（编码映射没对齐）"""
 
 
 def get_db() -> sqlite3.Connection:
@@ -227,7 +267,7 @@ def latest_equipment_status() -> list[dict]:
         result = []
         for e in equip_rows:
             m = conn.execute(
-                "SELECT * FROM metric WHERE equipment_id = ? ORDER BY ts DESC LIMIT 1",
+                "SELECT * FROM metric WHERE equipment_id = ? ORDER BY ts DESC, rowid DESC LIMIT 1",
                 (e["equipment_id"],),
             ).fetchone()
             open_wo = conn.execute(
@@ -296,13 +336,121 @@ def save_knowledge(
 
 
 # --------------------------------------------------------------------------- #
+# 采集入库（网关 / 模拟器 → metric 表）
+# --------------------------------------------------------------------------- #
+def normalize_ts(ts: str | None) -> str:
+    """把上报时间戳统一到秒级 'YYYY-MM-DD HH:MM:SS'
+
+    网关侧常见格式不统一：ISO8601（带 T / Z / 毫秒 / 时区）与本地时间混用。
+    不统一就会导致 ORDER BY ts 排序错乱，进而让巡检读到"旧的最新值"。
+    """
+    if not ts:
+        return now()
+    text = str(ts).strip()
+    text = text.replace("T", " ").replace("Z", "")
+    text = text.split("+")[0].split(".")[0].strip()
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text, fmt).strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+    raise MetricError(f"时间格式无法解析: {ts}（应为 YYYY-MM-DD HH:MM:SS 或 ISO8601）")
+
+
+def _coerce_metric_values(**kwargs) -> dict[str, float]:
+    """逐字段校验类型与物理区间，返回清洗后的数值字典"""
+    cleaned: dict[str, float] = {}
+    for field in METRIC_FIELDS:
+        raw = kwargs.get(field)
+        if raw is None or raw == "":
+            continue
+        if isinstance(raw, bool):
+            raise MetricError(f"{field} 必须是数字，收到布尔值")
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            raise MetricError(f"{field} 必须是数字，收到 {raw!r}") from None
+        low, high = METRIC_RANGES[field]
+        if not (low <= value <= high):
+            raise MetricError(f"{field}={value} 超出物理合理区间 [{low}, {high}]")
+        cleaned[field] = value
+    if not cleaned:
+        raise MetricError(
+            f"未提供任何有效指标（可用字段: {', '.join(METRIC_FIELDS)}）"
+        )
+    return cleaned
+
+
+def insert_metric(
+    equipment_id: str | None,
+    ts: str | None = None,
+    temp: float | None = None,
+    vibration: float | None = None,
+    pressure: float | None = None,
+    rpm: float | None = None,
+    run_hours: float | None = None,
+) -> dict:
+    """写入一条设备运行指标（采集入口，幂等）
+
+    约束：
+      - equipment_id 必须已在设备台账登记（否则网关编码映射没对齐，入库也无法关联工单）
+      - 数值必须落在 METRIC_RANGES 物理区间内，超区间直接拒绝
+      - 同一设备同一秒重复上报视为同一条（INSERT OR IGNORE + 确定性 id），
+        返回 duplicate=True，避免网关重试把点数翻倍
+    """
+    eq = (equipment_id or "").strip()
+    if not eq:
+        raise MetricError("缺少 equipment_id")
+    if not query_equipment(eq):
+        raise EquipmentNotFound(f"设备不存在: {eq}（请先在设备台账登记该编码）")
+
+    ts_text = normalize_ts(ts)
+    values = _coerce_metric_values(
+        temp=temp, vibration=vibration, pressure=pressure, rpm=rpm, run_hours=run_hours
+    )
+    # 确定性主键：同设备同秒 → 同一条，天然幂等（不依赖自增/随机 id）
+    mid = f"M-{eq}-{ts_text.replace('-', '').replace(':', '').replace(' ', '')}"
+
+    with get_db() as conn:
+        existed = conn.execute("SELECT 1 FROM metric WHERE id = ?", (mid,)).fetchone()
+        if existed:
+            return {"id": mid, "equipment_id": eq, "ts": ts_text, "duplicate": True}
+        conn.execute(
+            "INSERT INTO metric(id, equipment_id, ts, temp, vibration, pressure, rpm, run_hours) "
+            "VALUES (?,?,?,?,?,?,?,?)",
+            (
+                mid, eq, ts_text,
+                values.get("temp"), values.get("vibration"), values.get("pressure"),
+                values.get("rpm"), values.get("run_hours"),
+            ),
+        )
+    return {
+        "id": mid,
+        "equipment_id": eq,
+        "ts": ts_text,
+        "values": values,
+        "duplicate": False,
+    }
+
+
+def latest_metric_row(equipment_id: str) -> dict | None:
+    """取设备最新一条指标（供模拟器续算 run_hours 等状态）"""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM metric WHERE equipment_id = ? ORDER BY ts DESC, rowid DESC LIMIT 1",
+            (equipment_id,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+# --------------------------------------------------------------------------- #
 # 巡检 / 异常判定
 # --------------------------------------------------------------------------- #
 def check_latest_metric(equipment_id: str) -> dict | None:
     """读取设备最新一条运行指标，返回是否超阈值及超限项"""
     with get_db() as conn:
         row = conn.execute(
-            "SELECT * FROM metric WHERE equipment_id = ? ORDER BY ts DESC LIMIT 1",
+            "SELECT * FROM metric WHERE equipment_id = ? ORDER BY ts DESC, rowid DESC LIMIT 1",
             (equipment_id,),
         ).fetchone()
     if not row:
