@@ -1,8 +1,10 @@
 /**
- * MesUi.tsx — 设备业务页共享的深色工业风组件
- * 视觉基调与 mes-dashboard（深色大屏）一致：#0B1220 底、#0E1729 面板、蓝色主强调。
+ * MesUi.tsx — 设备业务页共享的工业风组件
+ * 配色全部走 globals.css 里的 --mes-* 变量（浅色/深色两套），
+ * 因此右上角的主题切换按钮会让业务页与全站一起换肤。
  */
 import { type ReactNode, useEffect } from 'react';
+import { ThemeToggle } from '../common/ThemeToggle';
 
 export const MES_THRESHOLDS = {
   vibration: { label: '振动 mm/s', max: 8.0 },
@@ -13,18 +15,20 @@ export const MES_THRESHOLDS = {
 export type MesMetricKey = keyof typeof MES_THRESHOLDS;
 
 export const MES_COLORS = {
-  bg: '#0B1220',
-  panel: '#0E1729',
-  card: '#101B31',
-  border: '#1C2A44',
-  borderSoft: '#1A2740',
-  text: '#E6EDF7',
-  muted: '#8FA3C0',
-  faint: '#51638A',
-  accent: '#4DA3FF',
-  ok: '#34D399',
-  warn: '#FBBF24',
-  bad: '#F87171',
+  bg: 'var(--mes-bg)',
+  panel: 'var(--mes-panel)',
+  card: 'var(--mes-card)',
+  border: 'var(--mes-border)',
+  borderSoft: 'var(--mes-border-soft)',
+  text: 'var(--mes-text)',
+  textSoft: 'var(--mes-text-soft)',
+  muted: 'var(--mes-muted)',
+  faint: 'var(--mes-faint)',
+  accent: 'var(--mes-accent)',
+  accentSoft: 'var(--mes-accent-soft)',
+  ok: 'var(--mes-ok)',
+  warn: 'var(--mes-warn)',
+  bad: 'var(--mes-bad)',
 };
 
 export function MesShell({
@@ -57,7 +61,10 @@ export function MesShell({
                 </p>
               )}
             </div>
-            {actions}
+            <div className="flex items-center gap-2">
+              {actions}
+              <ThemeToggle />
+            </div>
           </header>
           {children}
         </div>
@@ -88,7 +95,7 @@ export function MesPanel({
       {title && (
         <div
           className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[13px] font-medium"
-          style={{ color: '#B7C6DE' }}
+          style={{ color: MES_COLORS.textSoft }}
         >
           <span>{title}</span>
           {right && (
@@ -116,7 +123,7 @@ export function KpiCard({
   sub?: ReactNode;
   tone?: 'text' | 'ok' | 'warn' | 'bad' | 'accent';
 }) {
-  const toneClass = { text: '', ok: 'text-emerald-400', warn: 'text-amber-400', bad: 'text-red-400', accent: 'text-[#4DA3FF]' }[tone];
+  const toneClass = { text: '', ok: 'text-[var(--mes-ok)]', warn: 'text-[var(--mes-warn)]', bad: 'text-[var(--mes-bad)]', accent: 'text-[var(--mes-accent)]' }[tone];
   return (
     <div
       className="rounded-[10px] p-4"
@@ -155,7 +162,7 @@ export function MetricBar({
           {label}
           {unit ? '' : ` / ${max}`}
         </span>
-        <span className={v > max ? 'text-red-400' : ''}>{value ?? '--'}</span>
+        <span className={v > max ? 'text-[var(--mes-bad)] font-medium' : ''}>{value ?? '--'}</span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full" style={{ background: MES_COLORS.borderSoft }}>
         <div
@@ -187,21 +194,22 @@ export function Sparkline({
     .join(' ');
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="mt-1.5 block">
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" />
+      {/* 走 style 而不是属性：CSS 变量只在样式声明里解析 */}
+      <polyline points={pts} fill="none" style={{ stroke: color }} strokeWidth="1.5" />
     </svg>
   );
 }
 
 export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; fg: string; label: string }> = {
-    open: { bg: '#33260A', fg: MES_COLORS.warn, label: '待处理' },
-    assigned: { bg: '#0F2440', fg: MES_COLORS.accent, label: '已派单' },
-    done: { bg: '#06281E', fg: MES_COLORS.ok, label: '已回填' },
-    closed: { bg: '#1A2338', fg: MES_COLORS.muted, label: '已闭环' },
-    running: { bg: '#06281E', fg: MES_COLORS.ok, label: '运行' },
-    alarm: { bg: '#3B0D0D', fg: MES_COLORS.bad, label: '告警' },
+    open: { bg: 'var(--mes-warn-bg)', fg: MES_COLORS.warn, label: '待处理' },
+    assigned: { bg: 'var(--mes-accent-soft)', fg: MES_COLORS.accent, label: '已派单' },
+    done: { bg: 'var(--mes-ok-bg)', fg: MES_COLORS.ok, label: '已回填' },
+    closed: { bg: 'var(--mes-border-soft)', fg: MES_COLORS.muted, label: '已闭环' },
+    running: { bg: 'var(--mes-ok-bg)', fg: MES_COLORS.ok, label: '运行' },
+    alarm: { bg: 'var(--mes-alarm-bg)', fg: MES_COLORS.bad, label: '告警' },
   };
-  const s = map[status] || { bg: '#1A2338', fg: MES_COLORS.muted, label: status };
+  const s = map[status] || { bg: 'var(--mes-border-soft)', fg: MES_COLORS.muted, label: status };
   return (
     <span className="inline-block rounded px-2 py-0.5 text-[11px]" style={{ background: s.bg, color: s.fg }}>
       {s.label}
@@ -211,11 +219,11 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function SeverityTag({ severity }: { severity: string }) {
   const map: Record<string, { bg: string; fg: string; label: string }> = {
-    high: { bg: '#3B0D0D', fg: MES_COLORS.bad, label: '紧急' },
-    medium: { bg: '#33260A', fg: MES_COLORS.warn, label: '一般' },
-    low: { bg: '#06281E', fg: MES_COLORS.ok, label: '低优' },
+    high: { bg: 'var(--mes-alarm-bg)', fg: MES_COLORS.bad, label: '紧急' },
+    medium: { bg: 'var(--mes-warn-bg)', fg: MES_COLORS.warn, label: '一般' },
+    low: { bg: 'var(--mes-ok-bg)', fg: MES_COLORS.ok, label: '低优' },
   };
-  const s = map[severity] || { bg: '#1A2338', fg: MES_COLORS.muted, label: severity };
+  const s = map[severity] || { bg: 'var(--mes-border-soft)', fg: MES_COLORS.muted, label: severity };
   return (
     <span className="inline-block rounded px-2 py-0.5 text-[11px]" style={{ background: s.bg, color: s.fg }}>
       {s.label}
@@ -246,12 +254,12 @@ export function MesModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-6 md:p-10"
-      style={{ background: 'rgba(4,8,18,.72)' }}
+      style={{ background: 'var(--mes-overlay)' }}
       onClick={onClose}
     >
       <div
         className="w-full rounded-xl p-5"
-        style={{ maxWidth: width, background: MES_COLORS.panel, border: `1px solid #2A3C61` }}
+        style={{ maxWidth: width, background: MES_COLORS.panel, border: '1px solid var(--mes-btn-border)' }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -267,11 +275,11 @@ export function MesModal({
 }
 
 export const mesInputClass =
-  'w-full rounded-md border px-3 py-2 text-[13px] outline-none focus:border-[#4DA3FF]';
+  'w-full rounded-md border px-3 py-2 text-[13px] outline-none focus:border-[var(--mes-accent)]';
 
 export const mesInputStyle = {
   background: MES_COLORS.card,
-  borderColor: '#2A3C61',
+  borderColor: 'var(--mes-btn-border)',
   color: MES_COLORS.text,
 };
 
@@ -279,15 +287,15 @@ export const mesBtnClass =
   'rounded-md border px-3 py-1.5 text-xs transition-colors';
 
 export const mesBtnStyle = {
-  background: '#16233D',
-  borderColor: '#2A3C61',
-  color: '#B7C6DE',
+  background: 'var(--mes-btn-bg)',
+  borderColor: 'var(--mes-btn-border)',
+  color: 'var(--mes-btn-text)',
 };
 
 export const mesBtnPrimaryClass = mesBtnClass + ' hover:opacity-90';
 
 export const mesBtnPrimaryStyle = {
-  background: '#1D4ED8',
-  borderColor: '#1D4ED8',
+  background: 'var(--mes-primary)',
+  borderColor: 'var(--mes-primary)',
   color: '#fff',
 };

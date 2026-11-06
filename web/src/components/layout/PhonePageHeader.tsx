@@ -4,6 +4,7 @@ import { create } from 'zustand';
 
 import { cn } from '@/lib/utils';
 import { IconButton } from '../common/IconButton';
+import { ThemeToggle } from '../common/ThemeToggle';
 import { ResponsiveMenu, type MenuAction } from '../common/ResponsiveMenu';
 import { NavDrawerButton } from './NavDrawer';
 import { useIsPhone } from './phone';
@@ -95,6 +96,8 @@ export function PhoneTopBar() {
           )}
         </>
       )}
+      {/* 手机右上角同样可以一键换肤（ml-auto 在无标题时也靠右） */}
+      <ThemeToggle size="md" className="ml-auto" />
     </div>
   );
 }

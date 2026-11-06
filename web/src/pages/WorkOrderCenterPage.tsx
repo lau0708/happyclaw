@@ -74,7 +74,7 @@ export function WorkOrderCenterPage() {
   return (
     <MesShell title="工单中心" subtitle="open → assigned → done → closed · 所有流转经状态机校验并留痕">
       {error && (
-        <div className="mb-5 rounded-lg px-4 py-3 text-sm text-amber-300" style={{ background: '#33260A', border: '1px solid #7a5b16' }}>
+        <div className="mb-5 rounded-lg px-4 py-3 text-sm text-[var(--mes-warn-text)]" style={{ background: 'var(--mes-warn-bg)', border: '1px solid var(--mes-warn-border)' }}>
           MES 后端未连接：请先运行 <code>python3 mes-mcp-server/api.py</code>
         </div>
       )}
@@ -85,7 +85,7 @@ export function WorkOrderCenterPage() {
             value={status}
             onChange={(e) => setStatus(e.target.value)}
             className="rounded-md border px-3 py-1.5 text-xs outline-none"
-            style={{ background: MES_COLORS.card, borderColor: '#2A3C61', color: '#B7C6DE' }}
+            style={{ background: MES_COLORS.card, borderColor: 'var(--mes-btn-border)', color: 'var(--mes-btn-text)' }}
           >
             <option value="">全部状态</option>
             {STATUS_OPTIONS.map((s) => (
@@ -96,7 +96,7 @@ export function WorkOrderCenterPage() {
             value={equipmentId}
             onChange={(e) => setEquipmentId(e.target.value)}
             className="rounded-md border px-3 py-1.5 text-xs outline-none"
-            style={{ background: MES_COLORS.card, borderColor: '#2A3C61', color: '#B7C6DE' }}
+            style={{ background: MES_COLORS.card, borderColor: 'var(--mes-btn-border)', color: 'var(--mes-btn-text)' }}
           >
             <option value="">全部设备</option>
             {eqOptions.map((e) => (
@@ -121,7 +121,7 @@ export function WorkOrderCenterPage() {
             <tbody>
               {orders.map((o) => (
                 <tr key={o.wo_id} style={{ borderTop: `1px solid ${MES_COLORS.border}` }}>
-                  <td className="px-2.5 py-2.5 font-mono text-xs text-[#4DA3FF]">{o.wo_id}</td>
+                  <td className="px-2.5 py-2.5 font-mono text-xs text-[var(--mes-accent)]">{o.wo_id}</td>
                   <td className="px-2.5 py-2.5">{o.equipment_id}</td>
                   <td className="max-w-[340px] px-2.5 py-2.5">
                     <div>{o.fault_desc}</div>
@@ -296,7 +296,7 @@ function LogsModal({ woId, onClose }: { woId: string | null; onClose: () => void
             <span className="w-[128px] shrink-0 tabular-nums" style={{ color: MES_COLORS.faint }}>{l.ts}</span>
             <span className="w-16 shrink-0 text-emerald-400">{l.operator || '系统'}</span>
             <span>
-              <span className="mr-2 rounded bg-[#0F2440] px-1.5 py-0.5 text-[11px] text-[#4DA3FF]">{l.action}</span>
+              <span className="mr-2 rounded bg-[var(--mes-accent-soft)] px-1.5 py-0.5 text-[11px] text-[var(--mes-accent)]">{l.action}</span>
               {l.detail}
             </span>
           </div>

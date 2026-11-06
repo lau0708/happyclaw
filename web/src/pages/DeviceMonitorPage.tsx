@@ -78,7 +78,7 @@ export function DeviceMonitorPage() {
       subtitle="实时指标 / 超限告警 / 工单联动 · 数据 30s 自动刷新 · 点击设备查看详情"
     >
       {error && (
-        <div className="mb-5 rounded-lg px-4 py-3 text-sm text-amber-300" style={{ background: '#33260A', border: '1px solid #7a5b16' }}>
+        <div className="mb-5 rounded-lg px-4 py-3 text-sm text-[var(--mes-warn-text)]" style={{ background: 'var(--mes-warn-bg)', border: '1px solid var(--mes-warn-border)' }}>
           MES 后端未连接：请先运行 <code>python3 mes-mcp-server/api.py</code>
         </div>
       )}
@@ -117,12 +117,12 @@ export function DeviceMonitorPage() {
                 key={d.equipment_id}
                 className="mb-1.5 flex items-center gap-3.5 rounded-lg px-2.5 py-3"
                 style={{
-                  background: alert ? '#1B1224' : MES_COLORS.card,
-                  border: `1px solid ${alert ? '#7F1D1D' : MES_COLORS.borderSoft}`,
+                  background: alert ? 'var(--mes-alarm-bg)' : MES_COLORS.card,
+                  border: `1px solid ${alert ? 'var(--mes-alarm-border)' : MES_COLORS.borderSoft}`,
                 }}
               >
                 <button className="w-[140px] shrink-0 text-left" onClick={() => setDetailEq(d.equipment_id)}>
-                  <b className="block text-sm hover:text-[#4DA3FF]">{d.equipment_id}</b>
+                  <b className="block text-sm hover:text-[var(--mes-accent)]">{d.equipment_id}</b>
                   <span className="text-xs" style={{ color: MES_COLORS.muted }}>{d.name}</span>
                 </button>
                 <MetricBar label="振动" value={m?.vibration} max={MES_THRESHOLDS.vibration.max} />
@@ -186,7 +186,7 @@ function LatestOrders() {
       {orders.slice(0, 4).map((o) => (
         <div key={o.wo_id} className="mb-2 px-1 py-2" style={{ borderBottom: `1px solid ${MES_COLORS.border}` }}>
           <div className="mb-1.5 flex items-center gap-2">
-            <span className="font-mono text-xs text-[#4DA3FF]">{o.wo_id}</span>
+            <span className="font-mono text-xs text-[var(--mes-accent)]">{o.wo_id}</span>
             <StatusBadge status={o.status} />
           </div>
           <div className="text-xs" style={{ color: MES_COLORS.muted }}>
@@ -274,7 +274,7 @@ function DeviceDetail({
       </div>
 
       <div className="mb-2 flex items-center justify-between">
-        <b className="text-[13px]" style={{ color: '#B7C6DE' }}>历史故障（{faults.length}）</b>
+        <b className="text-[13px]" style={{ color: 'var(--mes-btn-text)' }}>历史故障（{faults.length}）</b>
         <button className={mesBtnClass} style={mesBtnStyle} onClick={runInspect} disabled={inspectRunning}>
           {inspectRunning ? '巡检中…' : '手动巡检（完整闭环）'}
         </button>
@@ -295,7 +295,7 @@ function DeviceDetail({
             <tbody>
               {faults.map((f) => (
                 <tr key={f.fault_id} style={{ borderTop: `1px solid ${MES_COLORS.border}` }}>
-                  <td className="py-2 pr-3 font-mono text-xs text-[#4DA3FF]">{f.fault_id}</td>
+                  <td className="py-2 pr-3 font-mono text-xs text-[var(--mes-accent)]">{f.fault_id}</td>
                   <td className="py-2 pr-3">{f.fault_code}</td>
                   <td className="max-w-[200px] py-2 pr-3">{f.fault_desc}</td>
                   <td className="py-2 pr-3">{f.down_minutes} min</td>

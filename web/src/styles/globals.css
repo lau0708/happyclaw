@@ -1304,3 +1304,71 @@ html.dark.theme-neutral {
   --error: #f87171;
   --error-bg: #2e0f12;
 }
+
+/* =====================================================
+   MES 设备业务页调色板（浅色 / 深色双套）
+   业务四页（设备监控 / 工单中心 / 故障知识库 / 智能巡检）
+   直接以 var(--mes-*) 取色，因此右上角的主题切换按钮一按，
+   大屏会跟着整站一起变浅，不会出现「外壳变白、内容还是黑的」。
+   :root 为浅色工业配色（冷灰白底 + 深蓝强调），html.dark 沿用
+   原有 #0B1220 深海军蓝。选择器特异性：html.dark > :root。
+   ===================================================== */
+:root {
+  --mes-bg: #f3f7fc;
+  --mes-panel: #ffffff;
+  --mes-card: #ffffff;
+  --mes-border: #dce6f2;
+  --mes-border-soft: #e7eff8;
+  --mes-text: #0e1b2e;
+  --mes-text-soft: #33455e;
+  --mes-muted: #5a6b85;
+  --mes-faint: #8597b0;
+  --mes-accent: #1668d6;
+  --mes-accent-soft: #e9f1fc;
+  --mes-ok: #0b9a6b;
+  --mes-ok-bg: #e7f8f1;
+  --mes-warn: #b45309;
+  --mes-bad: #d92d20;
+  --mes-warn-bg: #fff8e8;
+  --mes-warn-border: #efd398;
+  --mes-warn-text: #8a5300;
+  --mes-alarm-bg: #fdf1f1;
+  --mes-alarm-border: #f1b7b7;
+  --mes-overlay: rgba(15, 27, 45, 0.38);
+  --mes-btn-bg: #ffffff;
+  --mes-btn-border: #dce6f2;
+  --mes-btn-text: #33455e;
+  --mes-primary: #1668d6;
+  --mes-shadow: 0 1px 2px rgba(15, 27, 45, 0.06);
+}
+
+html.dark,
+html.dark.theme-orange,
+html.dark.theme-neutral {
+  --mes-bg: #0b1220;
+  --mes-panel: #0e1729;
+  --mes-card: #101b31;
+  --mes-border: #1c2a44;
+  --mes-border-soft: #1a2740;
+  --mes-text: #e6edf7;
+  --mes-text-soft: #b7c6de;
+  --mes-muted: #8fa3c0;
+  --mes-faint: #51638a;
+  --mes-accent: #4da3ff;
+  --mes-accent-soft: #0f2440;
+  --mes-ok: #34d399;
+  --mes-ok-bg: #06281e;
+  --mes-warn: #fbbf24;
+  --mes-bad: #f87171;
+  --mes-warn-bg: #33260a;
+  --mes-warn-border: #7a5b16;
+  --mes-warn-text: #fcd34d;
+  --mes-alarm-bg: #1b1224;
+  --mes-alarm-border: #7f1d1d;
+  --mes-overlay: rgba(4, 8, 18, 0.72);
+  --mes-btn-bg: #16233d;
+  --mes-btn-border: #2a3c61;
+  --mes-btn-text: #b7c6de;
+  --mes-primary: #1d4ed8;
+  --mes-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}

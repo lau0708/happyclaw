@@ -70,7 +70,7 @@ export function SmartInspectionPage() {
       subtitle="手动触发走完整闭环：判异 → 幂等 → LLM 诊断 → 建单 → 飞书推送 · 定时巡检用 scheduler.py"
     >
       {error && (
-        <div className="mb-5 rounded-lg px-4 py-3 text-sm text-amber-300" style={{ background: '#33260A', border: '1px solid #7a5b16' }}>
+        <div className="mb-5 rounded-lg px-4 py-3 text-sm text-[var(--mes-warn-text)]" style={{ background: 'var(--mes-warn-bg)', border: '1px solid var(--mes-warn-border)' }}>
           MES 后端未连接：请先运行 <code>python3 mes-mcp-server/api.py</code>
         </div>
       )}
@@ -112,7 +112,7 @@ export function SmartInspectionPage() {
                 return (
                   <tr key={d.equipment_id} style={{ borderTop: `1px solid ${MES_COLORS.border}` }}>
                     <td className="whitespace-nowrap px-2.5 py-2.5">
-                      <b className="text-[#4DA3FF]">{d.equipment_id}</b>
+                      <b className="text-[var(--mes-accent)]">{d.equipment_id}</b>
                       <span className="ml-1.5" style={{ color: MES_COLORS.muted }}>{d.name}</span>
                     </td>
                     <td className="px-2.5 py-2.5 text-xs">
@@ -150,7 +150,7 @@ export function SmartInspectionPage() {
             {Object.entries(MES_THRESHOLDS).map(([k, t]) => (
               <div key={k} className="rounded-lg px-3 py-3" style={{ background: MES_COLORS.card, border: `1px solid ${MES_COLORS.borderSoft}` }}>
                 <div className="text-xs" style={{ color: MES_COLORS.muted }}>{t.label}</div>
-                <div className="mt-0.5 text-xl font-semibold tabular-nums text-[#4DA3FF]">{t.max}</div>
+                <div className="mt-0.5 text-xl font-semibold tabular-nums text-[var(--mes-accent)]">{t.max}</div>
               </div>
             ))}
           </div>
@@ -159,7 +159,7 @@ export function SmartInspectionPage() {
           <div className="flex flex-wrap gap-2 text-xs">
             {FLOW_STEPS.map((s, i) => (
               <span key={s} className="rounded-md px-3 py-2" style={{ background: MES_COLORS.card, border: `1px solid ${MES_COLORS.borderSoft}` }}>
-                <span className="mr-1.5 text-[#4DA3FF]">{i + 1}</span>
+                <span className="mr-1.5 text-[var(--mes-accent)]">{i + 1}</span>
                 {s}
               </span>
             ))}

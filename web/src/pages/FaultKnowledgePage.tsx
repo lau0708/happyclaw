@@ -22,7 +22,7 @@ import {
 function KnCard({ k }: { k: Knowledge }) {
   return (
     <div className="mb-2.5 rounded-lg p-3.5" style={{ background: MES_COLORS.card, border: `1px solid ${MES_COLORS.borderSoft}` }}>
-      <div className="mb-1.5 flex flex-wrap justify-between gap-2 font-mono text-xs text-[#4DA3FF]">
+      <div className="mb-1.5 flex flex-wrap justify-between gap-2 font-mono text-xs text-[var(--mes-accent)]">
         <span>{k.id} · {k.fault_code}</span>
         <span style={{ color: MES_COLORS.faint }}>{k.created_at}</span>
       </div>
@@ -39,7 +39,7 @@ function KnCard({ k }: { k: Knowledge }) {
       <div className="text-[13px]">
         <span className="mr-1 inline-block w-14 shrink-0" style={{ color: MES_COLORS.muted }}>溯源</span>
         {k.source_wo_id ? (
-          <span className="font-mono text-xs text-[#4DA3FF]">{k.source_wo_id}</span>
+          <span className="font-mono text-xs text-[var(--mes-accent)]">{k.source_wo_id}</span>
         ) : (
           <span style={{ color: MES_COLORS.faint }}>预置种子</span>
         )}
@@ -82,7 +82,7 @@ export function FaultKnowledgePage() {
       }
     >
       {error && (
-        <div className="mb-5 rounded-lg px-4 py-3 text-sm text-amber-300" style={{ background: '#33260A', border: '1px solid #7a5b16' }}>
+        <div className="mb-5 rounded-lg px-4 py-3 text-sm text-[var(--mes-warn-text)]" style={{ background: 'var(--mes-warn-bg)', border: '1px solid var(--mes-warn-border)' }}>
           MES 后端未连接：请先运行 <code>python3 mes-mcp-server/api.py</code>
         </div>
       )}

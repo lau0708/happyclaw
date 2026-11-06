@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from './ThemeToggle';
 
 export interface PageHeaderProps {
   title: string;
@@ -25,9 +26,10 @@ export function PageHeader({
           <p className="mt-1 text-body text-muted-foreground">{subtitle}</p>
         )}
       </div>
-      {actions && (
-        <div className="flex shrink-0 items-center gap-2">{actions}</div>
-      )}
+      <div className="flex shrink-0 items-center gap-2">
+        {actions}
+        <ThemeToggle />
+      </div>
     </div>
   );
 }

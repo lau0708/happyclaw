@@ -94,6 +94,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Spinner } from '@/components/ui/spinner';
 import { IconButton } from '../common/IconButton';
+import { ThemeToggle } from '../common/ThemeToggle';
 import { lazyImBindingDialog } from '../common/lazy-dialogs';
 import { InfoTip } from '../common/InfoTip';
 import { wsManager } from '../../api/ws';
@@ -1564,6 +1565,8 @@ export function ChatView({ groupJid, onBack, headerLeft }: ChatViewProps) {
                 className={cn('hidden phone:inline-flex', phoneHeaderButton)}
               />
             )}
+            {/* 桌面会话页右上角的一键换肤；手机顶部空间留给标题与更多操作 */}
+            <ThemeToggle className="hidden lg:inline-flex" />
           </div>
         </header>
 
