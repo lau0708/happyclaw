@@ -55,6 +55,24 @@ export interface Knowledge {
   created_at: string;
 }
 
+export interface HistoryFault {
+  fault_id: string;
+  equipment_id: string;
+  fault_code: string;
+  fault_desc: string;
+  root_cause: string;
+  resolution: string;
+  occurred_at: string;
+  down_minutes: number;
+}
+
+export interface WorkOrderLog {
+  action: string;
+  detail: string;
+  operator: string | null;
+  ts: string;
+}
+
 const base = '/mes-api';
 
 async function get<T>(path: string): Promise<T> {
@@ -63,15 +81,54 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function post<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(base + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body ?? {}),
+  });
+  const data = (await res.json().catch(() => ({}))) as T & { error?: string };
+  if (!res.ok) throw new Error(data.error || `请求失败（${res.status}）`);
+  return data;
+}
+
 export const mesApi = {
   deviceStatus: () => get<DeviceStatus[]>('/latest_status'),
   equipment: (id?: string) =>
     get<Equipment[]>('/equipment' + (id ? `?equipment_id=${id}` : '')),
   metric: (equipmentId: string, hours = 24) =>
     get<Metric[]>(`/metric/${equipmentId}?hours=${hours}`),
-  workOrders: (status?: string) =>
-    get<WorkOrder[]>('/work_orders' + (status ? `?status=${status}` : '')),
-  knowledge: () => get<Knowledge[]>('/knowledge'),
+  historyFaults: (equipmentId: string) =>
+    get<HistoryFault[]>(`/history_faults/${equipmentId}`),
+  workOrders: (status?: string, equipmentId?: string) => {
+    const qs = new URLSearchParams();
+    if (status) qs.set('status', status);
+    if (equipmentId) qs.set('equipment_id', equipmentId);
+    const q = qs.toString();
+    return get<WorkOrder[]>('/work_orders' + (q ? `?${q}` : ''));
+  },
+  knowledge: (q?: string) =>
+    get<Knowledge[]>('/knowledge' + (q ? `?q=${encodeURIComponent(q)}` : '')),
   closeWorkOrder: (woId: string) =>
-    get<WorkOrder>(`/work_orders/${woId}/close`),
+    post<WorkOrder>(`/work_orders/${woId}/close`),
+  assignWorkOrder: (woId: string, operator: string) =>
+    post<WorkOrder>(`/work_orders/${woId}/assign`, { operator }),
+  doneWorkOrder: (woId: string, resolution: string, operator?: string) =>
+    post<WorkOrder>(`/work_orders/${woId}/done`, { resolution, operator }),
+  workOrderLogs: (woId: string) =>
+    get<WorkOrderLog[]>(`/work_orders/${woId}/logs`),
+  createKnowledge: (input: {
+    fault_code: string;
+    symptom: string;
+    root_cause: string;
+    resolution: string;
+    source_wo_id?: string | null;
+  }) => post<{ id: string; created_at: string }>('/knowledge/create', input),
+  inspect: (equipmentId: string) =>
+    post<{
+      equipment_id: string;
+      over_threshold: string[];
+      new_work_order: boolean;
+      open_work_orders: number;
+    }>(`/inspect/${equipmentId}`),
 };

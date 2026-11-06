@@ -1,113 +1,171 @@
-import { useEffect, useState } from 'react';
-import { Radar } from 'lucide-react';
-import { mesApi, type DeviceStatus, type WorkOrder } from '../api/mes';
+/**
+ * SmartInspectionPage — 智能巡检（深色工业大屏风格）
+ * 逐设备手动巡检（走完整闭环）+ 阈值看板 + 闭环流程说明
+ */
+import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { mesApi, type DeviceStatus } from '../api/mes';
+import {
+  MesShell,
+  MesPanel,
+  KpiCard,
+  StatusBadge,
+  MES_THRESHOLDS,
+  MES_COLORS,
+  mesBtnPrimaryClass,
+  mesBtnPrimaryStyle,
+} from '../components/mes/MesUi';
 
-const overLabel: Record<string, string> = {
-  vibration: '振动',
-  temp: '温度',
-  pressure: '压力',
-};
+const FLOW_STEPS = [
+  '定时巡检取数',
+  '阈值判异',
+  '幂等拦截',
+  'LLM 诊断（可降级）',
+  '创建工单',
+  '飞书报警推送',
+  '人工处置回填',
+  '复盘沉淀知识库',
+];
 
 export function SmartInspectionPage() {
   const [devices, setDevices] = useState<DeviceStatus[]>([]);
-  const [openOrders, setOpenOrders] = useState<WorkOrder[]>([]);
   const [error, setError] = useState('');
+  const [inspecting, setInspecting] = useState('');
 
-  useEffect(() => {
-    Promise.all([mesApi.deviceStatus(), mesApi.workOrders()])
-      .then(([ds, wo]) => {
-        setDevices(ds);
-        setOpenOrders(wo.filter((o) => o.status !== 'closed'));
-      })
-      .catch((e) => setError(String(e)));
+  const load = useCallback(async () => {
+    try {
+      setDevices(await mesApi.deviceStatus());
+      setError('');
+    } catch (e) {
+      setError(String(e));
+    }
   }, []);
 
-  const abnormal = devices.filter((d) => d.over_threshold.length > 0);
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 30_000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  const alertDevices = devices.filter((d) => d.over_threshold.length > 0);
+
+  const runInspect = async (eqId: string) => {
+    setInspecting(eqId);
+    try {
+      const r = await mesApi.inspect(eqId);
+      if (r.over_threshold.length === 0) toast.success(`${eqId} 巡检完成：各指标正常`);
+      else if (r.new_work_order) toast.error(`${eqId} 超限（${r.over_threshold.join('/')}），已诊断并创建新工单`);
+      else toast.warning(`${eqId} 超限，但已有未闭环工单，幂等跳过建单`);
+      await load();
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setInspecting('');
+    }
+  };
 
   return (
-    <div className="min-h-full px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground">智能巡检</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-            定时巡检 Agent 周期性扫描设备指标，超阈值自动触发「诊断 → 建单 → 推送」，并做幂等去重。
-          </p>
-        </header>
-
-        {error && (
-          <div className="mb-6 rounded-xl border border-border bg-warning-bg px-4 py-3 text-sm text-warning">
-            后端未连接：请先运行 <code>python3 api.py</code>。
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <div className="mb-3 flex items-center gap-2">
-              <Radar className="size-4 text-primary" />
-              <h2 className="text-sm font-semibold text-foreground">
-                异常设备（超阈值）
-              </h2>
-            </div>
-            {abnormal.length === 0 ? (
-              <p className="text-sm text-muted-foreground">当前无异常设备。</p>
-            ) : (
-              <ul className="space-y-2">
-                {abnormal.map((d) => (
-                  <li
-                    key={d.equipment_id}
-                    className="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm"
-                  >
-                    <span className="font-medium text-foreground">
-                      {d.name} ({d.equipment_id})
-                    </span>
-                    <span className="text-red-600">
-                      {d.over_threshold.map((o) => overLabel[o] || o).join(' / ')} 超限
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-            <h2 className="mb-3 text-sm font-semibold text-foreground">
-              未闭环工单（{openOrders.length}）
-            </h2>
-            {openOrders.length === 0 ? (
-              <p className="text-sm text-muted-foreground">暂无待处理工单。</p>
-            ) : (
-              <ul className="space-y-2">
-                {openOrders.map((o) => (
-                  <li
-                    key={o.wo_id}
-                    className="rounded-lg border border-border px-3 py-2 text-sm"
-                  >
-                    <div className="font-mono text-xs text-muted-foreground">
-                      {o.wo_id} · {o.equipment_id}
-                    </div>
-                    <div className="text-foreground">{o.fault_desc}</div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+    <MesShell
+      title="智能巡检"
+      subtitle="手动触发走完整闭环：判异 → 幂等 → LLM 诊断 → 建单 → 飞书推送 · 定时巡检用 scheduler.py"
+    >
+      {error && (
+        <div className="mb-5 rounded-lg px-4 py-3 text-sm text-amber-300" style={{ background: '#33260A', border: '1px solid #7a5b16' }}>
+          MES 后端未连接：请先运行 <code>python3 mes-mcp-server/api.py</code>
         </div>
+      )}
 
-        <div className="mt-4 rounded-xl border border-border bg-card p-5 text-sm leading-6 text-muted-foreground shadow-sm">
-          <p className="font-medium text-foreground">运行方式</p>
-          <p className="mt-1">
-            在 mes-mcp-server 目录执行{' '}
-            <code className="rounded bg-muted px-1.5 py-0.5">
-              python3 scheduler.py --once
-            </code>{' '}
-            触发单次巡检；或{' '}
-            <code className="rounded bg-muted px-1.5 py-0.5">
-              python3 scheduler.py --interval 30
-            </code>{' '}
-            每 30 秒巡检。异常设备会自动生成工单并推送到工单中心。
-          </p>
-        </div>
+      <div className="mb-4 grid grid-cols-2 gap-3.5 xl:grid-cols-4">
+        <KpiCard label="巡检对象" value={devices.length} sub={<span style={{ color: MES_COLORS.muted }}>全部在线设备</span>} />
+        <KpiCard
+          label="本轮异常"
+          value={alertDevices.length}
+          tone={alertDevices.length ? 'bad' : 'ok'}
+          sub={
+            alertDevices.length ? (
+              <span className="text-red-400">
+                {alertDevices.map((d) => `${d.equipment_id} ${d.over_threshold.join('/')}`).join('；')}
+              </span>
+            ) : (
+              <span className="text-emerald-400">无超限项</span>
+            )
+          }
+        />
+        <KpiCard label="诊断引擎" value="LLM" tone="accent" sub={<span className="text-emerald-400">失败自动降级知识库</span>} />
+        <KpiCard label="定时巡检" value={60} suffix="s" sub={<span style={{ color: MES_COLORS.muted }}>scheduler.py --interval 60</span>} />
       </div>
-    </div>
+
+      <MesPanel title="逐设备巡检" right="超限时经幂等校验后自动建单并推送飞书">
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="text-left text-[11px]" style={{ color: MES_COLORS.faint }}>
+                {['设备', '最新指标', '超限项', '开放工单', '操作'].map((h) => (
+                  <th key={h} className="whitespace-nowrap px-2.5 py-2 font-normal">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {devices.map((d) => {
+                const m = d.latest_metric;
+                const alert = d.over_threshold.length > 0;
+                return (
+                  <tr key={d.equipment_id} style={{ borderTop: `1px solid ${MES_COLORS.border}` }}>
+                    <td className="whitespace-nowrap px-2.5 py-2.5">
+                      <b className="text-[#4DA3FF]">{d.equipment_id}</b>
+                      <span className="ml-1.5" style={{ color: MES_COLORS.muted }}>{d.name}</span>
+                    </td>
+                    <td className="px-2.5 py-2.5 text-xs">
+                      振 {m?.vibration ?? '--'} · 温 {m?.temp ?? '--'} · 压 {m?.pressure ?? '--'}
+                      <span className="ml-1.5" style={{ color: MES_COLORS.faint }}>({m?.ts.slice(11, 16) ?? '--'})</span>
+                    </td>
+                    <td className="px-2.5 py-2.5">
+                      {alert ? <StatusBadge status="alarm" /> : <span className="text-emerald-400">无</span>}
+                      {alert && <span className="ml-1.5 text-xs text-red-400">{d.over_threshold.join(' / ')}</span>}
+                    </td>
+                    <td className={'px-2.5 py-2.5 ' + (d.open_work_orders ? 'text-amber-400' : '')} style={!d.open_work_orders ? { color: MES_COLORS.faint } : {}}>
+                      {d.open_work_orders || 0}
+                    </td>
+                    <td className="px-2.5 py-2.5">
+                      <button
+                        className={mesBtnPrimaryClass}
+                        style={mesBtnPrimaryStyle}
+                        onClick={() => runInspect(d.equipment_id)}
+                        disabled={inspecting === d.equipment_id}
+                      >
+                        {inspecting === d.equipment_id ? '巡检中…' : '手动巡检'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </MesPanel>
+
+      <div className="grid grid-cols-1 gap-3.5 lg:grid-cols-2">
+        <MesPanel title="判异阈值（严格大于才触发）">
+          <div className="grid grid-cols-3 gap-2.5">
+            {Object.entries(MES_THRESHOLDS).map(([k, t]) => (
+              <div key={k} className="rounded-lg px-3 py-3" style={{ background: MES_COLORS.card, border: `1px solid ${MES_COLORS.borderSoft}` }}>
+                <div className="text-xs" style={{ color: MES_COLORS.muted }}>{t.label}</div>
+                <div className="mt-0.5 text-xl font-semibold tabular-nums text-[#4DA3FF]">{t.max}</div>
+              </div>
+            ))}
+          </div>
+        </MesPanel>
+        <MesPanel title="闭环流程">
+          <div className="flex flex-wrap gap-2 text-xs">
+            {FLOW_STEPS.map((s, i) => (
+              <span key={s} className="rounded-md px-3 py-2" style={{ background: MES_COLORS.card, border: `1px solid ${MES_COLORS.borderSoft}` }}>
+                <span className="mr-1.5 text-[#4DA3FF]">{i + 1}</span>
+                {s}
+              </span>
+            ))}
+          </div>
+        </MesPanel>
+      </div>
+    </MesShell>
   );
 }
