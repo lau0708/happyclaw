@@ -122,14 +122,14 @@ _build-backend-if-stale: ## (内部) 后端变更时重新编译（Node 模式�
 	fi; \
 	if [ "$$NEED_BACKEND" = "1" ]; then echo "🔨 检测到后端源码变更，重新编译后端..."; $(PKG) run build; else echo "✅ 后端无变更，跳过编译"; fi
 
-logs: ## 实时查看日志（需配合手动后台运行：make start > /tmp/happyclaw.log 2>&1 &）
-	@tail -f /tmp/happyclaw.log
+logs: ## 实时查看日志（需配合手动后台运行：make start > /tmp/pulseops.log 2>&1 &）
+	@tail -f /tmp/pulseops.log
 
 stop: ## 停止监听指定端口的服务进程
-	@lsof -ti:$(PORT) -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null && echo "✅ 已停止 HappyClaw (端口 $(PORT))" || echo "⚠️  端口 $(PORT) 未被占用，无需停止"
+	@lsof -ti:$(PORT) -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null && echo "✅ 已停止 PulseOps (端口 $(PORT))" || echo "⚠️  端口 $(PORT) 未被占用，无需停止"
 
 status: ## 查看服务运行状态
-	@echo "=== HappyClaw 服务状态 ==="
+	@echo "=== PulseOps 服务状态 ==="
 	@if lsof -ti:$(PORT) -sTCP:LISTEN >/dev/null 2>&1; then \
 	  echo "✅ 后端进程: 运行中 (端口 $(PORT))"; \
 	  curl -s http://localhost:$(PORT)/api/health 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"   健康状态: {d.get('status','unknown')}\")" 2>/dev/null || echo "   健康状态: 无法获取"; \
@@ -138,16 +138,16 @@ status: ## 查看服务运行状态
 	fi
 	@echo ""
 	@echo "=== 日志文件 ==="
-	@if [ -f /tmp/happyclaw.log ]; then \
-	  echo "✅ /tmp/happyclaw.log 存在 ($$(wc -l < /tmp/happyclaw.log) 行)"; \
+	@if [ -f /tmp/pulseops.log ]; then \
+	  echo "✅ /tmp/pulseops.log 存在 ($$(wc -l < /tmp/pulseops.log) 行)"; \
 	  echo "   最近 3 行:"; \
-	  tail -3 /tmp/happyclaw.log | sed 's/^/   /'; \
+	  tail -3 /tmp/pulseops.log | sed 's/^/   /'; \
 	else \
-	  echo "⚠️  /tmp/happyclaw.log 不存在（未用后台模式启动）"; \
+	  echo "⚠️  /tmp/pulseops.log 不存在（未用后台模式启动）"; \
 	fi
 	@echo ""
 	@echo "=== Docker 容器 ==="
-	@docker ps --filter "name=happyclaw" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "   Docker 未运行或无 HappyClaw 容器"
+	@docker ps --filter "name=happyclaw" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "   Docker 未运行或无 PulseOps 容器"
 
 # ─── Quality ─────────────────────────────────────────────────
 
@@ -252,14 +252,14 @@ reset-init: ## 完全重置为首装状态（清空所有运行时数据）
 
 # ─── Backup / Restore ────────────────────────────────────────
 
-backup: ## 备份运行时数据到 happyclaw-backup-{date}.tar.gz
+backup: ## 备份运行时数据到 pulseops-backup-{date}.tar.gz
 	@set -eu; \
 	DATE=$$(date +%Y%m%d-%H%M%S); \
 	mkdir -p "$(BACKUP_DIR)"; \
-	FILE="$(BACKUP_DIR)/happyclaw-backup-$$DATE.tar.gz"; \
-	if [ -e "$$FILE" ]; then FILE="$(BACKUP_DIR)/happyclaw-backup-$$DATE-$$$$.tar.gz"; fi; \
+	FILE="$(BACKUP_DIR)/pulseops-backup-$$DATE.tar.gz"; \
+	if [ -e "$$FILE" ]; then FILE="$(BACKUP_DIR)/pulseops-backup-$$DATE-$$$$.tar.gz"; fi; \
 	TMP_FILE="$$FILE.tmp-$$$$"; \
-	TMP_ROOT=$$(mktemp -d "$${TMPDIR:-/tmp}/happyclaw-backup.XXXXXX"); \
+	TMP_ROOT=$$(mktemp -d "$${TMPDIR:-/tmp}/pulseops-backup.XXXXXX"); \
 	trap 'rm -rf "$$TMP_ROOT" "$$TMP_FILE"' EXIT INT TERM; \
 	mkdir -p "$$TMP_ROOT/data/db"; \
 	echo "📦 正在创建 SQLite 一致性快照..."; \
@@ -299,18 +299,18 @@ backup: ## 备份运行时数据到 happyclaw-backup-{date}.tar.gz
 	chmod 600 "$$FILE"; \
 	echo "✅ 备份完成：$$FILE ($$(du -sh "$$FILE" | cut -f1))"
 
-restore: ## 从 happyclaw-backup-*.tar.gz 恢复数据（用法：make restore 或 make restore FILE=xxx.tar.gz）
+restore: ## 从 pulseops-backup-*.tar.gz 恢复数据（兼容改名前的 happyclaw-backup-*，用法：make restore 或 make restore FILE=xxx.tar.gz）
 	@set -eu; \
 	if [ -n "$(FILE)" ]; then \
 	  BACKUP="$(FILE)"; \
-	elif [ $$(find "$(BACKUP_DIR)" -maxdepth 1 -type f -name 'happyclaw-backup-*.tar.gz' 2>/dev/null | wc -l) -eq 1 ]; then \
-	  BACKUP=$$(find "$(BACKUP_DIR)" -maxdepth 1 -type f -name 'happyclaw-backup-*.tar.gz' | head -1); \
-	elif [ $$(find "$(BACKUP_DIR)" -maxdepth 1 -type f -name 'happyclaw-backup-*.tar.gz' 2>/dev/null | wc -l) -gt 1 ]; then \
+	elif [ $$(find "$(BACKUP_DIR)" -maxdepth 1 -type f -name '*-backup-*.tar.gz' 2>/dev/null | wc -l) -eq 1 ]; then \
+	  BACKUP=$$(find "$(BACKUP_DIR)" -maxdepth 1 -type f -name '*-backup-*.tar.gz' | head -1); \
+	elif [ $$(find "$(BACKUP_DIR)" -maxdepth 1 -type f -name '*-backup-*.tar.gz' 2>/dev/null | wc -l) -gt 1 ]; then \
 	  echo "❌ 发现多个备份文件，请用 make restore FILE=xxx.tar.gz 指定："; \
-	  find "$(BACKUP_DIR)" -maxdepth 1 -type f -name 'happyclaw-backup-*.tar.gz' -print; \
+	  find "$(BACKUP_DIR)" -maxdepth 1 -type f -name '*-backup-*.tar.gz' -print; \
 	  exit 1; \
 	else \
-	  echo "❌ 未找到备份文件，请将 happyclaw-backup-*.tar.gz 放到当前目录"; \
+	  echo "❌ 未找到备份文件，请将 pulseops-backup-*.tar.gz 放到当前目录"; \
 	  exit 1; \
 	fi; \
 	if [ ! -f "$$BACKUP" ]; then \
