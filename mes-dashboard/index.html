@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备健康中枢 · 工业监控台</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #0B1220; color: #E6EDF7; font-size: 14px; }
+  .layout { display: flex; min-height: 100vh; }
+  .side { width: 200px; background: #0E1729; border-right: 1px solid #1C2A44; padding: 20px 12px; flex-shrink: 0; position: sticky; top: 0; height: 100vh; }
+  .logo { font-size: 15px; font-weight: 600; color: #4DA3FF; padding: 0 10px 20px; letter-spacing: 1px; }
+  .nav a { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 8px; color: #8FA3C0; text-decoration: none; margin-bottom: 4px; font-size: 13px; cursor: pointer; }
+  .nav a.active { background: #16233D; color: #E6EDF7; border-left: 3px solid #4DA3FF; }
+  .nav .dot { width: 8px; height: 8px; border-radius: 2px; background: #33456B; flex-shrink: 0; }
+  .nav a.active .dot { background: #4DA3FF; }
+  .side .foot { position: absolute; bottom: 16px; left: 12px; right: 12px; font-size: 11px; color: #51638A; }
+  .main { flex: 1; padding: 20px 24px; min-width: 0; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .topbar h1 { font-size: 18px; font-weight: 600; }
+  .clock { color: #8FA3C0; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .clock .live { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #34D399; margin-right: 6px; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+  .kpi { background: #0E1729; border: 1px solid #1C2A44; border-radius: 10px; padding: 14px 16px; }
+  .kpi .label { color: #8FA3C0; font-size: 12px; margin-bottom: 6px; }
+  .kpi .value { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .kpi .sub { font-size: 12px; margin-top: 4px; }
+  .ok { color: #34D399; } .warn { color: #FBBF24; } .bad { color: #F87171; } .blue { color: #4DA3FF; } .muted { color: #8FA3C0; }
+  .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .panel { background: #0E1729; border: 1px solid #1C2A44; border-radius: 10px; padding: 16px; min-width: 0; margin-bottom: 14px; }
+  .panel h2 { font-size: 13px; font-weight: 600; color: #B7C6DE; margin-bottom: 12px; letter-spacing: .5px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .panel h2 .r { font-weight: 400; color: #51638A; font-size: 11px; }
+  .dev { display: flex; align-items: center; gap: 14px; padding: 12px 10px; border-radius: 8px; margin-bottom: 6px; background: #101B31; border: 1px solid #1A2740; }
+  .dev.alert { border-color: #7F1D1D; background: #1B1224; }
+  .dev .name { width: 150px; flex-shrink: 0; cursor: pointer; }
+  .dev .name b { display: block; font-size: 14px; }
+  .dev .name b:hover { color: #4DA3FF; }
+  .dev .name span { font-size: 12px; color: #8FA3C0; }
+  .metric { flex: 1; min-width: 0; }
+  .metric .ml { font-size: 11px; color: #8FA3C0; display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .bar { height: 6px; border-radius: 3px; background: #1A2740; overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 3px; transition: width .6s; }
+  .badge { font-size: 12px; padding: 3px 10px; border-radius: 20px; flex-shrink: 0; }
+  .badge.run { background: #06281E; color: #34D399; }
+  .badge.alarm { background: #3B0D0D; color: #F87171; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: #51638A; font-weight: 400; font-size: 11px; padding: 8px 10px; border-bottom: 1px solid #16233D; white-space: nowrap; }
+  td { padding: 10px; border-bottom: 1px solid #121E36; font-variant-numeric: tabular-nums; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  .wo-id { color: #4DA3FF; font-family: ui-monospace, Menlo, monospace; font-size: 12px; cursor: pointer; }
+  .wo-id:hover { text-decoration: underline; }
+  .tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .tag.high { background: #3B0D0D; color: #F87171; }
+  .tag.medium { background: #33260A; color: #FBBF24; }
+  .tag.low { background: #06281E; color: #34D399; }
+  .st { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; }
+  .st.open { background: #33260A; color: #FBBF24; }
+  .st.assigned { background: #0F2440; color: #4DA3FF; }
+  .st.done { background: #06281E; color: #34D399; }
+  .st.closed { background: #1A2338; color: #8FA3C0; }
+  .btn { background: #16233D; border: 1px solid #2A3C61; color: #B7C6DE; border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; }
+  .btn:hover { border-color: #4DA3FF; color: #4DA3FF; }
+  .btn.primary { background: #1D4ED8; border-color: #1D4ED8; color: #fff; }
+  .btn.primary:hover { background: #2563EB; color: #fff; }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .empty { color: #51638A; text-align: center; padding: 30px 0; font-size: 13px; }
+  .kn-card { background: #101B31; border: 1px solid #1A2740; border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+  .kn-card .code { color: #4DA3FF; font-family: ui-monospace, Menlo, monospace; font-size: 12px; margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .kn-card .row { font-size: 13px; margin: 3px 0; line-height: 1.5; }
+  .kn-card .row .k { color: #8FA3C0; width: 64px; display: inline-block; flex-shrink: 0; }
+  .chart-wrap { position: relative; height: 220px; }
+  .mini-charts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .mini-charts .c { background: #101B31; border: 1px solid #1A2740; border-radius: 8px; padding: 10px; }
+  .mini-charts .t { font-size: 12px; color: #8FA3C0; margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .modal-mask { position: fixed; inset: 0; background: rgba(4, 8, 18, .72); z-index: 50; display: none; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 40px 20px; }
+  .modal-mask.show { display: flex; }
+  .modal { background: #0E1729; border: 1px solid #2A3C61; border-radius: 12px; width: 860px; max-width: 100%; padding: 20px 22px; }
+  .modal .m-hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .modal .m-hd b { font-size: 15px; }
+  .modal .m-close { background: none; border: none; color: #8FA3C0; font-size: 18px; cursor: pointer; }
+  .modal label { display: block; font-size: 12px; color: #8FA3C0; margin: 12px 0 6px; }
+  .modal input, .modal textarea { width: 100%; background: #101B31; border: 1px solid #2A3C61; border-radius: 6px; color: #E6EDF7; padding: 9px 12px; font-size: 13px; font-family: inherit; }
+  .modal textarea { min-height: 70px; resize: vertical; }
+  .modal .m-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  .toast { position: fixed; top: 18px; right: 18px; background: #16233D; border: 1px solid #2A3C61; color: #E6EDF7; padding: 12px 18px; border-radius: 8px; font-size: 13px; z-index: 99; display: none; max-width: 420px; }
+  .toast.err { border-color: #7F1D1D; color: #F87171; }
+  .select, .search { background: #101B31; border: 1px solid #2A3C61; color: #B7C6DE; border-radius: 6px; padding: 6px 10px; font-size: 12px; }
+  .th-box { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .th-item { background: #101B31; border: 1px solid #1A2740; border-radius: 8px; padding: 12px; }
+  .th-item .n { font-size: 12px; color: #8FA3C0; }
+  .th-item .v { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .log-item { display: flex; gap: 12px; padding: 8px 6px; border-bottom: 1px solid #121E36; font-size: 12px; }
+  .log-item:last-child { border-bottom: none; }
+  .log-item .ts { color: #51638A; width: 130px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .log-item .who { color: #34D399; width: 70px; flex-shrink: 0; }
+  .flow { display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; }
+  .flow span { background: #101B31; border: 1px solid #1A2740; border-radius: 6px; padding: 8px 12px; }
+  .kv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .kv .i { background: #101B31; border: 1px solid #1A2740; border-radius: 8px; padding: 10px 12px; }
+  .kv .i .k { font-size: 11px; color: #51638A; }
+  .kv .i .v { font-size: 13px; margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="logo">设备健康中枢</div>
+    <nav class="nav" id="nav">
+      <a data-page="overview" class="active"><span class="dot"></span>设备总览</a>
+      <a data-page="orders"><span class="dot"></span>工单中心</a>
+      <a data-page="knowledge"><span class="dot"></span>故障知识库</a>
+      <a data-page="inspection"><span class="dot"></span>智能巡检</a>
+    </nav>
+    <div class="foot">MES API <span id="api-state" class="ok">连接中…</span><br>30s 自动刷新</div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <h1 id="page-title">车间实时监控 · 3 号产线</h1>
+      <div class="clock"><span class="live"></span><span id="clock">--</span></div>
+    </div>
+    <div id="content"></div>
+  </main>
+</div>
+
+<div class="modal-mask" id="modal-mask"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = location.port === '8002' ? '' : 'http://127.0.0.1:8002';
+const THRESHOLDS = { vibration: { label: '振动 mm/s', max: 8.0 }, temp: { label: '温度 ℃', max: 75.0 }, pressure: { label: '压力 MPa', max: 5.5 } };
+const EQ_NAMES = {};
+let charts = [];
+let cacheDevices = [], cacheOrders = [];
+
+async function jget(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || path + ' → ' + r.status); }
+  return r.json();
+}
+async function jpost(path, body) {
+  const r = await fetch(API + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, data };
+}
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.innerHTML = msg; t.className = 'toast' + (isErr ? ' err' : ''); t.style.display = 'block';
+  clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 3600);
+}
+function fmtBar(val, max) {
+  const pct = Math.min(100, Math.round((val || 0) / max * 100));
+  const cls = val > max ? '#F87171' : pct > 80 ? '#FBBF24' : '#34D399';
+  return `<div class="bar"><i style="width:${pct}%;background:${cls}"></i></div>`;
+}
+function spark(vals, color) {
+  if (!vals || vals.length < 2) return '';
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const pts = vals.map((v, i) => `${(i / (vals.length - 1) * 200).toFixed(1)},${(20 - (v - min) / (max - min || 1) * 18).toFixed(1)}`).join(' ');
+  return `<svg width="200" height="22" viewBox="0 0 200 22" preserveAspectRatio="none" style="margin-top:6px;display:block"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5"/></svg>`;
+}
+function killCharts() { charts.forEach(c => c.destroy()); charts = []; }
+function lineChart(id, labels, data, color, extraSets) {
+  const ctx = document.getElementById(id).getContext('2d');
+  charts.push(new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ label: id, data, borderColor: color, backgroundColor: color + '14', fill: true, tension: .35, pointRadius: 0, borderWidth: 2 }, ...(extraSets || [])] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { ticks: { color: '#51638A', maxTicksLimit: 8 }, grid: { color: '#16233D' } }, y: { ticks: { color: '#51638A' }, grid: { color: '#16233D' } } } }
+  }));
+}
+
+/* ---------------- 通用弹窗 ---------------- */
+function openModal(html) {
+  document.getElementById('modal').innerHTML = html;
+  document.getElementById('modal-mask').classList.add('show');
+}
+function closeModal() { document.getElementById('modal-mask').classList.remove('show'); }
+document.getElementById('modal-mask').addEventListener('click', e => { if (e.target.id === 'modal-mask') closeModal(); });
+
+/* ---------------- 设备详情弹窗 ---------------- */
+async function showDevice(eqId) {
+  openModal(`<div class="m-hd"><b>设备详情 · ${esc(eqId)}</b><button class="m-close" onclick="closeModal()">✕</button></div><div class="empty">加载中…</div>`);
+  try {
+    const [eqList, metrics, faults] = await Promise.all([
+      jget('/api/equipment?equipment_id=' + eqId),
+      jget('/api/metric/' + eqId + '?hours=24'),
+      jget('/api/history_faults/' + eqId),
+    ]);
+    const eq = (Array.isArray(eqList) ? eqList : [eqList])[0] || {};
+    const labels = metrics.map(m => (m.ts || '').slice(5, 16));
+    const colors = { vibration: '#F87171', temp: '#FBBF24', pressure: '#4DA3FF' };
+    openModal(`<div class="m-hd"><b>设备详情 · ${esc(eqId)} <span class="muted" style="font-weight:400;font-size:13px;">${esc(eq.name || '')}</span></b><button class="m-close" onclick="closeModal()">✕</button></div>
+      <div class="kv" style="margin-bottom:14px;">
+        <div class="i"><div class="k">类型 / 产线</div><div class="v">${esc(eq.type || '--')} · ${esc(eq.line || '--')}</div></div>
+        <div class="i"><div class="k">厂商 / 型号</div><div class="v">${esc(eq.mfr || '--')} ${esc(eq.model || '')}</div></div>
+        <div class="i"><div class="k">安装日期</div><div class="v">${esc(eq.install_date || '--')}</div></div>
+        <div class="i"><div class="k">状态</div><div class="v">${esc(eq.status || '--')}</div></div>
+      </div>
+      <div class="mini-charts" style="margin-bottom:14px;">${Object.entries(THRESHOLDS).map(([k, t]) => `
+        <div class="c"><div class="t"><span>${t.label}</span><span>阈值 ${t.max}</span></div>
+        <div style="position:relative;height:110px;"><canvas id="mc-${k}" role="img" aria-label="${esc(t.label)}24小时趋势">无数据</canvas></div></div>`).join('')}
+      </div>
+      <h2 style="font-size:13px;color:#B7C6DE;margin-bottom:10px;">历史故障（${faults.length}）</h2>
+      ${faults.length ? `<div style="max-height:200px;overflow-y:auto;"><table>
+        <tr><th>故障号</th><th>故障类型</th><th>描述</th><th>停机时长</th><th>处置</th><th>发生时间</th></tr>
+        ${faults.map(f => `<tr><td class="wo-id" style="cursor:default;">${esc(f.fault_id || f.fault_code || '--')}</td><td>${esc(f.fault_code || '--')}</td><td style="max-width:220px;">${esc(f.description || '--')}</td><td>${esc(f.downtime_min != null ? f.downtime_min + ' min' : '--')}</td><td style="max-width:200px;">${esc(f.resolution || '--')}</td><td class="muted">${esc(f.ts || f.occurred_at || '--')}</td></tr>`).join('')}
+      </table></div>` : '<div class="empty">无历史故障记录</div>'}`);
+    Object.entries(THRESHOLDS).forEach(([k, t]) => lineChart('mc-' + k, labels, metrics.map(m => m[k]), colors[k]));
+  } catch (e) { openModal(`<div class="m-hd"><b>设备详情</b><button class="m-close" onclick="closeModal()">✕</button></div><div class="empty">${esc(e.message)}</div>`); }
+}
+
+/* ---------------- 工单日志弹窗 ---------------- */
+async function showLogs(woId) {
+  openModal(`<div class="m-hd"><b>流转留痕 · ${esc(woId)}</b><button class="m-close" onclick="closeModal()">✕</button></div><div class="empty">加载中…</div>`);
+  const logs = await jget('/api/work_orders/' + woId + '/logs');
+  openModal(`<div class="m-hd"><b>流转留痕 · ${esc(woId)}</b><button class="m-close" onclick="closeModal()">✕</button></div>
+    ${logs.length ? logs.map(l => `<div class="log-item"><span class="ts">${esc(l.ts)}</span><span class="who">${esc(l.operator || '系统')}</span><span><span class="tag" style="background:#0F2440;color:#4DA3FF;margin-right:8px;">${esc(l.action)}</span>${esc(l.detail)}</span></div>`).join('') : '<div class="empty">无留痕</div>'}`);
+}
+
+/* ---------------- 工单操作弹窗 ---------------- */
+function showAssign(woId) {
+  openModal(`<div class="m-hd"><b>派单 · ${esc(woId)}</b><button class="m-close" onclick="closeModal()">✕</button></div>
+    <label>维修人 / 班组（必填，将回填 assignee 并留痕）</label>
+    <input id="as-op" placeholder="如：王师傅 / 电工班">
+    <div class="m-foot"><button class="btn" onclick="closeModal()">取消</button><button class="btn primary" id="as-go">确认派单</button></div>`);
+  document.getElementById('as-go').onclick = async () => {
+    const op = document.getElementById('as-op').value.trim();
+    if (!op) return toast('请填写维修人', true);
+    const r = await jpost('/api/work_orders/' + woId + '/assign', { operator: op });
+    if (r.ok) { closeModal(); toast('✔ 已派单给 ' + esc(op) + '（open → assigned）'); refresh(); }
+    else toast('✘ ' + esc(r.data.error || '派单失败'), true);
+  };
+}
+function showDone(woId) {
+  openModal(`<div class="m-hd"><b>处置回填 · ${esc(woId)}</b><button class="m-close" onclick="closeModal()">✕</button></div>
+    <label>维修人</label><input id="dn-op" placeholder="如：王师傅">
+    <label>处置结果（必填，将写入工单 plan 并留痕）</label>
+    <textarea id="dn-res" placeholder="如：更换主轴轴承 6208，校动平衡后复测振动 5.8，恢复正常"></textarea>
+    <div class="m-foot"><button class="btn" onclick="closeModal()">取消</button><button class="btn primary" id="dn-go">确认回填</button></div>`);
+  document.getElementById('dn-go').onclick = async () => {
+    const res = document.getElementById('dn-res').value.trim();
+    if (!res) return toast('请填写处置结果', true);
+    const r = await jpost('/api/work_orders/' + woId + '/done', { resolution: res, operator: document.getElementById('dn-op').value.trim() || undefined });
+    if (r.ok) { closeModal(); toast('✔ 处置已回填（→ done），可继续闭环归档'); refresh(); }
+    else toast('✘ ' + esc(r.data.error || '回填失败'), true);
+  };
+}
+async function doClose(woId) {
+  const r = await jpost('/api/work_orders/' + woId + '/close');
+  if (r.ok) { toast('✔ ' + woId + ' 已沿状态机闭环归档'); refresh(); }
+  else toast('✘ ' + esc(r.data.error || '闭环失败'), true);
+}
+async function doInspect(eqId) {
+  toast('⏳ 正在巡检 ' + eqId + '…');
+  const r = await jpost('/api/inspect/' + eqId);
+  if (r.ok) {
+    const d = r.data;
+    if (d.over_threshold.length === 0) toast('✔ ' + eqId + ' 巡检完成：各指标正常');
+    else if (d.new_work_order) toast('🔴 ' + eqId + ' 超限（' + esc(d.over_threshold.join('/')) + '），已诊断并创建新工单');
+    else toast('🟡 ' + eqId + ' 超限，但已有未闭环工单，幂等跳过建单');
+    refresh();
+  } else toast('✘ ' + esc(r.data.error || '巡检失败'), true);
+}
+
+/* ---------------- 页面：设备总览 ---------------- */
+async function renderOverview(el) {
+  el.innerHTML = '<div class="empty">加载中…</div>';
+  const [devices, orders] = await Promise.all([jget('/api/latest_status'), jget('/api/work_orders')]);
+  cacheDevices = devices; cacheOrders = orders;
+  devices.forEach(d => EQ_NAMES[d.equipment_id] = d.name);
+  const alertDevs = devices.filter(d => d.over_threshold.length > 0);
+  const openWo = orders.filter(o => !['closed', 'done'].includes(o.status));
+  const metrics = await Promise.all(devices.map(d => jget('/api/metric/' + d.equipment_id + '?hours=24').catch(() => [])));
+
+  el.innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="label">在线设备</div><div class="value">${devices.length}<span style="font-size:14px;color:#8FA3C0"> / ${devices.length}</span></div><div class="sub ok">全部联网</div></div>
+      <div class="kpi"><div class="label">告警设备</div><div class="value ${alertDevs.length ? 'bad' : 'ok'}">${alertDevs.length}</div><div class="sub ${alertDevs.length ? 'bad' : 'ok'}">${alertDevs.length ? esc(alertDevs.map(d => d.equipment_id).join(' ') + ' 超限') : '各指标均在阈值内'}</div></div>
+      <div class="kpi"><div class="label">未闭环工单</div><div class="value ${openWo.length ? 'warn' : 'ok'}">${openWo.length}</div><div class="sub warn">${openWo.length ? '可在工单中心处置' : '全部闭环'}</div></div>
+      <div class="kpi"><div class="label">工单总数</div><div class="value blue">${orders.length}</div><div class="sub ok">闭环 ${orders.filter(o => o.status === 'closed').length} 张</div></div>
+    </div>
+    <div class="grid">
+      <div class="panel"><h2>设备实时状态<span class="r">点击设备名查看详情 · 阈值 ${Object.values(THRESHOLDS).map(t => t.max).join(' / ')}</span></h2>
+        ${devices.map((d, i) => {
+          const m = d.latest_metric || {};
+          const alert = d.over_threshold.length > 0;
+          const vib24 = metrics[i].slice(-24).map(x => x.vibration);
+          return `<div class="dev ${alert ? 'alert' : ''}">
+            <div class="name" data-eq="${esc(d.equipment_id)}" title="查看设备详情"><b>${esc(d.equipment_id)}</b><span>${esc(d.name)}</span></div>
+            ${Object.entries(THRESHOLDS).map(([k, t]) => `<div class="metric"><div class="ml"><span>${t.label}</span><span class="${(m[k] || 0) > t.max ? 'bad' : ''}">${m[k] != null ? m[k] : '--'} / ${t.max}</span></div>${fmtBar(m[k], t.max)}${k === 'vibration' ? spark(vib24, alert ? '#F87171' : '#34D399') : ''}</div>`).join('')}
+            <span class="badge ${alert ? 'alarm' : 'run'}">${alert ? '告警' : '运行'}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="panel"><h2>最新工单</h2>
+        ${orders.length ? orders.slice(0, 4).map(o => `
+          <div style="padding:10px 8px;border-bottom:1px solid #16233D;">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+              <span class="wo-id" data-wo="${esc(o.wo_id)}">${esc(o.wo_id)}</span>
+              <span class="tag ${esc(o.severity)}">${o.severity === 'high' ? '紧急' : o.severity === 'medium' ? '一般' : '低优'}</span>
+              <span class="st ${esc(o.status)}">${esc(o.status)}</span>
+            </div>
+            <div style="font-size:12px;color:#8FA3C0;">${esc(o.equipment_id)} · ${esc((o.fault_desc || '').slice(0, 36))}…</div>
+          </div>`).join('') : '<div class="empty">暂无工单</div>'}
+        <div style="margin-top:12px;"><button class="btn primary" onclick="location.hash='#/orders'">进入工单中心 →</button></div>
+      </div>
+    </div>
+    <div class="panel"><h2>告警设备 24h 振动趋势<span class="r">红色虚线 = 阈值 8.0</span></h2>
+      <div class="chart-wrap"><canvas id="trend-chart" role="img" aria-label="告警设备24小时振动趋势折线图">加载失败</canvas></div>
+    </div>`;
+
+  el.querySelectorAll('[data-eq]').forEach(n => n.addEventListener('click', () => showDevice(n.dataset.eq)));
+  el.querySelectorAll('[data-wo]').forEach(n => n.addEventListener('click', () => showLogs(n.dataset.wo)));
+  const alertEq = alertDevs[0] || devices[0];
+  const series = metrics[devices.findIndex(d => d.equipment_id === alertEq.equipment_id)] || [];
+  const ctx = document.getElementById('trend-chart').getContext('2d');
+  charts.push(new Chart(ctx, {
+    type: 'line',
+    data: { labels: series.map(x => (x.ts || '').slice(11, 16)), datasets: [
+      { label: '振动', data: series.map(x => x.vibration), borderColor: '#F87171', backgroundColor: 'rgba(248,113,113,.08)', fill: true, tension: .35, pointRadius: 0, borderWidth: 2 },
+      { label: '阈值 8.0', data: series.map(() => 8.0), borderColor: 'rgba(248,113,113,.5)', borderDash: [5, 5], pointRadius: 0, borderWidth: 1 } ] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { ticks: { color: '#51638A', maxTicksLimit: 12 }, grid: { color: '#16233D' } }, y: { ticks: { color: '#51638A' }, grid: { color: '#16233D' } } } }
+  }));
+}
+
+/* ---------------- 页面：工单中心 ---------------- */
+let woFilter = { status: '', equipment_id: '' };
+async function renderOrders(el) {
+  el.innerHTML = '<div class="empty">加载中…</div>';
+  const qs = new URLSearchParams(Object.entries(woFilter).filter(([, v]) => v)).toString();
+  const orders = await jget('/api/work_orders' + (qs ? '?' + qs : ''));
+  const eqs = [...new Set(cacheDevices.length ? cacheDevices.map(d => d.equipment_id) : orders.map(o => o.equipment_id))];
+  const ACTIONS = {
+    open: wo => `<button class="btn" data-act="assign" data-wo="${esc(wo.wo_id)}">派单</button> <button class="btn" data-act="close" data-wo="${esc(wo.wo_id)}">闭环</button>`,
+    assigned: wo => `<button class="btn" data-act="done" data-wo="${esc(wo.wo_id)}">回填处置</button> <button class="btn" data-act="close" data-wo="${esc(wo.wo_id)}">闭环</button>`,
+    done: wo => `<button class="btn" data-act="close" data-wo="${esc(wo.wo_id)}">闭环归档</button>`,
+    closed: () => `<span class="muted">已归档</span>`,
+  };
+  el.innerHTML = `
+    <div class="panel">
+      <h2>工单流水
+        <span class="r" style="display:flex;gap:8px;align-items:center;">
+          <select class="select" id="f-status"><option value="">全部状态</option>${['open', 'assigned', 'done', 'closed'].map(s => `<option ${woFilter.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+          <select class="select" id="f-eq"><option value="">全部设备</option>${eqs.map(e => `<option ${woFilter.equipment_id === e ? 'selected' : ''}>${esc(e)}</option>`).join('')}</select>
+          <span>open → assigned → done → closed</span>
+        </span>
+      </h2>
+      ${orders.length ? `<table>
+        <tr><th>工单号</th><th>设备</th><th>故障描述 / 处置方案</th><th>严重度</th><th>状态</th><th>负责人</th><th>创建 / 更新</th><th>操作</th></tr>
+        ${orders.map(o => `<tr>
+          <td class="wo-id" data-act="logs" data-wo="${esc(o.wo_id)}" title="查看流转留痕">${esc(o.wo_id)}</td>
+          <td>${esc(o.equipment_id)}</td>
+          <td style="max-width:360px;"><div>${esc(o.fault_desc || '')}</div>${o.plan ? `<div style="color:#8FA3C0;font-size:12px;margin-top:4px;">处置：${esc(o.plan)}</div>` : ''}</td>
+          <td><span class="tag ${esc(o.severity)}">${o.severity === 'high' ? '紧急' : o.severity === 'medium' ? '一般' : '低优'}</span></td>
+          <td><span class="st ${esc(o.status)}">${esc(o.status)}</span></td>
+          <td>${o.assignee ? esc(o.assignee) : '<span class="muted">未派单</span>'}</td>
+          <td class="muted" style="font-size:12px;">${esc(o.created_at)}<br>${esc(o.updated_at || '')}</td>
+          <td style="white-space:nowrap;"><button class="btn" data-act="logs" data-wo="${esc(o.wo_id)}">日志</button> ${(ACTIONS[o.status] || ACTIONS.closed)(o)}</td>
+        </tr>`).join('')}
+      </table>` : '<div class="empty">当前筛选条件下无工单</div>'}
+    </div>`;
+  el.querySelector('#f-status').addEventListener('change', e => { woFilter.status = e.target.value; refresh(); });
+  el.querySelector('#f-eq').addEventListener('change', e => { woFilter.equipment_id = e.target.value; refresh(); });
+  el.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => {
+    const { act, wo } = b.dataset;
+    if (act === 'assign') showAssign(wo);
+    else if (act === 'done') showDone(wo);
+    else if (act === 'close') doClose(wo);
+    else if (act === 'logs') showLogs(wo);
+  }));
+}
+
+/* ---------------- 页面：故障知识库 ---------------- */
+async function renderKnowledge(el) {
+  el.innerHTML = '<div class="empty">加载中…</div>';
+  let kn = [];
+  try { kn = await jget('/api/knowledge'); } catch (e) { kn = []; }
+  el.innerHTML = `
+    <div class="kpis" style="grid-template-columns:repeat(3,1fr);">
+      <div class="kpi"><div class="label">知识条目</div><div class="value blue">${kn.length}</div><div class="sub muted">含种子与复盘沉淀</div></div>
+      <div class="kpi"><div class="label">溯源沉淀</div><div class="value ok">${kn.filter(k => k.source_wo_id).length}</div><div class="sub muted">带 source_wo_id</div></div>
+      <div class="kpi"><div class="label">检索方式</div><div class="value" style="font-size:18px;">关键词 LIKE</div><div class="sub muted">向量 RAG 为升级项</div></div>
+    </div>
+    <div class="panel">
+      <h2>
+        <span style="display:flex;gap:8px;align-items:center;">
+          <input class="search" id="kn-q" placeholder="按症状关键词检索，如：振动 / 温度 / 泄漏" style="width:260px;">
+          <button class="btn" id="kn-search">检索</button>
+        </span>
+        <button class="btn primary" id="kn-add">+ 沉淀新经验</button>
+      </h2>
+      <div id="kn-list">${kn.length ? kn.map(k => `<div class="kn-card">
+        <div class="code"><span>${esc(k.id)} · ${esc(k.fault_code)}</span><span class="muted">${esc(k.created_at)}</span></div>
+        <div class="row"><span class="k">症状</span>${esc(k.symptom)}</div>
+        <div class="row"><span class="k">根因</span>${esc(k.root_cause)}</div>
+        <div class="row"><span class="k">处置</span>${esc(k.resolution)}</div>
+        <div class="row"><span class="k">溯源</span>${k.source_wo_id ? `<span class="wo-id" style="cursor:default;">${esc(k.source_wo_id)}</span>` : '<span class="muted">预置种子</span>'}</div>
+      </div>`).join('') : '<div class="empty">无匹配结果</div>'}</div>
+    </div>`;
+  const doSearch = async () => {
+    const q = el.querySelector('#kn-q').value.trim();
+    const list = q ? await jget('/api/knowledge?q=' + encodeURIComponent(q)) : await jget('/api/knowledge');
+    el.querySelector('#kn-list').innerHTML = list.length ? list.map(k => `<div class="kn-card">
+      <div class="code"><span>${esc(k.id)} · ${esc(k.fault_code)}</span><span class="muted">${esc(k.created_at)}</span></div>
+      <div class="row"><span class="k">症状</span>${esc(k.symptom)}</div>
+      <div class="row"><span class="k">根因</span>${esc(k.root_cause)}</div>
+      <div class="row"><span class="k">处置</span>${esc(k.resolution)}</div>
+      <div class="row"><span class="k">溯源</span>${k.source_wo_id ? `<span class="wo-id" style="cursor:default;">${esc(k.source_wo_id)}</span>` : '<span class="muted">预置种子</span>'}</div>
+    </div>`).join('') : '<div class="empty">无匹配结果</div>';
+  };
+  el.querySelector('#kn-search').addEventListener('click', doSearch);
+  el.querySelector('#kn-q').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+  el.querySelector('#kn-add').addEventListener('click', () => {
+    openModal(`<div class="m-hd"><b>沉淀处置经验</b><button class="m-close" onclick="closeModal()">✕</button></div>
+      <div class="form-grid">
+        <div><label>故障代码（必填）</label><input id="kf-code" placeholder="如 SPINDLE-BEARING"></div>
+        <div><label>溯源工单号（可选）</label><input id="kf-wo" placeholder="如 WO-2026…"></div>
+      </div>
+      <label>症状关键词（必填，供检索命中）</label><input id="kf-sym" placeholder="如 主轴异响 振动升高">
+      <label>根因（必填）</label><input id="kf-rc" placeholder="如 轴承游隙超差">
+      <label>处置方案（必填）</label><textarea id="kf-res" placeholder="如 停机→换轴承→校动平衡→复测振动"></textarea>
+      <div class="m-foot"><button class="btn" onclick="closeModal()">取消</button><button class="btn primary" id="kf-go">保存到知识库</button></div>`);
+    document.getElementById('kf-go').onclick = async () => {
+      const payload = {
+        fault_code: document.getElementById('kf-code').value.trim(),
+        symptom: document.getElementById('kf-sym').value.trim(),
+        root_cause: document.getElementById('kf-rc').value.trim(),
+        resolution: document.getElementById('kf-res').value.trim(),
+        source_wo_id: document.getElementById('kf-wo').value.trim() || null,
+      };
+      if (!payload.fault_code || !payload.symptom || !payload.root_cause || !payload.resolution)
+        return toast('请填写全部必填字段', true);
+      const r = await jpost('/api/knowledge/create', payload);
+      if (r.ok) { closeModal(); toast('✔ 经验已沉淀（' + esc(r.data.id) + '），下轮诊断可命中'); refresh(); }
+      else toast('✘ ' + esc(r.data.error || '保存失败'), true);
+    };
+  });
+}
+
+/* ---------------- 页面：智能巡检 ---------------- */
+async function renderInspection(el) {
+  el.innerHTML = '<div class="empty">加载中…</div>';
+  const devices = await jget('/api/latest_status');
+  const alertDevs = devices.filter(d => d.over_threshold.length > 0);
+  el.innerHTML = `
+    <div class="kpis">
+      <div class="kpi"><div class="label">巡检对象</div><div class="value">${devices.length}</div><div class="sub muted">全部在线设备</div></div>
+      <div class="kpi"><div class="label">本轮异常</div><div class="value ${alertDevs.length ? 'bad' : 'ok'}">${alertDevs.length}</div><div class="sub ${alertDevs.length ? 'bad' : 'ok'}">${alertDevs.length ? esc(alertDevs.map(d => d.equipment_id + ' ' + d.over_threshold.join('/')).join('；')) : '无超限项'}</div></div>
+      <div class="kpi"><div class="label">诊断引擎</div><div class="value blue">LLM</div><div class="sub ok">失败自动降级知识库</div></div>
+      <div class="kpi"><div class="label">定时巡检</div><div class="value">60<span style="font-size:13px;color:#8FA3C0">s</span></div><div class="sub muted">scheduler.py --interval 60</div></div>
+    </div>
+    <div class="panel"><h2>逐设备巡检<span class="r">手动触发走完整闭环：判异 → 幂等 → LLM 诊断 → 建单 → 飞书</span></h2>
+      <table>
+        <tr><th>设备</th><th>最新指标</th><th>超限项</th><th>开放工单</th><th>操作</th></tr>
+        ${devices.map(d => {
+          const m = d.latest_metric || {};
+          const alert = d.over_threshold.length > 0;
+          return `<tr>
+            <td><b class="blue" style="cursor:pointer;" data-eq="${esc(d.equipment_id)}">${esc(d.equipment_id)}</b><span class="muted"> ${esc(d.name)}</span></td>
+            <td style="font-size:12px;">振 ${m.vibration ?? '--'} · 温 ${m.temp ?? '--'} · 压 ${m.pressure ?? '--'} <span class="muted">(${esc((m.ts || '').slice(11, 16))})</span></td>
+            <td>${alert ? `<span class="tag high">${esc(d.over_threshold.join(' / '))}</span>` : '<span class="ok">无</span>'}</td>
+            <td class="${d.open_work_orders ? 'warn' : 'muted'}">${d.open_work_orders || 0}</td>
+            <td><button class="btn primary" data-inspect="${esc(d.equipment_id)}">手动巡检</button></td>
+          </tr>`;
+        }).join('')}
+      </table>
+    </div>
+    <div class="grid2">
+      <div class="panel"><h2>判异阈值（严格大于才触发）</h2>
+        <div class="th-box">${Object.entries(THRESHOLDS).map(([k, t]) => `<div class="th-item"><div class="n">${t.label}</div><div class="v blue">${t.max}</div></div>`).join('')}</div>
+      </div>
+      <div class="panel"><h2>闭环流程</h2>
+        <div class="flow">${['定时巡检取数', '阈值判异', '幂等拦截', 'LLM 诊断（可降级）', '创建工单', '飞书报警推送', '人工处置回填', '复盘沉淀知识库'].map((s, i) =>
+          `<span><span class="blue" style="margin-right:6px;">${i + 1}</span>${s}</span>`).join('')}</div>
+      </div>
+    </div>`;
+  el.querySelectorAll('[data-inspect]').forEach(b => b.addEventListener('click', () => doInspect(b.dataset.inspect)));
+  el.querySelectorAll('[data-eq]').forEach(n => n.addEventListener('click', () => showDevice(n.dataset.eq)));
+}
+
+/* ---------------- 路由与时钟 ---------------- */
+const PAGES = { overview: ['车间实时监控 · 3 号产线', renderOverview], orders: ['工单中心', renderOrders], knowledge: ['故障知识库', renderKnowledge], inspection: ['智能巡检', renderInspection] };
+let currentPage = 'overview';
+let refreshing = false;
+async function goto(page) {
+  currentPage = page;
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('active', a.dataset.page === page));
+  document.getElementById('page-title').textContent = PAGES[page][0];
+  killCharts(); closeModal();
+  const el = document.getElementById('content');
+  try { await PAGES[page][1](el); }
+  catch (e) { el.innerHTML = `<div class="empty">数据加载失败：${esc(e.message)}<br><span style="font-size:12px">请确认 MES API 已启动（python3 mes-mcp-server/api.py）</span></div>`; }
+}
+function refresh() { if (!refreshing) { refreshing = true; goto(currentPage).finally(() => refreshing = false); } }
+document.getElementById('nav').addEventListener('click', e => { const a = e.target.closest('a'); if (a) location.hash = '#/' + a.dataset.page; });
+window.addEventListener('hashchange', () => { const p = (location.hash.replace('#/', '') || 'overview'); if (PAGES[p] && p !== currentPage) goto(p); });
+setInterval(() => document.getElementById('clock').textContent = new Date().toLocaleString('zh-CN', { hour12: false }), 1000);
+setInterval(refresh, 30000);
+jget('/api/health').then(() => document.getElementById('api-state').textContent = '已连接').catch(() => { document.getElementById('api-state').textContent = '离线'; document.getElementById('api-state').className = 'bad'; });
+goto(PAGES[location.hash.replace('#/', '')] ? location.hash.replace('#/', '') : 'overview');
+</script>
+</body>
+</html>
