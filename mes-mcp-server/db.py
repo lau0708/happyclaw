@@ -13,10 +13,30 @@ DB_PATH = DATA_DIR / "mes.db"
 # 振动/温度/压力阈值（模拟，用于巡检异常判定）
 THRESHOLDS = {"vibration": 8.0, "temp": 75.0, "pressure": 5.5}
 
+# --------------------------------------------------------------------------- #
+# 工单状态机：合法流转表（跳级 / 回退 / 终态再流转一律拒绝）
+#   open → assigned → done → closed
+#   open → done 允许（无派单环节、直接回填处置结果的场景）
+# --------------------------------------------------------------------------- #
+WORK_ORDER_STATUSES = ("open", "assigned", "done", "closed")
+WORK_ORDER_TRANSITIONS: dict[str, set[str]] = {
+    "open": {"assigned", "done"},
+    "assigned": {"done"},
+    "done": {"closed"},
+    "closed": set(),  # 终态
+}
+
+
+class WorkOrderError(ValueError):
+    """工单状态机校验失败（非法状态 / 非法流转 / 工单不存在）"""
+
 
 def get_db() -> sqlite3.Connection:
     """获取数据库连接（每行自动按列名返回 dict）"""
-    DATA_DIR.mkdir(exist_ok=True)
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+    except FileExistsError:  # 部分环境的 mkdir 代理在目录已存在时仍抛出，忽略即可
+        pass
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -67,8 +87,9 @@ def query_history_faults(
         sql += " AND equipment_id = ?"
         params.append(equipment_id)
     if fault_code:
-        sql += " AND fault_code = ?"
-        params.append(fault_code)
+        # 兼容两种口径：fault_code（如 SPINDLE-BEARING）或 fault_id 主键（如 F-001）
+        sql += " AND (fault_code = ? OR fault_id = ?)"
+        params.extend([fault_code, fault_code])
     sql += " ORDER BY occurred_at DESC LIMIT ?"
     params.append(limit)
     with get_db() as conn:
@@ -105,25 +126,64 @@ def create_work_order(
 
 
 def update_work_order(
-    wo_id: str, status: str, resolution: str | None = None, operator: str | None = None
+    wo_id: str,
+    status: str | None = None,
+    resolution: str | None = None,
+    operator: str | None = None,
 ) -> dict:
-    """更新工单状态 / 回填处置结果"""
+    """更新工单状态 / 回填处置结果（经状态机校验，非法流转抛 WorkOrderError）
+
+    约束：
+      - 工单必须存在，状态必须属于 WORK_ORDER_STATUSES
+      - 状态流转必须符合 WORK_ORDER_TRANSITIONS（不跳级、不回退）
+      - 流转到 assigned 必须提供 operator（派单对象），同时回填 assignee
+    """
     with get_db() as conn:
-        conn.execute(
-            "UPDATE work_order SET status = ?, updated_at = ? WHERE wo_id = ?",
-            (status, now(), wo_id),
-        )
-        if resolution:
+        row = conn.execute(
+            "SELECT * FROM work_order WHERE wo_id = ?", (wo_id,)
+        ).fetchone()
+        if row is None:
+            raise WorkOrderError(f"工单不存在: {wo_id}")
+        current = row["status"]
+
+        if status is not None and status != current:
+            if status not in WORK_ORDER_TRANSITIONS:
+                raise WorkOrderError(
+                    f"非法状态: {status}（合法状态: {'/'.join(WORK_ORDER_STATUSES)}）"
+                )
+            if status not in WORK_ORDER_TRANSITIONS[current]:
+                raise WorkOrderError(
+                    f"非法流转: {current} → {status}"
+                    f"（允许: {'/'.join(sorted(WORK_ORDER_TRANSITIONS[current])) or '无，已是终态'}）"
+                )
+            if status == "assigned" and not (operator or row["assignee"]):
+                raise WorkOrderError("流转到 assigned 必须提供 operator（派单对象）")
             conn.execute(
-                "UPDATE work_order SET plan = ? WHERE wo_id = ?",
-                (resolution, wo_id),
+                "UPDATE work_order SET status = ?, updated_at = ? WHERE wo_id = ?",
+                (status, now(), wo_id),
             )
-        if operator:
+            if status == "assigned" and operator:
+                conn.execute(
+                    "UPDATE work_order SET assignee = ? WHERE wo_id = ?",
+                    (operator, wo_id),
+                )
             conn.execute(
                 "INSERT INTO work_order_log(wo_id, action, detail, operator, ts) "
                 "VALUES (?,?,?,?,?)",
-                (wo_id, "resolution", resolution or status, operator, now()),
+                (wo_id, "status_change", f"{current} → {status}", operator, now()),
             )
+
+        if resolution:
+            conn.execute(
+                "UPDATE work_order SET plan = ?, updated_at = ? WHERE wo_id = ?",
+                (resolution, now(), wo_id),
+            )
+            if operator:
+                conn.execute(
+                    "INSERT INTO work_order_log(wo_id, action, detail, operator, ts) "
+                    "VALUES (?,?,?,?,?)",
+                    (wo_id, "resolution", resolution, operator, now()),
+                )
     return get_work_order(wo_id)
 
 
@@ -189,15 +249,30 @@ def latest_equipment_status() -> list[dict]:
 
 
 def close_work_order(wo_id: str, resolution: str, operator: str = "系统") -> dict | None:
-    """把工单置为 closed（看板闭环演示）"""
-    with get_db() as conn:
-        conn.execute(
-            "UPDATE work_order SET status='closed', plan=?, updated_at=? WHERE wo_id=?",
-            (resolution, now(), wo_id),
-        )
-        conn.execute(
-            "INSERT INTO work_order_log(wo_id, action, detail, operator, ts) VALUES (?,?,?,?,?)",
-            (wo_id, "close", resolution, operator, now()),
+    """看板人工回填闭环：沿状态机从当前状态合法推进到 closed，全程留痕
+
+    不再直接 UPDATE status='closed' 绕过状态机，而是把缺失的中间环节
+    （assigned / done）按合法流转逐步补全，每步写 work_order_log；
+    已是 closed 的工单幂等返回，不存在的工单抛 WorkOrderError。
+    """
+    wo = get_work_order(wo_id)
+    if wo is None:
+        raise WorkOrderError(f"工单不存在: {wo_id}")
+    if wo["status"] == "closed":
+        return wo  # 幂等
+
+    # 从当前状态到 closed 的最短合法路径
+    path_map = {
+        "open": ["assigned", "done", "closed"],
+        "assigned": ["done", "closed"],
+        "done": ["closed"],
+    }
+    for step in path_map[wo["status"]]:
+        update_work_order(
+            wo_id,
+            status=step,
+            resolution=resolution if step == "closed" else None,
+            operator=operator,
         )
     return get_work_order(wo_id)
 

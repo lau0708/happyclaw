@@ -97,12 +97,19 @@ HappyClaw 的 Agent 在 **Docker 沙箱容器**内执行 MCP 工具，容器里�
 |---|---|---|
 | `query_equipment` | 数据Agent | 查设备台账 / 状态 |
 | `query_metric` | 数据Agent | 查运行指标 |
-| `query_history_faults` | 数据Agent | 查历史故障 / 处置 |
+| `query_history_faults` | 数据Agent | 查历史故障 / 处置（支持 fault_code 或 fault_id） |
 | `search_knowledge` | 诊断Agent | 命中历史处置经验 |
 | `create_work_order` | 工单Agent | 创建工单 |
-| `update_work_order` | 工单Agent | 回填处置结果 |
+| `update_work_order` | 工单Agent | 回填处置结果（经状态机校验） |
+| `query_work_orders` | 工单Agent | 查工单列表（按状态/设备过滤，供看板） |
 | `save_knowledge` | 诊断Agent | 沉淀经验（复盘） |
 | `check_latest_metric` | 巡检 | 最新指标超阈值判定 |
+
+### 工单状态机
+
+`open → assigned → done → closed`（允许 `open → done` 直接回填；跳级 / 回退 / 终态再流转会被拒绝，
+`update_work_order` 抛 `WorkOrderError`，HTTP API 关单端点返回 409）。看板「一键关单」不再绕过状态机，
+而是沿合法路径补全中间环节并逐步写 `work_order_log`，全程可审计。
 
 ## 数据模型
 

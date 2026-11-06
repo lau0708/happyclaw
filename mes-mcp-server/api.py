@@ -19,6 +19,16 @@ import db
 PORT = 8002
 
 
+def _close_work_order(wo_id: str) -> tuple[int, object]:
+    """看板关单：经状态机合法推进到 closed，错误返回 404/409 而非静默 200"""
+    if db.get_work_order(wo_id) is None:
+        return 404, {"error": f"工单不存在: {wo_id}"}
+    try:
+        return 200, db.close_work_order(wo_id, "人工回填闭环", operator="看板")
+    except db.WorkOrderError as e:
+        return 409, {"error": str(e)}
+
+
 def find_free_port(preferred: int = PORT, tries: int = 30) -> int:
     """指定端口被占用时，自动顺延找下一个空闲端口（规避 Docker 等占用冲突）"""
     for p in range(preferred, preferred + tries):
@@ -41,10 +51,11 @@ def handle(path: str, query: dict) -> tuple[int, object]:
         return 200, db.query_work_orders(query.get("status"), query.get("equipment_id"))
     if path.startswith("/api/work_orders/") and path.endswith("/close"):
         wo_id = path.split("/")[3]
-        return 200, db.close_work_order(wo_id, "人工回填闭环", operator="看板")
+        return _close_work_order(wo_id)
     if path.startswith("/api/work_orders/"):
         wo_id = path.rsplit("/", 1)[-1]
-        return 200, db.get_work_order(wo_id)
+        wo = db.get_work_order(wo_id)
+        return (200, wo) if wo else (404, {"error": f"工单不存在: {wo_id}"})
     if path.startswith("/api/metric/"):
         eq = path.rsplit("/", 1)[-1]
         return 200, db.query_metric(eq, int(query.get("hours", "24")))
