@@ -6,6 +6,10 @@ mes-mcp-server/.env
 # Build output
 dist/
 
+# Python
+__pycache__/
+*.py[cod]
+
 # Runtime data — databases, encrypted configs, sessions, IPC, env files, agent workspaces
 # All personal data, auto-created at startup, must not be committed.
 /data/

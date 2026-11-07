@@ -1,0 +1,38 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mes-python:
+    name: MES 单元测试（Python 3.10）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: 初始化演示库并运行 112 项回归
+        working-directory: mes-mcp-server
+        run: |
+          python3 init_db.py
+          python3 -W ignore -m unittest discover -s . -p "test_*.py"
+
+  platform-ts:
+    name: 卡片回写（Node 20）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: 运行卡片回写回归
+        run: npx vitest run tests/mes-workorder-actions.test.ts

@@ -15,6 +15,7 @@
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
   <img src="https://img.shields.io/badge/飞书-卡片×回调-00D6B9?style=flat-square" alt="Feishu" />
   <img src="https://img.shields.io/badge/回归用例-127-34D399?style=flat-square" alt="Tests" />
+  <img src="https://github.com/lau0708/pulseops/actions/workflows/tests.yml/badge.svg" alt="CI" />
   <img src="https://img.shields.io/badge/License-MIT-0F766E?style=flat-square" alt="MIT" />
 </p>
 
@@ -22,7 +23,7 @@
 
 ## 目录
 
-[这是什么](#这是什么) · [界面](#界面) · [闭环流程](#闭环流程) · [技术点](#技术点) · [架构](#架构) · [数据模型](#数据模型) · [跑起来](#跑起来) · [测试](#测试与验收) · [边界](#边界与取舍) · [致谢](#上游与致谢)
+[这是什么](#这是什么) · [界面](#界面) · [闭环流程](#闭环流程) · [技术点](#技术点) · [架构](#架构) · [数据模型](#数据模型) · [跑起来](#跑起来) · [测试](#测试与验收) · [边界](#边界与取舍) · [目录结构](#目录结构) · [致谢](#上游与致谢) · [License](#license)
 
 ## 这是什么
 

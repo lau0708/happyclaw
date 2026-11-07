@@ -1,7 +1,7 @@
 {
   "name": "pulseops",
   "version": "1.0.0",
-  "description": "PulseOps — 设备异常工单闭环 Agent（基于 PulseOps 二次开发）",
+  "description": "PulseOps — 设备异常工单闭环 Agent（基于 happyclaw 二次开发）",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -75,11 +75,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/riba2534/happyclaw.git"
+    "url": "git+https://github.com/lau0708/pulseops.git"
   },
-  "homepage": "https://github.com/riba2534/happyclaw#readme",
+  "homepage": "https://github.com/lau0708/pulseops#readme",
   "bugs": {
-    "url": "https://github.com/riba2534/happyclaw/issues"
+    "url": "https://github.com/lau0708/pulseops/issues"
   },
   "author": "riba2534",
   "keywords": [
