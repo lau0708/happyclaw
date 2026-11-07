@@ -23,6 +23,8 @@ happyclaw-backup-*.tar.gz
 # Environment variables (may contain API keys and secrets)
 .env
 .env.*
+# ...but the template itself carries no secrets and must ship with the repo
+!.env.example
 
 # Secrets — catch-all for key/cert files that may appear anywhere
 *.key

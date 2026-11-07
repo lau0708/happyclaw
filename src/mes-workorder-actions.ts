@@ -40,6 +40,9 @@ export interface MesWorkOrderRecord {
   plan?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+  /** 关单时自动沉淀出的知识条目（MES 按 source_wo_id 反查后随工单返回） */
+  knowledge_id?: string | null;
+  knowledge_fault_code?: string | null;
 }
 
 export interface CardActionToast {
@@ -137,6 +140,20 @@ export function buildMesWorkOrderCard(input: {
         (wo.assignee ? `　**处理人**：${safeInline(wo.assignee, 40)}` : ''),
     },
   ];
+
+  // 关单后 MES 会顺手沉淀一条经验，卡片上把它显示出来 —— 演示时这一步最能
+  // 体现「闭环的产出不只是关掉一张单」。
+  if (wo.knowledge_id) {
+    elements.push({
+      tag: 'markdown',
+      content:
+        `📚 **经验已沉淀**：${safeInline(wo.knowledge_id, 40)}` +
+        (wo.knowledge_fault_code
+          ? `（${safeInline(wo.knowledge_fault_code, 30)}）`
+          : '') +
+        '　下次同类故障可直接命中',
+    });
+  }
 
   const next = nextWorkOrderAction(wo.status);
   if (next) {

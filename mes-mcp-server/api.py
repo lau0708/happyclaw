@@ -45,17 +45,37 @@ def _read_json(handler: BaseHTTPRequestHandler) -> dict:
         return {}
 
 
-def _close_work_order(wo_id: str, operator: str | None = None) -> tuple[int, object]:
+def _with_knowledge(wo: dict | None) -> dict | None:
+    """给工单补上「已沉淀的知识条目」，卡片与看板据此显示 KN 号。
+
+    只做只读拼装，不在工单表冗余字段：归属关系只在 knowledge.source_wo_id。
+    """
+    if not wo:
+        return wo
+    kn = db.knowledge_for_work_order(wo["wo_id"])
+    if kn:
+        wo["knowledge_id"] = kn["id"]
+        wo["knowledge_fault_code"] = kn["fault_code"]
+    return wo
+
+
+def _close_work_order(
+    wo_id: str, operator: str | None = None, resolution: str | None = None
+) -> tuple[int, object]:
     """看板关单：经状态机合法推进到 closed，错误返回 404/409 而非静默 200
 
     operator 由调用方给：飞书卡片按钮点击时是真实点击人，看板兜底用「看板」。
+    resolution 只在调用方真的回填了处置结果时才传 —— 传占位文案会覆盖掉
+    done 环节已经写好的处置方案，知识库沉淀出来的经验就失真了。
+    关单成功会自动沉淀一条知识（db.close_work_order 内触发），响应带回 KN 号。
     """
     if db.get_work_order(wo_id) is None:
         return 404, {"error": f"工单不存在: {wo_id}"}
     try:
-        return 200, db.close_work_order(
-            wo_id, "人工回填闭环", operator=operator or "看板"
+        wo = db.close_work_order(
+            wo_id, resolution or "", operator=operator or "看板"
         )
+        return 200, _with_knowledge(wo)
     except db.WorkOrderError as e:
         return 409, {"error": str(e)}
 
@@ -72,8 +92,10 @@ def _wo_transition(wo_id: str, body: dict, target: str) -> tuple[int, object]:
     if target == "done" and not resolution:
         return 400, {"error": "处置回填必须提供 resolution（处置结果）"}
     try:
-        return 200, db.update_work_order(
-            wo_id, status=target, resolution=resolution, operator=operator
+        return 200, _with_knowledge(
+            db.update_work_order(
+                wo_id, status=target, resolution=resolution, operator=operator
+            )
         )
     except db.WorkOrderError as e:
         return 409, {"error": str(e)}
@@ -241,12 +263,16 @@ def handle(
         if len(parts) == 5 and parts[4] == "done":
             return _wo_transition(wo_id, body, "done")
         if len(parts) == 5 and parts[4] == "close":
-            return _close_work_order(wo_id, (body or {}).get("operator"))
+            return _close_work_order(
+                wo_id,
+                (body or {}).get("operator"),
+                (body or {}).get("resolution"),
+            )
         if len(parts) == 5 and parts[4] == "logs":
             return _wo_logs(wo_id)
         if len(parts) == 4:
             wo = db.get_work_order(wo_id)
-            return (200, wo) if wo else (404, {"error": f"工单不存在: {wo_id}"})
+            return (200, _with_knowledge(wo)) if wo else (404, {"error": f"工单不存在: {wo_id}"})
     if path.startswith("/api/metric/"):
         eq = path.rsplit("/", 1)[-1]
         return 200, db.query_metric(eq, int(query.get("hours", "24")))

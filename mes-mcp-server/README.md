@@ -248,7 +248,30 @@ python3 test_state_machine.py   # 状态机 9 + 数据契约 6
 python3 test_closed_loop.py     # 幂等 / 经验回流 / 双触发收敛
 python3 test_agent_nodes.py     # LLM 节点（假传输层，不联网）
 python3 test_ingest.py          # 采集入库 + 模拟器（29 用例，临时库不污染演示数据）
+python3 test_sediment.py        # 关单自动沉淀经验（12 用例，临时库）
 ```
+
+## 关单自动沉淀经验（经验回流）
+
+工单走到 `closed` 时，`db.close_work_order` 会顺手把这一次处置写成一条知识，
+不需要人去知识库页手动录入 —— 关单才是有处置结果的那一刻，此时沉淀最省事。
+
+| 知识字段 | 取值来源 |
+|---|---|
+| `fault_code` | 按症状文本推断（轴承/主轴 → `SPINDLE-BEARING`，振动 → `VIB-OVER`，温度 → `TEMP-OVER`…）；都不沾边归 `OTHER` |
+| `symptom` | `设备编号 + 设备名：工单故障描述` —— 带上设备标识，按设备检索同类故障才命得中 |
+| `root_cause` | 从描述里的「疑似…」从句切出；没写就留「建议人工补充」 |
+| `resolution` | 优先关单时回填的处置结果，其次 `done` 环节的时间线记录 |
+| `source_wo_id` | 工单号，知识库页的「溯源」直接可点回工单 |
+
+几个刻意的取舍：
+
+- **只认 `closed`**：`open`/`assigned` 阶段没有处置结果，沉淀进去是废料，还会稀释后续检索。
+- **幂等**：幂等键是 `source_wo_id`，同一张工单关几次都只产出一条。
+- **沉淀失败不影响关单**：异常只打一行日志，工单该闭环还是闭环。
+- **开关**：`MES_AUTO_KNOWLEDGE=0` 可整体关掉（默认开）。
+- **留痕**：沉淀会在工单时间线上写一条 `knowledge_sediment`，点开工单就能看到本次闭环产出了哪条经验；
+  飞书闭环卡片上也会显示 `📚 经验已沉淀：KN-xxx`。
 
 ## 数据模型
 

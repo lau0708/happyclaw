@@ -294,12 +294,17 @@ def close_work_order(wo_id: str, resolution: str, operator: str = "系统") -> d
     不再直接 UPDATE status='closed' 绕过状态机，而是把缺失的中间环节
     （assigned / done）按合法流转逐步补全，每步写 work_order_log；
     已是 closed 的工单幂等返回，不存在的工单抛 WorkOrderError。
+
+    闭环成功即触发一次经验沉淀（见 sediment_knowledge_from_work_order）：
+    它自己幂等，所以重复关单不会沉淀出第二条；沉淀失败只记日志，不影响关单。
     """
     wo = get_work_order(wo_id)
     if wo is None:
         raise WorkOrderError(f"工单不存在: {wo_id}")
     if wo["status"] == "closed":
-        return wo  # 幂等
+        # 幂等返回。若上一次沉淀因故没写成，这里补一次 —— 沉淀本身是幂等的。
+        _try_sediment_quietly(wo_id)
+        return wo
 
     # 从当前状态到 closed 的最短合法路径
     path_map = {
@@ -311,9 +316,13 @@ def close_work_order(wo_id: str, resolution: str, operator: str = "系统") -> d
         update_work_order(
             wo_id,
             status=step,
-            resolution=resolution if step == "closed" else None,
+            # 只有调用方真的给了处置结果才覆盖 plan。空留白必须保持原样：
+            # 关单这一步的默认文案一旦写进 plan，会把 done 环节回填的真实
+            # 处置方案盖掉，沉淀出来的经验就成了「人工回填闭环」这种废话。
+            resolution=(resolution or None) if step == "closed" else None,
             operator=operator,
         )
+    _try_sediment_quietly(wo_id)
     return get_work_order(wo_id)
 
 
@@ -333,6 +342,138 @@ def save_knowledge(
             (kid, fault_code, symptom, root_cause, resolution, source_wo_id, now()),
         )
     return {"id": kid, "created_at": now()}
+
+
+# --------------------------------------------------------------------------- #
+# 经验回流：工单闭环 → 知识库自动沉淀
+# --------------------------------------------------------------------------- #
+# 症状关键词 → 故障码。顺序即优先级：越具体的排越前，否则「主轴轴承磨损」
+# 会被「振动」抢走，沉淀出来的码就没法指导下一次诊断。
+FAULT_CODE_HINTS: tuple[tuple[str, str], ...] = (
+    ("轴承", "SPINDLE-BEARING"),
+    ("主轴", "SPINDLE-BEARING"),
+    ("泄漏", "COOLANT-LEAK"),
+    ("漏液", "COOLANT-LEAK"),
+    ("液压", "HYDRAULIC-FAULT"),
+    ("加热圈", "HEATER-AGING"),
+    ("加热", "HEATER-AGING"),
+    ("温控", "TEMP-DRIFT"),
+    ("异响", "ABNORMAL-NOISE"),
+    ("振动", "VIB-OVER"),
+    ("温度", "TEMP-OVER"),
+    ("过热", "TEMP-OVER"),
+    ("压力", "PRESS-OVER"),
+    ("转速", "RPM-OVER"),
+)
+
+# 自动沉淀开关：环境变量置 "0" 即关闭（默认开）
+AUTO_KNOWLEDGE_ENV = "MES_AUTO_KNOWLEDGE"
+
+# 工单描述里引出「推断根因」的常见词
+_ROOT_CAUSE_MARKERS = ("疑似", "可能", "判断为", "原因为", "原因是")
+
+
+def infer_fault_code(*texts: str | None) -> str:
+    """按症状文本推断故障码；都不沾边时归 OTHER（仍可被关键词检索命中）"""
+    blob = " ".join(str(t) for t in texts if t)
+    for keyword, code in FAULT_CODE_HINTS:
+        if keyword in blob:
+            return code
+    return "OTHER"
+
+
+def _extract_root_cause(fault_desc: str) -> str:
+    """从工单描述里取出「疑似…」这类推断句；没有就返回空串交给人工补。
+
+    工单描述是巡检自动生成的，根因往往以「疑似主轴轴承磨损复发」这样的
+    从句出现，直接把它切出来比把整段描述同时塞进 symptom 和 root_cause 有用。
+    """
+    text = (fault_desc or "").strip()
+    for marker in _ROOT_CAUSE_MARKERS:
+        idx = text.find(marker)
+        if idx > 0:
+            return text[idx:].strip(" ，,。;；")
+    return ""
+
+
+def knowledge_for_work_order(wo_id: str) -> dict | None:
+    """取工单沉淀出的知识条目（看板/卡片展示「已沉淀」用）"""
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM knowledge WHERE source_wo_id = ? "
+            "ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (wo_id,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def sediment_knowledge_from_work_order(wo_id: str) -> dict | None:
+    """把已闭环工单沉淀成一条知识；已沉淀过 / 未闭环 / 开关关闭时返回 None。
+
+    只认 closed：未闭环的工单没有处置结果，沉淀进去是废料，还会污染后续检索。
+    幂等键是 source_wo_id —— 同一张工单无论被关几次，都只产出一条。
+    """
+    if os.environ.get(AUTO_KNOWLEDGE_ENV, "1") == "0":
+        return None
+    wo = get_work_order(wo_id)
+    if wo is None or wo["status"] != "closed":
+        return None
+    if knowledge_for_work_order(wo_id):
+        return None
+
+    equipment_name = ""
+    rows = query_equipment(wo["equipment_id"])
+    if rows:
+        equipment_name = rows[0].get("name") or ""
+
+    fault_desc = (wo.get("fault_desc") or "").strip()
+    # 处置结果优先取工单 plan（关单时回填），其次时间线里最后一条 resolution
+    resolution = (wo.get("plan") or "").strip()
+    if not resolution:
+        with get_db() as conn:
+            row = conn.execute(
+                "SELECT detail FROM work_order_log WHERE wo_id = ? AND action = 'resolution' "
+                "ORDER BY ts DESC, rowid DESC LIMIT 1",
+                (wo_id,),
+            ).fetchone()
+        resolution = (row["detail"] if row else "").strip()
+    if not resolution:
+        resolution = f"现场已完成处置，细节见工单 {wo_id}"
+
+    root_cause = _extract_root_cause(fault_desc) or "工单未记录根因，建议人工补充"
+    fault_code = infer_fault_code(fault_desc, wo.get("plan"), equipment_name)
+    # 症状里带上设备编号与名称：既方便人看，也让「按设备查同类故障」能命中
+    symptom = f"{wo['equipment_id']} {equipment_name}：{fault_desc}" if equipment_name else \
+        f"{wo['equipment_id']}：{fault_desc}"
+
+    saved = save_knowledge(
+        fault_code=fault_code,
+        symptom=symptom,
+        root_cause=root_cause,
+        resolution=resolution,
+        source_wo_id=wo_id,
+    )
+    # 挂到工单时间线上：点开工单就能看到「这次闭环产出了哪条经验」
+    with get_db() as conn:
+        conn.execute(
+            "INSERT INTO work_order_log(wo_id, action, detail, operator, ts) "
+            "VALUES (?,?,?,?,?)",
+            (wo_id, "knowledge_sediment", f"{saved['id']} · {fault_code}", "系统", now()),
+        )
+    return {
+        "id": saved["id"],
+        "fault_code": fault_code,
+        "symptom": symptom,
+        "source_wo_id": wo_id,
+    }
+
+
+def _try_sediment_quietly(wo_id: str) -> None:
+    """沉淀入口的唯一职责边界：它绝不能让关单失败"""
+    try:
+        sediment_knowledge_from_work_order(wo_id)
+    except Exception as exc:  # noqa: BLE001 —— 关单是主业务，沉淀是附加动作
+        print(f"[knowledge] 工单 {wo_id} 自动沉淀失败：{exc}", flush=True)
 
 
 # --------------------------------------------------------------------------- #

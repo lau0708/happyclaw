@@ -132,6 +132,25 @@ describe('buildMesWorkOrderCard', () => {
     expect(text).not.toContain('<at');
     expect(text).toContain('&lt;at');
   });
+
+  it('shows the sedimented knowledge entry after closing', () => {
+    const card = buildMesWorkOrderCard({
+      wo: wo({
+        status: 'closed',
+        knowledge_id: 'KN-20261107190000001',
+        knowledge_fault_code: 'SPINDLE-BEARING',
+      }),
+    }) as Record<string, any>;
+    const text = JSON.stringify(card.body.elements);
+    expect(text).toContain('经验已沉淀');
+    expect(text).toContain('KN-20261107190000001');
+    expect(text).toContain('SPINDLE-BEARING');
+  });
+
+  it('says nothing about knowledge before the order is closed', () => {
+    const card = buildMesWorkOrderCard({ wo: wo({ status: 'done' }) }) as Record<string, any>;
+    expect(JSON.stringify(card.body.elements)).not.toContain('经验已沉淀');
+  });
 });
 
 describe('dispatchMesWorkOrderAction', () => {

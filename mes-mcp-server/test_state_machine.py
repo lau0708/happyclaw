@@ -80,15 +80,19 @@ class WorkOrderStateMachineTests(unittest.TestCase):
         self.assertEqual(closed["status"], "closed")
         with db.get_db() as conn:
             logs = conn.execute(
-                "SELECT detail FROM work_order_log WHERE wo_id = ? ORDER BY ts",
+                "SELECT action, detail FROM work_order_log WHERE wo_id = ? ORDER BY ts",
                 (wo_id,),
             ).fetchall()
         details = [r["detail"] for r in logs]
+        actions = [r["action"] for r in logs]
         self.assertIn("open → assigned", details)
         self.assertIn("assigned → done", details)
         self.assertIn("done → closed", details)
         # 3 次状态流转日志 + 1 条关单处置(resolution)日志
-        self.assertEqual(len(details), 4)
+        flow = [a for a in actions if a != "knowledge_sediment"]
+        self.assertEqual(len(flow), 4)
+        # 闭环会顺手沉淀一条经验并留痕（内容质量由 test_sediment 覆盖）
+        self.assertIn("knowledge_sediment", actions)
 
     def test_board_close_idempotent(self) -> None:
         wo_id = self._new_order()
