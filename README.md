@@ -86,6 +86,9 @@ PulseOps 是一个**给工厂设备当值班医生的智能体系统**：它像�
 
 双触发收敛到同一闭环：**被动**由定时巡检进入，**主动**由人问一句「3 号机振动不对，看下」经由问诊解析节点进入，后续步骤完全一致。
 
+另有一条**汇总视角**：每班收班（08:00 / 20:00）推一条**班次简报**——当班越阈设备、未闭环工单、沉淀经验。
+报警卡片是「事件驱动，立刻有人管」，简报是「一班一总，收班不留坑」。
+
 ## 平台底座：PulseOps 是什么
 
 PulseOps 是一个基于 [Claude Agent SDK for TypeScript](https://github.com/anthropics/claude-agent-sdk-typescript) 的自托管 AI 智能体系统。它把完整的 Claude Code 运行时封装成一个可持续运行的多用户服务，让你可以从浏览器、飞书、Telegram、QQ、钉钉、微信、企业微信、Discord 或 WhatsApp 使用同一套智能体、工作区、能力和自动化任务。
@@ -319,8 +322,8 @@ make dev
 ### 进程守护（推荐用于演示与长期挂机）
 
 ```bash
-make up      # 守护启动：后端 3000 / 前端 5173 / MES API 8002 / 工况模拟器
-make status  # 四项服务的健康状态 + 日志尾部
+make up      # 守护启动：后端 3000 / 前端 5173 / MES API 8002 / 工况模拟器 / 班次简报
+make status  # 五项服务的健康状态 + 日志尾部
 make down    # 优雅停止守护进程与其托管的所有服务
 make logs    # 实时汇总全部服务日志
 ```
@@ -332,6 +335,8 @@ make logs    # 实时汇总全部服务日志
 - 收到 `Ctrl-C` / `SIGTERM` 时按进程组整体收尾，不留孤儿进程
 - 日志写入 `logs/<服务名>.log`，同时带时间戳打到终端
 - 模拟器会等 MES API 探活通过再启动，避免开机时刷一串 502
+- 班次简报定时器（`shift_report.py --daemon`）也由它托管：08:00 / 20:00 收班自动推群，
+  进程挂了说明推送链路已断，同样会被拉起
 
 只想跑前后端可用 `make up-core`，只跑部分服务用 `node scripts/supervise.mjs backend web`。
 

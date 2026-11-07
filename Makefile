@@ -130,7 +130,7 @@ logs: ## 实时查看全部服务日志（make up 启动后写入 logs/）
 stop: ## 停止监听指定端口的服务进程
 	@lsof -ti:$(PORT) -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null && echo "✅ 已停止 PulseOps (端口 $(PORT))" || echo "⚠️  端口 $(PORT) 未被占用，无需停止"
 
-status: ## 查看全部服务运行状态（后端/前端/MES API/模拟器/守护进程）
+status: ## 查看全部服务运行状态（后端/前端/MES API/模拟器/班次简报/守护进程）
 	@echo "=== PulseOps 服务状态 ==="
 	@if [ -f logs/supervise.pid ] && kill -0 "$$(cat logs/supervise.pid)" 2>/dev/null; then \
 	  echo "  🛡 守护进程    运行中 (pid $$(cat logs/supervise.pid))"; \
@@ -154,10 +154,15 @@ status: ## 查看全部服务运行状态（后端/前端/MES API/模拟器/守�
 	else \
 	  echo "  ❌ 工况模拟器  未运行"; \
 	fi
+	@if pgrep -f "shift_report.py --daemon" >/dev/null 2>&1; then \
+	  echo "  ✅ 班次简报    运行中（下次推送见 logs/mes-report.log 末行）"; \
+	else \
+	  echo "  ⚠️  班次简报    未运行（08:00 / 20:00 不会自动推群）"; \
+	fi
 	@echo ""
 	@echo "=== 日志 ==="
 	@if [ -d logs ]; then \
-	  for f in logs/backend.log logs/web.log logs/mes-api.log logs/mes-sim.log logs/supervise.log; do \
+	  for f in logs/backend.log logs/web.log logs/mes-api.log logs/mes-sim.log logs/mes-report.log logs/supervise.log; do \
 	    [ -f "$$f" ] || continue; \
 	    echo "  $$f ($$(wc -l < "$$f" | tr -d ' ') 行)："; \
 	    tail -2 "$$f" | sed 's/^/     /'; \
@@ -171,7 +176,7 @@ status: ## 查看全部服务运行状态（后端/前端/MES API/模拟器/守�
 
 # ─── Supervision ─────────────────────────────────────────────
 
-up: ## 守护启动全部服务（后端/前端/MES API/模拟器；前台运行，Ctrl-C 全停）
+up: ## 守护启动全部服务（后端/前端/MES API/模拟器/班次简报；前台运行，Ctrl-C 全停）
 	@node scripts/supervise.mjs
 
 up-core: ## 只守护后端与前端
@@ -196,6 +201,9 @@ mes-api: ## 启动 MES 数据 API（端口 8002，含指标上报端点）
 
 mes-sim: ## 启动车间工况模拟器（回填 24h 历史后持续采样；透传参数：make mes-sim ARGS="--no-fault --interval 30"）
 	cd mes-mcp-server && python3 simulator.py --backfill 24 --backfill-interval 300 --interval 10 $(ARGS)
+
+mes-report: ## 生成/推送班次巡检简报（默认打印上一班；ARGS="--send" 推送，ARGS="--at \"2026-11-07 20:00\" --send" 补发）
+	cd mes-mcp-server && python3 shift_report.py $(ARGS)
 
 mes-test: ## 运行 MES 全部单元测试（状态机/闭环/LLM 节点/飞书/采集入库；自动备份并恢复演示数据，因为闭环测试会重建种子库）
 	cd mes-mcp-server && cp data/mes.db /tmp/mes-demo-keep.db && \

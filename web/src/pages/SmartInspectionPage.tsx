@@ -1,10 +1,10 @@
 /**
  * SmartInspectionPage — 智能巡检（深色工业大屏风格）
- * 逐设备手动巡检（走完整闭环）+ 阈值看板 + 闭环流程说明
+ * 逐设备手动巡检（走完整闭环）+ 当班简报 + 阈值看板 + 闭环流程说明
  */
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { mesApi, type DeviceStatus } from '../api/mes';
+import { mesApi, type DeviceStatus, type ShiftReport } from '../api/mes';
 import {
   MesShell,
   MesPanel,
@@ -29,8 +29,10 @@ const FLOW_STEPS = [
 
 export function SmartInspectionPage() {
   const [devices, setDevices] = useState<DeviceStatus[]>([]);
+  const [report, setReport] = useState<ShiftReport | null>(null);
   const [error, setError] = useState('');
   const [inspecting, setInspecting] = useState('');
+  const [pushing, setPushing] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -41,13 +43,39 @@ export function SmartInspectionPage() {
     }
   }, []);
 
+  const loadReport = useCallback(async () => {
+    try {
+      setReport(await mesApi.shiftReport());
+    } catch {
+      // 简报取不到不影响逐设备巡检，上面的「MES 后端未连接」已经提示过了
+    }
+  }, []);
+
   useEffect(() => {
     load();
-    const t = setInterval(load, 30_000);
+    loadReport();
+    const t = setInterval(() => {
+      load();
+      loadReport();
+    }, 30_000);
     return () => clearInterval(t);
-  }, [load]);
+  }, [load, loadReport]);
 
   const alertDevices = devices.filter((d) => d.over_threshold.length > 0);
+
+  const pushReport = async () => {
+    setPushing(true);
+    try {
+      const r = await mesApi.sendShiftReport();
+      setReport(r.report);
+      if (r.ok) toast.success(`${r.report.window.label} 简报已推送到飞书群`);
+      else toast.warning(`未推送：${r.note}`);
+    } catch (e) {
+      toast.error(String(e));
+    } finally {
+      setPushing(false);
+    }
+  };
 
   const runInspect = async (eqId: string) => {
     setInspecting(eqId);
@@ -67,7 +95,7 @@ export function SmartInspectionPage() {
   return (
     <MesShell
       title="智能巡检"
-      subtitle="手动触发走完整闭环：判异 → 幂等 → LLM 诊断 → 建单 → 飞书推送 · 定时巡检用 scheduler.py"
+      subtitle="手动触发走完整闭环：判异 → 幂等 → LLM 诊断 → 建单 → 飞书推送 · 定时巡检用 scheduler.py · 班次简报每班 08:00 / 20:00 推群"
     >
       {error && (
         <div className="mb-5 rounded-lg px-4 py-3 text-sm text-[var(--mes-warn-text)]" style={{ background: 'var(--mes-warn-bg)', border: '1px solid var(--mes-warn-border)' }}>
@@ -94,6 +122,128 @@ export function SmartInspectionPage() {
         <KpiCard label="诊断引擎" value="LLM" tone="accent" sub={<span className="text-emerald-400">失败自动降级知识库</span>} />
         <KpiCard label="定时巡检" value={60} suffix="s" sub={<span style={{ color: MES_COLORS.muted }}>scheduler.py --interval 60</span>} />
       </div>
+
+      <MesPanel
+        title={report ? `当班简报 · ${report.window.label}` : '当班简报'}
+        right={
+          <button
+            className={mesBtnPrimaryClass}
+            style={mesBtnPrimaryStyle}
+            onClick={pushReport}
+            disabled={pushing || !report}
+          >
+            {pushing ? '推送中…' : '推送当班简报'}
+          </button>
+        }
+      >
+        {!report ? (
+          <div className="text-xs" style={{ color: MES_COLORS.muted }}>
+            简报加载中…
+          </div>
+        ) : (
+          <>
+            <div className="mb-3 text-[11px]" style={{ color: MES_COLORS.faint }}>
+              {report.window.span}
+              {report.window.ended ? ' · 已收班' : ' · 当班至今'}
+              　·　每班收班（08:00 / 20:00）自动推群，也可手动补推
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+              {[
+                {
+                  label: '当班越阈设备',
+                  value: `${report.summary.devices_over} 台`,
+                  sub: `收班仍在越阈 ${report.summary.devices_over_now} 台`,
+                  bad: report.summary.devices_over > 0,
+                },
+                {
+                  label: '未闭环工单',
+                  value: `${report.summary.wo_open} 张`,
+                  sub: `其中紧急 ${report.summary.wo_open_high} 张`,
+                  bad: report.summary.wo_open > 0,
+                },
+                {
+                  label: '当班工单',
+                  value: `+${report.summary.wo_created} / -${report.summary.wo_closed}`,
+                  sub: '新建 / 闭环',
+                  bad: false,
+                },
+                {
+                  label: '当班沉淀经验',
+                  value: `${report.summary.knowledge_added} 条`,
+                  sub: `采集 ${report.summary.samples.toLocaleString()} 点`,
+                  bad: false,
+                },
+              ].map((k) => (
+                <div
+                  key={k.label}
+                  className="rounded-lg px-3 py-2.5"
+                  style={{ background: MES_COLORS.card, border: `1px solid ${MES_COLORS.borderSoft}` }}
+                >
+                  <div className="text-[11px]" style={{ color: MES_COLORS.muted }}>
+                    {k.label}
+                  </div>
+                  <div
+                    className={
+                      'mt-0.5 text-lg font-semibold tabular-nums ' +
+                      (k.bad ? 'text-red-400' : 'text-[var(--mes-accent)]')
+                    }
+                  >
+                    {k.value}
+                  </div>
+                  <div className="text-[11px]" style={{ color: MES_COLORS.faint }}>
+                    {k.sub}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {report.devices_over.length > 0 && (
+              <div className="mt-3 space-y-1 text-xs">
+                {report.devices_over.map((d) => (
+                  <div key={d.equipment_id}>
+                    <b className="text-red-400">{d.equipment_id}</b>
+                    <span className="ml-1.5" style={{ color: MES_COLORS.muted }}>
+                      {d.name}
+                    </span>
+                    <span className="ml-2">
+                      {d.items.map((i) => `${i.label}峰值 ${i.peak}${i.unit}`).join('；')}
+                    </span>
+                    <span
+                      className="ml-2"
+                      style={{ color: d.over_now.length ? '#f87171' : MES_COLORS.faint }}
+                    >
+                      {d.over_now.length ? '收班仍越阈' : '已回落'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {report.open_work_orders.length > 0 && (
+              <div className="mt-2 space-y-1 text-xs">
+                {report.open_work_orders.slice(0, 3).map((w) => (
+                  <div key={w.wo_id}>
+                    <span className="text-amber-400">{w.wo_id}</span>
+                    <span className="ml-1.5" style={{ color: MES_COLORS.muted }}>
+                      {w.equipment}
+                    </span>
+                    <span className="ml-2">{w.status_label}</span>
+                    <span className="ml-2" style={{ color: MES_COLORS.faint }}>
+                      已挂 {Math.floor(w.age_minutes / 60)}h{w.age_minutes % 60}m
+                    </span>
+                    {w.overdue && <span className="ml-2 text-red-400">超 12h 未闭环</span>}
+                  </div>
+                ))}
+                {report.open_work_orders.length > 3 && (
+                  <div style={{ color: MES_COLORS.faint }}>
+                    …另有 {report.open_work_orders.length - 3} 张未闭环
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </MesPanel>
 
       <MesPanel title="逐设备巡检" right="超限时经幂等校验后自动建单并推送飞书">
         <div className="overflow-x-auto">

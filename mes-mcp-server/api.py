@@ -1,12 +1,13 @@
 """api.py — 轻量 HTTP JSON API（仅标准库 http.server），供看板取数 + 网关上报
 
 端点分两类：
-  只读查询：equipment / metric / work_orders / knowledge / latest_status
+  只读查询：equipment / metric / work_orders / knowledge / latest_status / shift_report
   写入接口：
     POST /api/metric            采集网关上报单条指标（需 X-API-Key）
     POST /api/metric/batch      网关批量补传（需 X-API-Key）
     POST /api/work_orders/...   工单派单 / 回填 / 闭环
     POST /api/knowledge/create  经验沉淀
+    POST /api/shift_report/send 立即推送班次简报（看板手动触发/补发）
 
 鉴权：设置了环境变量 INGEST_API_KEY 时，上报必须带同值 X-API-Key 头；
 未设置时只接受本机（127.0.0.1）上报，便于本地联调，跨机上报请务必配置密钥。
@@ -26,6 +27,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 import db
+import shift_report
 
 db.load_env()
 
@@ -297,6 +299,26 @@ def handle(
         return _inspect(path.rsplit("/", 1)[-1])
     if path == "/api/latest_status":
         return 200, db.latest_equipment_status()
+    if path == "/api/shift_report":
+        # 班次简报预览：不传 at 即「当班至今」，传班次边界（如 2026-11-07 20:00）即取刚结束那一班
+        try:
+            at = shift_report.parse_at(query.get("at"))
+        except ValueError as e:
+            return 400, {"error": str(e)}
+        ended = str(query.get("ended", "1")).lower() not in ("0", "false")
+        return 200, shift_report.collect(at, ended=ended)
+    if path == "/api/shift_report/send":
+        body = body or {}
+        try:
+            at = shift_report.parse_at(body.get("at"))
+        except ValueError as e:
+            return 400, {"error": str(e)}
+        ok, note, report = shift_report.send_shift_report(
+            at,
+            ended=bool(body.get("ended", True)),
+            dry_run=bool(body.get("dry_run", False)),
+        )
+        return 200, {"ok": ok, "note": note, "report": report}
     return 404, {"error": "not found"}
 
 

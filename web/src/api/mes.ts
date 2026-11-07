@@ -73,6 +73,67 @@ export interface WorkOrderLog {
   ts: string;
 }
 
+/** 班次简报：与 mes-mcp-server/shift_report.py 的 collect() 返回结构一一对应 */
+export interface ShiftReportOverItem {
+  metric: string;
+  label: string;
+  unit: string;
+  peak: number;
+  threshold: number;
+  at: string | null;
+}
+
+export interface ShiftReportDevice {
+  equipment_id: string;
+  name: string;
+  items: ShiftReportOverItem[];
+  /** 收班时刻仍在越阈的指标项 */
+  over_now: string[];
+  open_work_orders: number;
+}
+
+export interface ShiftReportOrder {
+  wo_id: string;
+  equipment_id: string;
+  equipment: string;
+  fault_desc: string;
+  severity: string;
+  status: string;
+  status_label: string;
+  assignee: string | null;
+  created_at: string;
+  age_minutes: number;
+  overdue: boolean;
+}
+
+export interface ShiftReport {
+  shift: string;
+  window: {
+    start: string;
+    end: string;
+    hours: number;
+    ended: boolean;
+    label: string;
+    span: string;
+  };
+  generated_at: string;
+  summary: {
+    devices_total: number;
+    samples: number;
+    devices_over: number;
+    devices_over_now: number;
+    wo_open: number;
+    wo_open_high: number;
+    wo_created: number;
+    wo_closed: number;
+    knowledge_added: number;
+  };
+  devices_over: ShiftReportDevice[];
+  open_work_orders: ShiftReportOrder[];
+  closed_work_orders: { wo_id: string; closed_at: string }[];
+  knowledge: { id: string; fault_code: string; symptom: string; source_wo_id: string | null }[];
+}
+
 const base = '/mes-api';
 
 async function get<T>(path: string): Promise<T> {
@@ -131,4 +192,19 @@ export const mesApi = {
       new_work_order: boolean;
       open_work_orders: number;
     }>(`/inspect/${equipmentId}`),
+  /** 班次简报：不传 at 即「当班至今」；传班次边界（如 2026-11-07 20:00）取刚结束那一班 */
+  shiftReport: (at?: string) => {
+    const qs = new URLSearchParams();
+    if (at) {
+      qs.set('at', at);
+      qs.set('ended', '1');
+    }
+    const q = qs.toString();
+    return get<ShiftReport>('/shift_report' + (q ? `?${q}` : ''));
+  },
+  sendShiftReport: (at?: string) =>
+    post<{ ok: boolean; note: string; report: ShiftReport }>(
+      '/shift_report/send',
+      at ? { at, ended: true } : {},
+    ),
 };

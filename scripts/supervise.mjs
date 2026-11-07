@@ -2,8 +2,8 @@
 /**
  * supervise.mjs — 零依赖进程守护（演示/长期挂机用）
  *
- * 为什么需要它：PulseOps 要同时跑四个进程（后端 3000 / 前端 5173 / MES API 8002 /
- * 工况模拟器）。手工起四个终端窗口的问题不是麻烦，而是**谁挂了没人知道**：
+ * 为什么需要它：PulseOps 要同时跑五个进程（后端 3000 / 前端 5173 / MES API 8002 /
+ * 工况模拟器 / 班次简报定时器）。手工起五个终端窗口的问题不是麻烦，而是**谁挂了没人知道**：
  * 演示中途模拟器退出，页面上曲线就停在那儿不动；后端 OOM 被杀，飞书就静默失联。
  *
  * 本脚本做的事，只有三件：
@@ -42,6 +42,9 @@ const SERVICES = [
     args: ['tsx', 'src/index.ts'],
     cwd: ROOT,
     health: `http://127.0.0.1:${WEB_PORT}/api/health`,
+    // tsx 冷启动要现场编译 + 跑启动迁移/飞书回填，实测 25~40s；
+    // 默认 20s 宽限会把「慢」误判成「僵死」，连着 SIGKILL 反而永远起不来。
+    startGraceMs: 60_000,
   },
   {
     name: 'web',
@@ -83,6 +86,20 @@ const SERVICES = [
     // 回填 24h 历史要几秒，别在回填期判活
     startGraceMs: 30_000,
     // 模拟器一启动就往外报，API 没起来会连着刷 502 并触发退避重启
+    dependsOn: 'mes-api',
+  },
+  {
+    name: 'mes-report',
+    label: '班次简报',
+    cmd: 'python3',
+    // 常驻定时器：08:00 / 20:00 收班各推一次，自己在进程内算下一次边界
+    args: ['-u', 'shift_report.py', '--daemon'],
+    cwd: path.join(ROOT, 'mes-mcp-server'),
+    // 无对外端口，只做进程存活监护（挂了说明推送链路已经断了）
+    health: null,
+    // 启动即打印下次推送时刻，给足宽限再判活
+    startGraceMs: 10_000,
+    // 简报要读库，API 没起来时读到的只能是旧数据
     dependsOn: 'mes-api',
   },
 ];

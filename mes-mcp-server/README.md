@@ -11,6 +11,7 @@ mes-mcp-server/
 ├── server.py      # MCP Server（FastMCP），供 PulseOps 接入
 ├── demo.py        # 端到端闭环演示（不依赖 mcp 包）
 ├── scheduler.py   # 定时巡检 Agent（模拟 PulseOps Cron，自动建单 + 幂等）
+├── shift_report.py    # 班次简报：每班收班（08:00 / 20:00）汇总越阈设备与未闭环工单推群
 ├── workorder_flow.py  # 工单闭环：经 MCP 协议跑通 建单→处置→复盘→经验回流
 ├── health_check.py    # 主动查询触发：人让 Agent 查设备健康状态并判定
 ├── api.py         # 轻量 HTTP JSON API（标准库）：看板取数 + 网关指标上报（/api/metric）
@@ -21,6 +22,7 @@ mes-mcp-server/
 ├── test_closed_loop.py    # 闭环 Eval：幂等 / 经验回流 / 双触发收敛（8 用例）
 ├── test_agent_nodes.py    # LLM 节点单测（假传输层，不联网不耗 token）
 ├── test_ingest.py         # 采集入库 + 模拟器（29 用例，用临时库不污染演示数据）
+├── test_shift_report.py   # 班次简报：班次口径 / 统计口径 / 历史还原 / 推送降级（18 用例）
 ├── web/           # Vue3 + TS 工单看板（Vite）
 ├── requirements.txt
 ├── README.md
@@ -63,6 +65,7 @@ python3 demo.py        # 跑通完整闭环演示
 python3 scheduler.py --once   # 模拟定时巡检：异常自动建单
 python3 workorder_flow.py     # 经 MCP 协议走完 建单→处置→复盘→经验回流
 python3 health_check.py       # 主动查询：人让 Agent 查设备健康判定（CNC-03 异常 / CNC-01 健康）
+python3 shift_report.py       # 班次简报：打印上一班汇总（加 --send 推飞书群）
 ```
 
 > `workorder_flow.py` / `health_check.py` 走**标准 MCP Client**（`pip install mcp`），
@@ -76,6 +79,45 @@ python3 scheduler.py --interval 30     # 每 30 秒巡检，异常自动诊断+�
 python3 scheduler.py --devices CNC-03,INJ-01   # 指定设备
 ```
 对同一设备未闭环工单做幂等去重，避免重复建单。真实 PulseOps 中由 Cron 定时任务 + 巡检 Agent 等价实现。
+
+## 班次巡检简报（每班 08:00 / 20:00 推群）
+
+报警卡片解决「立刻有人管」，简报解决「收班时知道有没有留坑」——两者不是重复：
+卡片是**事件驱动**（一台设备越阈推一条），班组长要的是**一班一总**。
+
+```bash
+python3 shift_report.py                        # 打印上一班简报（不发）
+python3 shift_report.py --send                 # 生成并推送
+python3 shift_report.py --at "2026-11-07 20:00" --send   # 指定班次边界（演示 / 补发）
+python3 shift_report.py --daemon               # 常驻：到点自动推（make up 已托管）
+python3 shift_report.py --json                 # 机器可读，供看板/接口消费
+```
+
+班次口径（两班倒）：**早班 08:00–20:00**，**晚班 20:00–次日 08:00**。
+到点推的是**刚结束那一班**，不是「接下来这一班」。
+
+三个刻意的统计选择：
+
+| 选择 | 原因 |
+| --- | --- |
+| 越阈按**窗口内峰值**判，不只看最后一刻 | 中途越阈后被处置好的设备也要曝光，否则夜班漏掉的问题会被早班抹平 |
+| `done`（已处理待闭环）计入**未闭环** | 它同样要人签字收尾，不算完 |
+| 闭环数按 `work_order_log` 的 `status_change → closed` 统计 | 工单表没有 `closed_at`，`updated_at` 还会被处置回填改写 |
+
+「当前状态」一律锚在**班次结束时刻**（工单状态由日志回推、越阈取 end 之前最后一条采集），
+所以补发昨天晚班的简报也是当时的样子，不会被今天关掉的单抹掉。
+
+看板「智能巡检」页有同名面板，可按「推送当班简报」手动补推；接口：
+
+```bash
+curl "http://localhost:8002/api/shift_report"                      # 当班至今
+curl "http://localhost:8002/api/shift_report?at=2026-11-07%2020:00&ended=1"  # 刚结束的早班
+curl -X POST http://localhost:8002/api/shift_report/send -H 'Content-Type: application/json' \
+  -d '{"dry_run":true}'                                            # 只生成不推送
+```
+
+推送通道与报警卡片一致：配齐 `FEISHU_APP_ID` / `FEISHU_APP_SECRET` / `FEISHU_CHAT_ID` 就发卡片
+（无按钮，动作在各工单卡片上），否则退回 `FEISHU_WEBHOOK_URL` 的纯文本；都没配则只打印不报错。
 
 ## 数据采集：真实设备数据怎么进来
 
