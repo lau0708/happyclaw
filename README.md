@@ -1,667 +1,477 @@
 <p align="center">
-  <img src="web/public/icons/logo-1024.png" alt="PulseOps Logo" width="120" />
+  <img src="web/public/icons/logo-1024.png" alt="PulseOps Logo" width="110" />
 </p>
 
 <h1 align="center">PulseOps · 脉巡</h1>
 
 <p align="center">
-  <strong>设备异常工单闭环 Agent</strong>
-  <br />
-  定时巡检设备指标 → 阈值判异 → LLM 根因诊断 → 幂等建单 → 飞书报警 → 处置回填 → 经验回流
-  <br />
-  一条闭环全自动跑完：异常不会漏、工单不会重、经验越用越准。
+  <strong>设备异常工单闭环 Agent</strong><br/>
+  巡检发现异常 → LLM 诊断根因 → 幂等建单 → 飞书推报警 → 群里点按钮处置 → 关单自动沉淀经验
 </p>
 
 <p align="center">
-  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-%3E%3D20-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js" /></a>
-  <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Python-FastMCP-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
-  <img src="https://img.shields.io/badge/Tests-40%20passed-34D399?style=for-the-badge" alt="Tests" />
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-0F766E?style=for-the-badge" alt="MIT License" /></a>
-</p>
-
-> **关于本项目**：PulseOps（脉巡）基于开源智能体平台 [PulseOps](https://github.com/riba2534/happyclaw)（MIT License，平台底座版权归原作者）二次开发。平台负责会话、调度、权限与多渠道接入；**设备健康业务层完全自研**：
->
-> - `mes-mcp-server/`：模拟 MES 的 MCP Server（FastMCP + SQLite，9 个业务工具：设备台账 / 指标 / 历史故障 / 知识库 / 工单 / 巡检）
-> - `mes-dashboard/` 与 `web/src/pages/`：设备监控 / 工单中心 / 故障知识库 / 智能巡检 四个业务页面（工业深色大屏视觉）
-> - **确定性骨架 + 两个 LLM 节点**：巡检、判异、幂等、状态机、推送全部是确定性代码；只有「根因诊断」「自然语言问诊解析」交给模型，无 API Key 时自动降级到知识库命中
-> - 40 个回归用例覆盖阈值边界、幂等去重、状态机非法流转、经验回流溯源、飞书推送与 LLM 降级
-
-<p align="center">
-  <a href="#pulseops-是什么">介绍</a> ·
-  <a href="#业务闭环">闭环</a> ·
-  <a href="#功能总览">功能</a> ·
-  <a href="#快速开始">快速开始</a> ·
-  <a href="#渠道接入">渠道</a> ·
-  <a href="#系统架构">架构</a> ·
-  <a href="#开发与测试">开发</a>
-</p>
-
-<p align="center">
-  <a href="docs/API.md">API 文档</a> ·
-  <a href="docs/RUNTIME-ARCHITECTURE.md">运行时架构</a> ·
-  <a href="docs/ACL-MATRIX.md">权限矩阵</a> ·
-  <a href="DEPLOYMENT.md">生产部署</a> ·
-  <a href="https://github.com/riba2534/happyclaw/issues">上游问题反馈</a>
+  <img src="https://img.shields.io/badge/Node.js-20%2B-339933?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node" />
+  <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/飞书-卡片×回调-00D6B9?style=flat-square" alt="Feishu" />
+  <img src="https://img.shields.io/badge/回归用例-127-34D399?style=flat-square" alt="Tests" />
+  <img src="https://img.shields.io/badge/License-MIT-0F766E?style=flat-square" alt="MIT" />
 </p>
 
 ---
 
-## PulseOps 是什么
-
-PulseOps 是一个**给工厂设备当值班医生的智能体系统**：它像医生查房一样定时巡一遍产线设备，测出「脉搏」异常（振动 / 温度 / 压力超阈值）就当场开单、诊断根因、把报警推到维修班群里，处置完成后自动复盘、把这次经验写进病例库，下次遇到同类症状直接给出高置信方案。
-
-它不是一个只读的监控大屏。判断链路里每一环的性质不同，所以设计上做了明确的切分：
-
-| 环节 | 性质 | 实现方式 |
-|---|---|---|
-| 定时巡检、阈值判异 | 可穷举 | 确定性代码（严格大于阈值，边界值判健康） |
-| 未闭环工单幂等拦截 | 可穷举 | 确定性代码（同设备有未闭环单则跳过） |
-| 工单状态流转 | 可穷举 | 状态机校验（`open→assigned→done→closed`，跳级/回退/终态再流转一律拒绝） |
-| 根因假设与处置方案 | 不可穷举 | **LLM 诊断节点**（结构化事实包 → 根因/方案/置信度，强制 JSON） |
-| 「3 号机振动不对」这类问询 | 不可穷举 | **LLM 问诊解析节点**（自然语言 → 设备号 + 意图） |
-| 报警推送、复盘沉淀 | 可穷举 | 确定性调用（飞书卡片、知识库写入带 `source_wo_id` 溯源） |
-
-这样切的收益很直接：**模型只做判断，不碰写操作**——建单、改状态、推送都由代码执行，Agent 输出的每个数字都能在 `mes.db` 里对账；模型挂了、key 失效或返回坏 JSON，系统自动降级到知识库命中，巡检循环不中断。
-
-## 业务闭环
-
-```
-① 定时巡检（Cron / 手动触发）
-      ↓ 最新指标 vs 阈值（振动 8.0 / 温度 75.0 / 压力 5.5）
-② 判异 → 有超限项
-      ↓ 幂等检查：该设备已有未闭环工单？→ 跳过，不重复建单
-③ 组事实包（最新指标 + 超限项 + 3 条历史故障 + 知识库命中）
-      ↓
-④ LLM 诊断节点 → 根因假设 / 处置方案 / 置信度 / 依据
-      ↓ 输出非法或调用失败 → 降级为知识库命中
-⑤ 建单（状态机 open）→ 飞书报警卡片推送维修班
-      ↓
-⑥ 人工派单（assigned，必须带 operator）→ 回填处置（done）→ 闭环（closed）
-      ↓
-⑦ 复盘：save_knowledge 写入经验，带 source_wo_id 溯源
-      ↓
-⑧ 下次同类异常 → 知识库命中 → 诊断置信度更高（越用越准）
-```
-
-双触发收敛到同一闭环：**被动**由定时巡检进入，**主动**由人问一句「3 号机振动不对，看下」经由问诊解析节点进入，后续步骤完全一致。
-
-另有一条**汇总视角**：每班收班（08:00 / 20:00）推一条**班次简报**——当班越阈设备、未闭环工单、沉淀经验。
-报警卡片是「事件驱动，立刻有人管」，简报是「一班一总，收班不留坑」。
-
-## 平台底座：PulseOps 是什么
-
-PulseOps 是一个基于 [Claude Agent SDK for TypeScript](https://github.com/anthropics/claude-agent-sdk-typescript) 的自托管 AI 智能体系统。它把完整的 Claude Code 运行时封装成一个可持续运行的多用户服务，让你可以从浏览器、飞书、Telegram、QQ、钉钉、微信、企业微信、Discord 或 WhatsApp 使用同一套智能体、工作区、能力和自动化任务。
-
-PulseOps 不是一个简单的聊天 API Wrapper。智能体运行在真实的 Claude Code 环境中，可以读写项目文件、执行终端命令、使用浏览器、调用 MCP、加载 Skills，并在多个独立工作区和会话之间保持清晰的权限与上下文边界。
-
-### 为什么使用 PulseOps
-
-- **Claude Code 原生运行时** — 直接使用版本锁定的 Claude Agent SDK 与 Claude Code CLI，不重新实现工具调用和运行循环。
-- **智能体优先工作台** — 智能体管身份和能力，工作区管文件与执行环境，会话管对话上下文，产品层级清晰。
-- **随时可访问** — Web、PWA 和 8 种 IM 渠道统一接入，任务完成后可以主动把结果送回消息渠道。
-- **多用户与多账号** — 用户、渠道凭据、工作区及其 Memory、Skills、MCP 和运行数据彼此隔离。
-- **宿主机与容器双模式** — 管理员可以使用授权的本机项目目录，普通成员默认在 Docker 沙箱中运行。
-- **面向长期运行** — 提供调度任务、运行历史、消息回执、故障恢复、用量统计、监控与一致性备份。
-
-## 功能总览
-
-| 模块           | 主要能力                                                                                                                       |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| **智能体**     | 主 PulseOps 对话式创建/编辑、自定义智能体、内置模板、复制与导入导出、头像、结构化提示词、AI 优化                              |
-| **工作区**     | 智能体归属、宿主机/容器执行、独立目录、项目环境变量、项目 Claude 上下文、多会话、会话级 git worktree、只读代码 Review          |
-| **能力治理**   | 用户 Skills、系统/用户 MCP、Claude Code Plugins 与最终生效预览；智能体工具权限完整开放                                         |
-| **消息渠道**   | 飞书、Telegram、QQ、钉钉、微信、企业微信、Discord、WhatsApp，多账号、扫码登录、工作区/会话绑定                                 |
-| **模型提供商** | Anthropic 官方、ChatGPT 订阅、20 余家厂商预设与自定义兼容端点，一个连接多个模型，轮询/加权/故障转移                            |
-| **自动化**     | 按计划在真实会话里运行一轮：绑定当前会话或新建会话，停止条件、安静模式、前置检查，失败去重通知，撞额度后自动继续               |
-| **记忆与文件** | Workspace Memory（事实、决策、经验、待跟进）、按相关性召回与常驻目录、非主人写入待确认、来源与修订、CAS 编辑、搜索、文件与终端 |
-| **用量与计费** | Token 分类统计、缓存命中率、智能体/工作区/模型筛选、明细与 CSV 导出、订阅、余额、兑换码与配额                                  |
-| **运维与安全** | RBAC、邀请注册、登录设备、审计日志、运行监控、Docker 镜像管理、备份与安全恢复                                                  |
-| **客户端体验** | 实时流式输出、工具轨迹、富文本输入框（列表、`/` 技能、`@` 文件、长文本折叠、排队）、Markdown/Mermaid/KaTeX、PWA                |
-
-## 智能体优先工作模型
-
-PulseOps 使用统一的 `智能体 → Workspace → Runtime Session` 层级：
-
-```text
-智能体（身份、提示词、Skills、MCP）
-└── Workspace（项目目录、执行模式、环境变量、渠道挂载）
-    ├── Workspace Memory（跨 Session 的事实、决策、经验、待跟进）
-    ├── Runtime Session（独立对话或渠道原生话题，彼此平等，没有主会话）
-    └── Automation（自动化，每次运行都是某个会话里的一轮）
-```
-
-- **内置 PulseOps** 是不可删除的平台主 Agent，拥有代码级固定身份，理解
-  Workspace、Session、Agent Builder、渠道、任务、Skills/MCP、Provider 和权限
-  模型；这些规则不存放在可遗忘的 Memory 中。
-- **首次唤醒** 只面向 Home Workspace 中经过宿主验证的实际 owner。PulseOps
-  用简短的“刚醒来”话语询问称呼，并通过专用 Owner Profile 保存；并发会话使用
-  onboarding lease，后续新 Session 或服务重启不会重复表演。清空称呼也不会重置
-  onboarding。
-- **智能体** 保存长期身份和能力策略。主 PulseOps 智能体始终存在，也可以创建代码审查、研究、运维等自定义智能体。
-- **对话式智能体构建器** 在主 PulseOps 名下所有 Workspace 的 Runtime Session 中生效，允许用户多轮讨论需求、保存并预览智能体草稿，并在后续人类消息逐字回复一次性确认口令后创建或更新智能体；自动化运行与 Sub-Agent 不能代替用户发布。
-- **Home Workspace** 是不可删除的系统工作区，并永久归属内置 PulseOps。
-- **自定义 Agent** 创建后没有隐式 Workspace、Session 或 Memory；用户需要显式
-  新建 Workspace 或迁移一个非 Home Workspace，避免继承 PulseOps 上下文。
-- **Workspace** 是私有的文件与执行隔离边界。创建时必须选择智能体，非 Home
-  Workspace 后续可以迁移归属；文件、Session、渠道绑定和 Memory 会随 Workspace
-  保留。
-- **Workspace Memory** 是该工作区跨 Session 复用的结构化知识，不是用户全局记忆，也不是任意文件或日期归档。主人称呼由 Home 专用 Owner Profile facade 管理，不出现在通用 Memory 搜索、快照或修改接口中。
-- **Runtime Session** 是工作区内的一段独立对话上下文，不是另一个顶层智能体；Session 历史与 Workspace Memory 分开保存，忘记一条 Memory 不会删除聊天历史。
-- **Channel Mount** 将私聊、普通群显式绑定到具体 Session，将话题群绑定到 Workspace，再按话题映射 Session。完整规则见[业务模型](docs/BUSINESS-MODEL.md)。
+## 目录
 
-### 执行模式
+[这是什么](#这是什么) · [界面](#界面) · [闭环流程](#闭环流程) · [技术点](#技术点) · [架构](#架构) · [数据模型](#数据模型) · [跑起来](#跑起来) · [测试](#测试与验收) · [边界](#边界与取舍) · [致谢](#上游与致谢)
 
-| 模式          | 适用对象                   | 行为                                                      |
-| ------------- | -------------------------- | --------------------------------------------------------- |
-| **Host**      | 管理员授权的宿主机工作区   | 直接在指定本机目录运行，适合已有代码仓库和本机工具链      |
-| **Container** | 普通成员与需要隔离的工作区 | 在非 root Docker 容器中运行，使用独立工作目录和预装工具链 |
+## 这是什么
 
-普通成员不能把容器工作区降级为宿主机执行。自动化的脚本和前置检查也只允许管理员在有权限的 Host 工作区运行。
+一条产线 4 台设备，值班的是班组长和 2 个维修工。**没人盯得住 24 小时的曲线**——所以异常通常是在「已经停机之后」才被发现，工单靠口头传，处置结果留在师傅脑子里。
 
-管理员可在 **设置 → 宿主机集成** 开启“管理员纯宿主机模式”。开启时，当前管理员拥有的
-工作区会统一迁移为 Host，后续也不能再选择 Docker；普通成员继续使用 Docker
-隔离。关闭开关只恢复混合模式的选择能力，不会自动迁回已有工作区。
+PulseOps 把这段流程做成闭环，扮演三个角色：
 
-## 智能体与能力治理
+| 角色 | 谁来干 | 干什么 |
+| --- | --- | --- |
+| **巡检** | 确定性代码（Cron） | 定时取最新指标比阈值，越限就进入诊断，已有未闭环工单就跳过 |
+| **诊断** | LLM（可降级） | 把指标 + 超限项 + 历史故障 + 知识命中组装成事实包，输出根因/方案/置信度 |
+| **工单** | 确定性代码 | 建单、发飞书卡片、校验状态流转、关单时把这次处置写回知识库 |
 
-### 智能体配置（Agent Profile）
+它**不是一块只读的大屏**。区别在于：大屏的终点是「看见异常」，这里的终点是「这张单被谁、在什么时候、用什么办法关掉，并且下次同类异常能直接查到」。
 
-每个自定义智能体都可以配置：
+> **关于本项目**：平台底座来自开源项目 [happyclaw](https://github.com/riba2534/happyclaw)（MIT），复用其中的会话、定时任务、飞书渠道与 MCP 接入；**设备健康业务层完全自研**——`mes-mcp-server/`（MES 服务 + 9 个 MCP 工具 + 巡检/诊断/工单编排）、四个业务页面、飞书卡片回写链路、班次简报与进程守护。
 
-- 名称、头像和 Claude 原生 preset。
-- 身份、目标、工作方式和输出要求等结构化提示词。
-- AI 生成和局部优化提示词。
-- 托管 Claude 上下文或管理员宿主机 Claude 上下文。
-- 用户 Skills、PulseOps MCP 与 Claude Code Plugins；智能体始终拥有完整工具权限。
+## 界面
 
-智能体可以从内置模板新建、复制，或导出为 JSON 再导入；导入时引用不到的 Skill 或 MCP
-会逐项列出，由用户确认去掉后再创建。
+四个页面共用一套深色工业视觉（右上角可切浅色）。以下截图全部来自**真实运行的 `mes.db`**——拍摄当晚 CNC-03 正处在振动劣化报警中（10.4 mm/s，阈值 8），每张图都是系统正在工作的样子，不是摆拍。
 
-配置页可以针对具体工作区预览最终生效能力，包括项目 `CLAUDE.md`、`.claude/skills`、项目 MCP、用户能力和同名覆盖来源。
+<p align="center">
+  <img src="docs/images/01-device-monitor.png" alt="设备监控" width="880" />
+</p>
 
-### Skills、MCP 与 Plugins
+**设备监控** —— 一眼分出 4 台设备里谁在告警：
 
-PulseOps 区分不同层级的能力来源：
+- KPI 行：在线设备 4 · 告警设备 1（CNC-03 走限）· 未闭环工单 1 · 监控指标 12（振动 / 温度 / 压力）
+- CNC-03 整行标红：振动 **10.37 mm/s**（阈值 8），其余三台绿色运行
+- 底部 24h 振动趋势是这张图的重点：CNC-03 的振动从凌晨起一路爬坡——巡检正是靠这条曲线在停机前把单开出来的
+- 右侧「最新工单」实时挂到工单中心，点了就能跳过去处置
 
-| 来源                    | 说明                                                              |
-| ----------------------- | ----------------------------------------------------------------- |
-| **内置能力**            | 随 PulseOps 或智能体容器提供的基础工具与 Skills                  |
-| **用户 Skills**         | 从技能市场、HTTPS Git 仓库或 ZIP 导入，按用户隔离并记录来源与版本 |
-| **项目上下文**          | 工作区目录里的 `CLAUDE.md`、`.claude/skills` 和 MCP 配置          |
-| **用户 MCP**            | 当前用户维护的 MCP Server，只进入允许使用它的智能体               |
-| **系统 MCP**            | 管理员维护，默认仅管理员可用，显式共享后普通成员才能使用          |
-| **Claude Code Plugins** | 系统 catalog 与用户启用状态分离，通过版本化运行快照加载           |
+<p align="center">
+  <img src="docs/images/02-work-orders.png" alt="工单中心" width="880" />
+</p>
 
-内置 MCP 工具覆盖消息发送、自动化、渠道查询、Skill 管理和记忆读写；实际开放的工具会根据用户权限、智能体策略、工作区模式和渠道上下文动态裁剪。
+**工单中心** —— 3 张真实工单正好对应三种状态：
 
-添加远端服务时，参见[远端 MCP 配置与排查](docs/REMOTE-MCP.md)，按步骤填写 HTTP/SSE
-URL 与 Headers、选择作用域，并在指定智能体的最终生效能力中确认来源。
+- CNC-03 那张是「已派单」，负责人王师傅——右侧蓝色的**「闭环」**按钮就是状态机的下一跳
+- INJ-01 那张已闭环，处置记录是维修工在飞书卡片上点「已处理 / 确认闭环」回填的
+- 每张单都有「日志」入口：状态机每一次流转都留痕（谁、何时、从哪个状态到哪个状态）
+- 顶部那行小字 `open → assigned → done → closed · 所有流转经状态机校验并留痕` 就是这套规则的合同
 
-## 渠道接入
+<p align="center">
+  <img src="docs/images/03-knowledge.png" alt="故障知识库" width="880" />
+</p>
 
-每个用户都可以为同一渠道创建多个 Bot 账号，并为渠道会话显式选择绑定目标。
-连接账号或发现聊天不会自动绑定，也不会触发回复。账号身份会写入渠道地址和 mount，
-发送时不会借用其他 Bot 的凭据。
+**故障知识库** —— 处置经验的沉淀与检索：
 
-| 渠道         | 接入方式                          | 主要能力                                               |
-| ------------ | --------------------------------- | ------------------------------------------------------ |
-| **飞书**     | App ID / App Secret，WebSocket    | 流式卡片、图片与文件、Reaction、群聊 @ 控制、话题映射  |
-| **Telegram** | Bot Token，Long Polling           | Markdown/HTML、长消息分片、图片与文件、代理配置        |
-| **QQ**       | App ID / App Secret，WebSocket    | 私聊、群聊 @Bot、图片消息、配对码绑定                  |
-| **钉钉**     | Client ID / Client Secret，Stream | AI Card 流式回复、图片与文件、群聊 @ 控制              |
-| **微信**     | Web 界面扫码，iLink               | 二维码授权、媒体收发、Typing、断线恢复                 |
-| **企业微信** | Bot ID / Secret，WebSocket        | Markdown 流式回复、图片与文件、群聊 @ 控制、配对码绑定 |
-| **Discord**  | Bot Token，Gateway                | 私聊与服务器频道路由、多账号隔离、频道信息查询         |
-| **WhatsApp** | Web 界面扫码，Baileys             | 二维码登录、文本与媒体、会话持久化、断线恢复           |
-| **Web**      | 浏览器与 WebSocket                | 实时 Markdown、文件、终端、工具轨迹、PWA               |
+- 最新一条 `KN-2026…`（HEATER-AGING）**不是人工录入的**：它是当晚在飞书卡片上点「确认闭环」时自动沉淀出来的，「溯源」字段直接点回来源工单
+- 每条经验固定四段：症状 / 根因 / 处置 / 溯源；KPI「溯源沉淀 3 / 3」表示库里的经验全部可回溯到工单
+- 检索按症状关键词命中（搜「振动」「温度」即达），为诊断 Agent 的知识召回预留了升级位
 
-渠道账号的凭据和扫码会话按用户、账号隔离。绑定规则为：
+<p align="center">
+  <img src="docs/images/04-inspection.png" alt="智能巡检" width="880" />
+</p>
 
-1. 私聊和普通群绑定到工作区内的指定 Session；IM 里 `/bind <工作区>` 会新建一个 Session 并绑定。
-2. 飞书话题群、Telegram Forum 绑定到 Workspace，每个原生话题映射独立 Session。
-3. 未绑定或已经解绑的渠道保持静默；默认工作区和历史话题记录不会恢复绑定。
+**智能巡检** —— 整个闭环的「驾驶舱」：
 
-飞书的“是否需要 @”与“响应所有人/仅主人”是两个独立维度。普通群始终沿用所绑定的
-Session，需要 @ 时也不会另建话题 Session。话题群按话题隔离上下文。
+- 顶部 KPI：巡检对象 4 · 本轮异常 1（CNC-03 vibration）· 诊断引擎 LLM · 定时巡检 60s
+- **当班简报**：晚班 20:00 起当班至今——越阈设备 1 台（CNC-03 振动峰值 10.4 mm/s）、未闭环工单 1 张（已挂 15h43m，超 12h 自动标红）；右上角「推送当班简报」可手动补推到飞书群
+- 逐设备巡检：任何一台点「手动巡检」都走完整闭环（判异 → 幂等 → LLM → 建单 → 飞书），和定时巡检共用同一段代码
+- 左下角判异阈值（振动 8 mm/s / 温度 75℃ / 压力 5.5 MPa）与右下角 8 步闭环流程，分别是系统的参数表和骨架图
 
-每条输入独立保存回复来源：私聊、群聊、话题回复回到收到该输入的同一聊天、话题和
-Bot 账号；Web 输入只在对应 Web Session 回复。多个渠道可以共享一个 Session，
-但不同来源的输入分批执行，旧渠道归属或后续输入不能改写当前回复目标。
+**报警卡片**没有配图——它长在飞书群里，不在浏览器里。一条卡片就是一张工单的随身档案：
 
-在已经绑定且支持斜杠命令的渠道中，可以使用 `/list`、`/status`、`/where`、`/bind`、`/unbind`、`/new`、`/clear` 和 `/fresh` 管理当前上下文。`/fresh [备注]` 会开启新的 SDK 窗口并写入零摘要交接说明，旧历史仍留在库中。飞书里，Agent 忙碌时的普通消息会静默自然排队；在群聊中真实 `@Bot /steer <消息>` 可立即引导当前任务，真实 `@Bot /break` 可停止当前任务并取消此前已经排队的消息。两条 Runtime 控制命令只接受精确小写形式。写操作受工作区 owner 和渠道发言者策略约束。
+| 卡片区块 | 内容 | 来源 |
+| --- | --- | --- |
+| 头部 | 设备 + 严重度着色（紧急红 / 一般橙） | 工单 severity |
+| 指标区 | 超限项与实测值（如「振动 12.7 mm/s > 阈值 8」） | 判异结果 |
+| 诊断区 | 根因、处置方案、置信度 | LLM 诊断节点 |
+| 操作区 | **接单 → 已处理 → 确认闭环** 三个按钮 | card.action.trigger 回调 |
+| 收尾 | 闭环后追加一行「📚 经验已沉淀：KN-xxxx」 | 关单自动沉淀 |
 
-## 模型与提供商
+点按钮后卡片**就地重绘**成下一个状态（不是发新卡），全部动作在 3 秒预算内返回——细节见[技术点 ④](#4-飞书卡片回写3-秒预算内的闭环)。
 
-PulseOps 可以同时配置多个模型连接。一个连接对应一份凭据和一个地址，可以提供多个模型。
-「设置 → 模型配置」只负责添加和维护连接；用哪个模型由智能体决定：主 PulseOps 和每个
-智能体各有自己的默认模型和推理等级，聊天时还可以临时换成任何一个已添加的模型。
+想亲眼看到这张卡片：`make mes-sim` 起模拟器（默认给 CNC-03 注入缓慢劣化，约 9 分钟爬过振动阈值），再等一轮 60s 定时巡检，卡片就会落进群里。
 
-点「添加模型连接」，向导会依次选择来源、连接、选择模型、测试并保存：
+## 闭环流程
 
-| 类型               | 配置方式                                                                                 |
-| ------------------ | ---------------------------------------------------------------------------------------- |
-| **Anthropic 官方** | Claude 订阅（OAuth、`setup-token` / `.credentials.json`）或 API Key                      |
-| **ChatGPT 订阅**   | 登录 ChatGPT，按账号可用的模型目录选择模型和推理力度                                     |
-| **厂商预设**       | DeepSeek、智谱 GLM、Kimi、MiniMax、阿里云百炼、火山、腾讯、OpenRouter 等，只需填 API Key |
-| **自定义兼容端点** | 填写地址和密钥，自动识别预设、判断认证方式、获取模型列表                                 |
-
-选择模型这一步可以搜索、全选或清空，并为每个模型设置上下文长度和可选的推理等级；
-能力表不认识的模型会按同系列推断，也可以手动声明。子代理和后台轻量调用默认跟随当前
-模型，也可以指定为本连接的另一个模型。上下文长度大于 200K 时，运行时自动给模型名加
-Claude Code 的 `[1m]` 开关，再按实际长度设置压缩窗口，模型名本身不需要改。
-
-环境变量只预填 `API_TIMEOUT_MS`、`CLAUDE_CODE_NO_FLICKER` 和
-`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`，可以修改或删除，也可以增加自定义 Header 等；
-没有保存的变量运行时不会注入。保存前会测试连接，密钥无效时不能保存；连接列表显示最近
-一次测试的结果。
-
-## 自动化
-
-自动化按计划把一段提示词作为真实的一轮发进会话，用法与 cindy 的 Automations 一致。
-在聊天里直接说「每天 21 点检查新剧集，全部下完就停」，Agent 就会建一个绑定当前会话的
-自动化；也可以在 Web 的「自动化」页、会话菜单或 ⌘K 里创建。
-
-- **计划** — 每 N 分钟、每小时、每天、工作日、每周、每月（Cron 定时）、上次完成后
-  再等一段时间（相对间隔，至少 1 分钟）、一次，或只手动运行。
-- **运行会话** — 绑定已有会话（默认当前会话，回复回到它的来源，例如飞书话题）、每次
-  新建或持续会话；每次运行都能「打开会话」继续聊。
-- **结束** — 可写停止条件，Agent 每次运行先核实，满足后自己结束自动化；也可设结束时间。
-- **安静模式** — 检查没事不说话：没有变化的运行不通知；失败总是通知，同一错误只通知
-  一次，恢复后再通知一次。
-- **前置检查与脚本** — 管理员的 Host 工作区可加一条命令，退出码 0 执行、2 跳过（不耗
-  token）；也可以只运行脚本。
-- **可靠性** — 同一自动化不会重叠运行；服务停机期间错过的周期运行记为「已错过」，
-  不补跑；撞用量上限时排队等待自动继续。
-
-REST 接口见 [API 文档](docs/API.md#自动化)。
-
-## 快速开始
-
-### 环境要求
-
-- macOS 或 Linux；Windows 推荐使用 WSL2。
-- [Node.js](https://nodejs.org/) 20 或更高版本，推荐使用 Node.js 24。
-- npm 与 GNU Make。
-- [Docker](https://www.docker.com/)：普通成员和 Container 工作区需要；仅使用管理员 Host 工作区时可不安装。
-
-macOS 可以使用 [OrbStack](https://orbstack.dev/) 或 Docker Desktop，Linux 可以使用 Docker Engine。
-
-> Claude Code CLI 不需要单独安装。项目依赖中已经包含与 Claude Agent SDK 配套、版本锁定的 Claude Code 运行时。
-
-### 安装并启动
-
-```bash
-git clone https://github.com/riba2534/happyclaw.git
-cd happyclaw
-make start
-```
-
-首次启动会自动安装三端依赖、编译后端/Web/Agent Runner，并在 Docker 可用时拉取最新的多架构智能体镜像。启动完成后打开：
-
-<http://localhost:3000>
-
-首次访问按照向导完成：
-
-1. 创建第一个管理员账户。
-2. 配置 Anthropic 官方账号或第三方 Claude 兼容 Provider。
-3. 可选添加飞书、Telegram、QQ、钉钉、微信、企业微信、Discord 或 WhatsApp 渠道账号。
-4. 进入工作台创建智能体、工作区和会话。
-
-### 开发模式
-
-```bash
-make dev
-```
-
-开发模式同时启动后端和 Vite 前端：
-
-- Web 前端：<http://localhost:5173>
-- API / WebSocket：<http://localhost:3000>
-
-### 进程守护（推荐用于演示与长期挂机）
-
-```bash
-make up      # 守护启动：后端 3000 / 前端 5173 / MES API 8002 / 工况模拟器 / 班次简报
-make status  # 五项服务的健康状态 + 日志尾部
-make down    # 优雅停止守护进程与其托管的所有服务
-make logs    # 实时汇总全部服务日志
-```
-
-`make up` 由 `scripts/supervise.mjs` 托管（零依赖）：
-
-- 子进程退出按指数退避重启（1s → 2s → … → 60s，稳定运行 60s 后归零）
-- 对带端口的服务每 5s 探活，连续 3 次失败判定僵死并强制重启
-- 收到 `Ctrl-C` / `SIGTERM` 时按进程组整体收尾，不留孤儿进程
-- 日志写入 `logs/<服务名>.log`，同时带时间戳打到终端
-- 模拟器会等 MES API 探活通过再启动，避免开机时刷一串 502
-- 班次简报定时器（`shift_report.py --daemon`）也由它托管：08:00 / 20:00 收班自动推群，
-  进程挂了说明推送链路已断，同样会被拉起
-
-只想跑前后端可用 `make up-core`，只跑部分服务用 `node scripts/supervise.mjs backend web`。
-
-### 常用运行命令
-
-| 命令                                            | 说明                                                  |
-| ----------------------------------------------- | ----------------------------------------------------- |
-| `make start`                                    | 构建必要产物并以前台生产模式启动                      |
-| `make up` / `make down`                         | 守护启动 / 优雅停止全部服务（含 MES API 与模拟器）    |
-| `WEB_PORT=8080 make start`                      | 使用自定义端口启动                                    |
-| `make status`                                   | 查看端口、健康状态、日志文件和 Docker 容器            |
-| `make stop`                                     | 停止当前端口上的 PulseOps 服务                       |
-| `make docker-pull`                              | 拉取 GitHub Actions 发布的最新 Agent 镜像             |
-| `make install-host-tools`                       | 安装 Host 工具并刷新 Host/Container 共用的内置 Skills |
-| `make backup`                                   | 创建一致性运行数据备份                                |
-| `make restore FILE=happyclaw-backup-xxx.tar.gz` | 停止服务后恢复指定备份                                |
-| `make help`                                     | 查看完整命令列表                                      |
-
-Agent 镜像只在 GitHub Actions 中构建和发布，用户机器不执行 `docker build`。
-`make dev` 和 `make start` 启动时都会从 Docker Hub 拉取 `CONTAINER_IMAGE`；
-也可以提前直接执行：
-
-```bash
-docker pull riba2534/happyclaw-agent:latest
-```
-
-`main` 分支每次推送都会重新构建
-`riba2534/happyclaw-agent`（amd64/arm64）。两个架构会分别在 GitHub 原生 x64
-与 ARM64 Hosted Runner 上并行构建，不使用 QEMU 模拟。每个 runner 先推送没有
-用户标签的 digest candidate，真实启动不可变 Runner、执行本地 fake provider
-SDK/CLI query，并在首次调用 agent-browser 后验证 `/json/version`；两边都验证通过
-后才合并、签名并提升 `git-<sha>` 和 `latest` manifest。默认 core 镜像不携带未启用
-的 Headroom Python 依赖；配置了 `headroom` MCP 的智能体会选择同版本
-`-headroom` 镜像。Claude Code、Claude Agent SDK、agent-browser、feishu-cli、uv
-和 Headroom 均使用源码锁定版本；实际安装版本记录在镜像内的
-`/usr/local/share/happyclaw-tool-versions.txt`，需要回滚时也可以通过 Docker
-build args 在发布工作流中指定精确版本。
-
-## 配置与数据
-
-PulseOps 优先通过 Web 设置管理配置，不要求用户维护一组庞大的环境变量。
-
-### Web 设置入口
-
-| 页面                    | 内容                                              |
-| ----------------------- | ------------------------------------------------- |
-| **设置 → 模型配置**     | 添加和维护模型连接、每个连接的模型、连接测试      |
-| **设置 → 消息渠道**     | 渠道账号、扫码登录、连接状态和会话绑定            |
-| **设置 → 主 PulseOps** | 默认智能体的 Skills 与 MCP                        |
-| **设置 → 执行与容量**   | 超时、并发、上下文窗口和运行限制                  |
-| **设置 → 宿主机集成**   | 管理员纯宿主机模式、Host 目录与 Claude 上下文来源 |
-| **设置 → 注册策略**     | 开放注册、邀请码注册或关闭注册                    |
-| **设置 → 用户与访问**   | 用户、权限、邀请码与审计日志                      |
-
-### 可选环境变量
-
-| 变量                                 | 默认值                            | 说明                                                                               |
-| ------------------------------------ | --------------------------------- | ---------------------------------------------------------------------------------- |
-| `WEB_PORT`                           | `3000`                            | Web、REST API 与 WebSocket 端口                                                    |
-| `WEB_SESSION_SECRET`                 | 自动生成并持久化                  | Web 登录会话签名密钥                                                               |
-| `CONTAINER_IMAGE`                    | `riba2534/happyclaw-agent:latest` | 智能体容器镜像                                                                     |
-| `CONTAINER_IMAGE_HEADROOM`           | 从 core 标签派生 `-headroom`      | 启用 Headroom MCP 时使用的同版本能力镜像                                           |
-| `CONTAINER_TIMEOUT`                  | `1800000`                         | 容器硬超时，毫秒                                                                   |
-| `IDLE_TIMEOUT`                       | `1800000`                         | 容器空闲保活时间，毫秒                                                             |
-| `STUCK_RUNNER_FORCE_RESTART_MINUTES` | `10`                              | IPC 债务强制恢复上限（整数分钟，范围 4–120；非法值回退默认）                       |
-| `ADMIN_HOST_ONLY_MODE`               | `false`                           | 管理员工作区与任务强制使用宿主机                                                   |
-| `MAX_CONCURRENT_CONTAINERS`          | `20`                              | 最大并发容器数                                                                     |
-| `CONTAINER_MEMORY_LIMIT`             | 不限制                            | 单个 Agent 容器内存上限，须带单位，如 `3g`；仅 Container 模式，见下文              |
-| `MAX_FILE_SIZE_MB`                   | `50`                              | Web 和 IM 入站文件大小上限                                                         |
-| `CORS_ALLOWED_ORIGINS`               | 仅 localhost                      | 公网部署的 WebSocket Origin 白名单                                                 |
-| `TRUST_PROXY`                        | `false`                           | 位于可信反向代理后时设为 `true`                                                    |
-| `TRUST_PROXY_HOPS`                   | `1`                               | `X-Forwarded-For` 中可信代理层数（Cloudflare 在 Caddy 之前时设为 `2`）             |
-| `TZ`                                 | 系统时区                          | 日志与自动化时区（建议 IANA 名称，如 `Asia/Shanghai`）；无效值回退并告警           |
-| `HTTPS_PROXY` / `HTTP_PROXY`         | 未设置                            | 独立配置 HTTPS/HTTP 出站代理；主进程与每个智能体容器都会使用，也接受对应的小写变量 |
-| `NO_PROXY`                           | 未设置                            | 独立配置不走代理的地址列表，也接受 `no_proxy`                                      |
-
-Provider 与渠道凭据建议只在 Web 设置中填写。它们使用 AES-256-GCM 加密存储，相关 API 只返回是否已配置，不返回密钥明文。
-
-容器代理值（包括 URL 中的用户名和密码）通过权限为 `0600` 的每容器运行时环境文件注入，不会出现在 `docker run` 参数或容器参数调试日志中。macOS 的 Docker Desktop/OrbStack 与 Windows Docker Desktop 会把代理 URL 中的 `localhost`、`127.0.0.1`、`::1` 改写为 `host.docker.internal`。Linux bridge 容器无法访问宿主机仅绑定在回环地址的代理；请将代理绑定到 Docker bridge 可达接口，并在代理变量中使用该接口的 IP 或 DNS 名称，否则容器会在启动前给出错误。
-
-`CONTAINER_MEMORY_LIMIT` 只对 Container 模式生效，Host 模式的 Runner 不受限。写法同 `docker run --memory`，必须带单位（如 `512m`、`1.5g`、`3GiB`），建议不低于 `256m`；纯数字或无法识别的值在启动时告警并按不限制处理。同一个值也设为 `--memory-swap`，容器不额外使用 swap；所有容器合计最多约 `MAX_CONCURRENT_CONTAINERS` × 该值。运行超过上限会被终止并照常重试，同一会话连续两次超限时提示用户本轮超过了内存上限，不会像未设上限时那样自动清空会话上下文。
-
-### 运行数据
-
-所有持久化运行数据默认位于 `data/`：
-
-```text
-data/
-├── db/messages.db     # SQLite 主数据库（含 Workspace Memory v2）
-├── config/            # 加密配置、密钥与系统设置
-├── groups/            # 工作区目录和项目文件
-├── memory/            # 旧版文件记忆，仅供离线迁移/归档
-├── sessions/          # 每个 Runtime Session 的 Claude 数据
-├── ipc/               # Runner 输入、工具请求和回执
-├── skills/            # 用户 Skills
-├── builtin-skills/    # 固定版本内置 Skills 清单
-├── mcp-servers/       # 用户 MCP 配置
-├── plugins/           # Plugin catalog、用户状态与运行快照
-└── extra/             # Container 工作区持久工具数据
-```
-
-不要把 `data/` 提交到 Git。迁移实例时优先使用 `make backup` 和 `make restore`；恢复流程会检查归档路径、文件类型、符号链接、清单和数据库完整性。
-
-## 系统架构
+一次真实告警从发生到沉淀的完整时序：
 
 ```mermaid
-flowchart LR
-    Web["Web / PWA"] --> Core["PulseOps Node Service"]
-    IM["8 个 IM 渠道"] --> Core
+sequenceDiagram
+    autonumber
+    participant S as 巡检 scheduler.py
+    participant D as mes.db
+    participant L as 诊断节点（LLM）
+    participant P as PulseOps 渠道网关
+    participant G as 维修班（飞书群）
 
-    Core --> Auth["Auth / RBAC"]
-    Core --> Router["消息路由与会话队列"]
-    Core --> Scheduler["任务调度与恢复"]
-    Core --> DB[("SQLite + Workspace Data")]
-
-    Router --> Providers["Provider Pool"]
-    Scheduler --> Router
-    Providers --> Host["Host Runner"]
-    Providers --> Container["Docker Agent Runner"]
-
-    Host --> SDK["Claude Agent SDK / Claude Code"]
-    Container --> SDK
-    SDK <--> MCP["Built-in MCP / IPC"]
-    MCP --> Core
-
-    Core --> Stream["WebSocket / Channel Reply"]
-    Stream --> Web
-    Stream --> IM
+    S->>D: 取每台设备最新指标
+    D-->>S: 振动 12.7 > 8.0（越限）
+    S->>D: 幂等检查：该设备有未闭环工单？
+    D-->>S: 没有 → 继续
+    S->>D: 组事实包（指标 / 超限项 / 3 条历史故障 / 知识命中）
+    S->>L: 诊断请求（强制 JSON）
+    L-->>S: 根因 主轴轴承磨损 / 方案 更换轴承+动平衡 / 置信度 0.85
+    S->>D: 建单（状态 open，写 work_order_log）
+    S->>P: 推送报警卡片
+    P->>G: 卡片落到群里
+    G->>P: 点「接单」
+    P->>D: POST /api/work_orders/{id}/assign
+    P-->>G: 就地换新卡片（assigned，显示处理人）
+    G->>P: 点「确认闭环」
+    P->>D: POST /api/work_orders/{id}/close
+    D->>D: 关单即沉淀经验（source_wo_id 幂等）
+    P-->>G: 卡片变「已闭环 · 📚 经验已沉淀：KN-xxx」
 ```
 
-主服务始终使用 Node.js 运行，负责认证、路由、队列、调度、渠道连接、Provider 池、用量和持久化。Docker 只用于隔离智能体执行环境，不承载 PulseOps 主服务。
+三个入口收敛到同一条链路：
 
-### 技术栈
+- **被动**：定时巡检发现越限（主线）
+- **主动**：人在会话里问「3 号机振动不对，看下」→ 问诊解析节点识别设备号与意图 → 进入同一诊断/建单流程
+- **汇总**：每班收班（08:00 / 20:00）推一条班次简报，回答「这一班有没有留坑」
 
-| 层               | 技术                                                                                                     |
-| ---------------- | -------------------------------------------------------------------------------------------------------- |
-| **主服务**       | Node.js、TypeScript、Hono、WebSocket、SQLite                                                             |
-| **智能体运行时** | Claude Agent SDK、Claude Code CLI、MCP、文件 IPC                                                         |
-| **Web**          | React 19、Vite、Tailwind CSS、Radix UI、Zustand、原生 SVG 图表、xterm.js                                 |
-| **渠道**         | Feishu SDK、grammY、QQ Bot API、DingTalk Stream、企业微信智能机器人 SDK、Discord.js、Baileys、微信 iLink |
-| **隔离执行**     | Docker、非 root Node.js 容器、Chromium、常用开发与浏览器工具                                             |
-| **质量保障**     | TypeScript、Vitest、Playwright、Prettier，合并前本地运行 `make check`                                    |
+## 技术点
 
-## 安全模型
+### 1. 确定性骨架 + 两个 LLM 节点，而不是「全交给模型」
 
-PulseOps 会执行代码和访问第三方消息平台，部署前请理解以下边界：
+判断链路里每一环的性质不同，所以分层切得很硬：
 
-- 用户、渠道账号、工作区及其 Memory、Skills、MCP、Plugin 状态和用量记录按 owner 隔离。
-- Provider 与渠道密钥使用本机 AES-256-GCM 密钥加密，密钥文件权限限制为 `0600`。
-- REST、WebSocket、IM 命令和 MCP 工具分别执行身份、owner、角色与能力策略检查。
-- 普通成员固定使用 Container 模式；管理员 Host 模式只允许访问授权目录。
-- 智能体的通用代码与文件工具不提供全局只读模式；Skills 与 MCP 是否启用由用户显式选择。Workspace Memory 控制面是例外：自动化运行与群成员轮次只能提议（待主人确认），Sub-Agent 只能读取，只有顶层交互式 Session 可以按 Workspace ACL 写入。
-- 自动化的脚本与前置检查只允许管理员在授权的 Host 工作区执行。
-- Skill ZIP、文件上传、备份恢复和 Git 操作包含路径、符号链接、大小与目标校验。
-- 对公网开放时，建议使用 HTTPS 反向代理、强密码、关闭开放注册，并定期备份 `data/`。
+| 环节 | 性质 | 实现 |
+| --- | --- | --- |
+| 定时巡检、阈值判异 | 可穷举 | 普通代码：`v > 8.0` 严格大于，边界值判健康 |
+| 未闭环工单去重 | 可穷举 | 普通代码：同设备存在未闭环单则跳过 |
+| 工单状态流转 | 可穷举 | 状态机 `open → assigned → done → closed` |
+| 根因假设与处置方案 | 不可穷举 | **LLM 诊断节点**：结构化事实包进，强制 JSON 出 |
+| 「3 号机振动不对」这类问询 | 不可穷举 | **LLM 问诊解析节点**：自然语言 → 设备号 + 意图 |
+| 推送、沉淀、留痕 | 可穷举 | 普通代码：飞书卡片、知识库写入带 `source_wo_id` |
 
-完整接口权限见 [ACL 权限矩阵](docs/ACL-MATRIX.md)。
+收益很直接：**模型只做判断，不碰写操作**。建单、改状态、推送都由代码执行，模型吐出的每个数字都能在 `mes.db` 里对账；模型挂了、key 失效、返回坏 JSON（重试 1 次后）都会降级为知识库关键词命中，巡检循环不中断。
 
-### 反向代理配置
+同一台 CNC-03，两种模式的实测差异：
 
-Web 界面依赖 `/ws` 上的 WebSocket 推送流式输出和运行状态。反向代理必须放行
-Upgrade 并把该连接的读超时设得足够长，否则前端会周期性弹出「连接中断，正在重连...」。
+```
+LLM   根因=主轴轴承磨损复发，振动 12.7 mm/s 超 8.0 阈值        置信度 0.85
+      依据=振动 12.7>8.0；历史故障 F-001 同为 SPINDLE-BEARING（停机 96 min）；
+           知识库 KN-001 命中；温度 61.0 / 压力 4.1 / 转速 3200 未见异常；
+           run_hours 12800 已长期运行
+降级  根因=主轴轴承磨损                                          置信度 0.80
+      依据=知识库命中 KN-001（未配置 LLM，关键词命中降级）
+```
 
-服务端已内置 30 秒心跳（ping/pong），既用于保活，也用于回收半开的死连接，
-因此代理侧只需把读超时设得高于心跳间隔即可。nginx 示例：
+健康设备（CNC-01）进同一节点，LLM 输出「无异常证据，不编造根因」，置信度回落到 0.5 —— 这条是防幻觉的验收项。
 
-```nginx
-location /ws {
-    proxy_pass http://127.0.0.1:3000;
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_set_header Host $host;
-    proxy_read_timeout 3600s;   # 默认 60s 会掐断长连接
-    proxy_send_timeout 3600s;
+### 2. 幂等：一台设备同时只允许有一张未闭环单
+
+巡检是定时跑的，同一台劣化中的设备会连续 N 轮越限。如果每轮都建单，维修班会被同一件事刷屏，工单表也会烂掉。
+
+「未闭环」的定义（`open / assigned / done`——`done` 是处置完了没人签字，事情还挂着）只在 `db.find_open_work_order()` 写一次，两个地方用它：
+
+- **巡检入口**先查一次，命中就跳过——顺便**省掉一次 LLM 诊断调用**，模型不该为幂等买单；
+- **`db.create_work_order()`** 再兜一次，命中时返回已有工单并带 `deduplicated: true`。必须兜的原因：建单入口有三个（巡检 / MCP 工具 / 看板），代码检查只能挡住顺序调用，巡检进程和 API 进程并发时两边都可能查到「没有未闭环单」。
+
+所以最后还落了一道**数据库级不变式**——部分唯一索引：
+
+```sql
+CREATE UNIQUE INDEX ux_work_order_open
+  ON work_order(equipment_id) WHERE status IN ('open','assigned','done');
+```
+
+绕过任何函数直插第二张未闭环单，SQLite 自己会拒。分层的意思是：入口检查为了省钱，库级约束为了保证正确。
+
+### 3. 状态机：状态只认数据库，不认卡片
+
+```python
+WORK_ORDER_TRANSITIONS = {
+    "open":     {"assigned", "done"},   # 允许跳过派单直接回填
+    "assigned": {"done"},
+    "done":     {"closed"},
+    "closed":   set(),                  # 终态
 }
 ```
 
-注意 `Connection` 应固定为 `"upgrade"`，不要写成 `$http_connection`——后者依赖
-客户端如实发送该头部，行为不稳定。
+跳级、回退、终态再流转一律抛 `WorkOrderError`，HTTP 层映射成 **409**。派单必须带 `operator`，同时回填 `assignee`——「谁派的」和「派给谁」都不允许空。
 
-若代理位于 Cloudflare 等平台之后，还需确认其空闲超时高于 30 秒心跳间隔。
-上传大文件时另需放宽 `client_max_body_size`（不小于 `MAX_FILE_SIZE_MB`，并预留
-multipart 开销）与 `client_body_timeout`。
+这条约束第一次落地时踩过一个坑：看板的「一键关单」原本直接 `UPDATE status='closed'`，绕过了中间环节。现在改成沿合法路径补全 `assigned → done → closed`，每一步都写 `work_order_log`，**关单也能查到是谁、什么时候、以什么理由**。
 
-位于反向代理之后必须设置 `TRUST_PROXY=true`，否则所有请求都显示为代理自身的地址：
-代理在另一台主机时，全部用户共用同一个按 IP 的登录限流桶，几十次失败即可锁住所有人；
-代理在本机（loopback）时，按 IP 的限流不生效。开启后，客户端 IP（登录限流与审计日志
-使用）取自 `X-Forwarded-For` 中由可信代理追加的那一项：右数第 `TRUST_PROXY_HOPS` 个
-（默认 1，即 Caddy 或 nginx 直接面向用户时）。更靠左的条目由客户端提供，不被信任。
+### 4. 飞书卡片回写：3 秒预算内的闭环
 
-密码哈希与校验（登录、注册、初始化、修改密码、管理员创建用户或重置密码）在一个有界的
-bcrypt 工作线程池中执行，最多同时排队 32 个任务。超出的突发请求会立即收到 HTTP 503
-（`服务繁忙，请稍后重试`，带 `Retry-After: 1`），且不计入登录或注册限流次数；
-客户端稍后重试即可。
+卡片由自建应用发出，按钮的 `value` 里**只带工单号和动作**，不存任何业务状态：
 
-## 开发与测试
+```json
+{"action": "mes_work_order", "wo_id": "WO-20261107183301408", "op": "close"}
+```
 
-### 常用命令
+点下去之后，PulseOps 做三件事：把点击翻译成 `POST /api/work_orders/{id}/{op}`（operator 取点击人）、拿 MES 返回的最新工单**重建**卡片、返回 toast 让飞书就地替换这条消息。
+
+两个约束决定了写法：
+
+- **飞书要求回调 3s 内响应**，否则按钮报错并重试 —— 所以 HTTP 预算压到 2.2s，留 0.8s 给重建与网络；
+- **重复点击必须安全** —— 第二次点会撞状态机 409，翻译成人话「工单状态已变化」，并把卡片刷成库里的真实状态，而不是停在点击前那一版。
+
+卡片永远是数据库的投影，不是第二个真相源。
+
+### 5. 经验回流：关单那一刻顺手沉淀
+
+工单走到 `closed` 时，`close_work_order` 尾部会调 `sediment_knowledge_from_work_order()`，把这次处置写成一条可检索的经验——不需要谁专门去知识库页手填。
+
+| 字段 | 取值 |
+| --- | --- |
+| `fault_code` | 按症状文本推断（主轴/轴承 → `SPINDLE-BEARING`，振动 → `VIB-OVER`，温度 → `TEMP-OVER`，加热圈老化 → `HEATER-AGING`） |
+| `symptom` | `设备号 + 设备名：故障描述` —— 带上设备标识，按设备检索同类故障才命得中 |
+| `root_cause` | 从描述里的「疑似…」从句切出，没写就留「建议人工补充」 |
+| `resolution` | 优先用关单时回填的处置结果，其次取 `done` 环节的时间线 |
+| `source_wo_id` | 工单号，知识库页「溯源」可直接点回工单 |
+
+四个刻意的取舍：
+
+- **只认 `closed`**：`open/assigned` 阶段没有处置结果，沉淀进去是废料，还会稀释后续检索；
+- **幂等键 = `source_wo_id`**：同一张单关几次只产出一条；
+- **沉淀失败不影响关单**：异常只打一行日志，该闭环还是闭环；
+- **留痕**：工单时间线写一条 `knowledge_sediment`，飞书闭环卡片显示 `📚 经验已沉淀：KN-xxx`。
+
+这条链路落地时抓到一个真 bug：关单占位文案「人工回填闭环」会覆盖 `done` 阶段填的真实处置，等于把知识库里最有价值的一栏写成废话。修法是关单留白不覆盖、API 层透传 `body.resolution`，并先写一条会失败的用例把它钉住。
+
+一次真实闭环的产物：
+
+```
+wo_id        WO-20261107183301408            → closed
+knowledge    KN-20261107192155977            → HEATER-AGING
+symptom      INJ-01 注塑机#1：巡检发现温度持续偏高，疑似料筒加热圈老化
+resolution   用户 011715 于 2026-11-07 19:08 通过飞书卡片确认现场处置完成
+source_wo_id WO-20261107183301408            ← 溯源对得上
+```
+
+### 6. 班次简报：一班一总，收班不留坑
+
+报警卡片是事件驱动的（一台设备越阈推一条），班组长要的是另一件事：**这一班到底有没有留下没人管的坑**。
+
+口径：早班 08:00–20:00，晚班 20:00–次日 08:00；到点推的是**刚结束那一班**。三个统计选择是有意的：
+
+| 选择 | 原因 |
+| --- | --- |
+| 越阈按**窗口内峰值**判 | 中途越阈后被处置好的设备也要曝光，否则夜班漏掉的问题会被早班抹平 |
+| `done`（已处理待闭环）仍计入**未闭环** | 它还要人签字收尾，不算完 |
+| 闭环数按 `work_order_log` 的 `status_change → closed` 统计 | 工单表没有 `closed_at`，`updated_at` 还会被处置回填改写 |
+
+「当前状态」一律锚在**班次结束时刻**：工单状态由日志回推、越阈取 end 之前最后一条采集。所以补发昨天晚班的简报，看到的是当时的样子，不会被今天关掉的单抹掉。
+
+### 7. 数据采集：真实设备的数据从哪进来
+
+页面上的曲线不是 `init_db.py` 里写死的假数据，两条写入路径都汇到同一个 `insert_metric()`：
+
+**① 采集上报（对应真实车间的网关）**
 
 ```bash
-make install          # 安装主服务、Web 与 Agent Runner 依赖
-make dev              # 启动开发环境
-make typecheck        # 三端类型检查 + 共享类型/Prompt 引用校验
-make test             # 运行 Vitest 测试
-make format-check     # 检查本次改动涉及文件的格式
-make build            # 构建后端、Web 与 Agent Runner
-npm run self-test     # 构建 + Agent Runner 自检 + 全量测试
+curl -X POST http://localhost:8002/api/metric \
+  -H "Content-Type: application/json" -H "X-API-Key: $INGEST_API_KEY" \
+  -d '{"equipment_id":"CNC-03","temp":61.2,"vibration":8.6,"pressure":4.1,"rpm":3250}'
 ```
 
-项目只使用 Node.js/npm 工具链，不使用 Bun。主服务依赖 Node.js 的 HTTP Upgrade 与 `ws` 完成 WebSocket 握手。
+- 鉴权：配了 `INGEST_API_KEY` 就必须带 `X-API-Key`，未配置时只接受本机上报（跨机部署务必配）
+- 校验：设备编码必须已登记（404）、数值必须落在物理区间（400）、时间戳自动归一（兼容 ISO8601）
+- 幂等：同设备同秒重复上报返回 `duplicate: true`，网关重试不会把点数翻倍
 
-### 项目结构
+**② 工况模拟器（让看板「活」起来）**
 
-```text
-happyclaw/
-├── src/                         # 主服务、路由、调度、渠道、权限与持久化
-├── web/                         # React Web/PWA
-├── container/
-│   └── agent-runner/            # Host/Container 共用的 Agent 执行器
-├── shared/                      # 主服务与前端/Runner 共享的事件类型源
-├── scripts/                     # 构建、校验、备份和恢复脚本
-├── tests/                       # 后端、前端契约、迁移与安全回归测试
-├── docs/                        # API、权限与设计文档
-├── Makefile                     # 统一开发、构建和运维入口
-└── data/                        # 本地运行数据，不进入 Git
-```
-
-### 合并门槛
-
-仓库不再运行 GitHub Actions CI（Agent 镜像发布仍在 GitHub Actions）。合并前在本地执行：
+按「基线 + 日周期负载 + 随机噪声 + 缓慢劣化」持续生成数据，并且**走同一个上报端点**——和将来真实网关是同一条路：
 
 ```bash
-make check
+python3 simulator.py --backfill 24 --interval 10   # 回填 24h + 每 10s 采样
 ```
 
-它依次运行：改动文件格式、生产依赖审计、共享文件副本一致性、三端类型检查（含 Prompt 与文档检查）、全量
-Vitest、三端生产构建、四个全栈冒烟测试、Web 浏览器 e2e（手机与桌面）、Agent Runner 自检和
-`git diff --check`，并打印每一步耗时。并行 worktree 用 `PLAYWRIGHT_PORT` 指定 e2e 端口。PR 的
-「验证」一节写明在哪个提交上跑过。
+默认注入 CNC-03 振动缓慢劣化（约 6 mm/s·h，十几分钟越过 8.0），自动触发巡检 → 诊断 → 建单 → 飞书推送的完整闭环。也就是说：**演示不需要手动造数据，等它自己报警就行**。
 
-## 文档
+接入真实车间时，让网关对接 ① 即可，上层零改动；若已有 MES 数据库，直接替换 `db.py` 的 `query_*` 为对方视图。
 
-| 文档                                                                  | 用途                                               |
-| --------------------------------------------------------------------- | -------------------------------------------------- |
-| [Web API](docs/API.md)                                                | REST API、认证、任务、渠道账号、智能体、用量等接口 |
-| [运行时架构](docs/RUNTIME-ARCHITECTURE.md)                            | 模块边界、依赖规则和性能预算                       |
-| [ACL 权限矩阵](docs/ACL-MATRIX.md)                                    | HTTP、WebSocket 与 IM 命令的权限要求               |
-| [远端 MCP 配置与排查](docs/REMOTE-MCP.md)                             | HTTP/SSE、Header、作用域、智能体生效确认与凭据保护 |
-| [Workspace Memory v2](docs/workspace-memory-v2.md)                    | Workspace 知识边界、数据模型、并发和 UI 语义       |
-| [智能体优先架构记录](docs/agent-first-architecture-plan.md)           | 智能体、工作区、运行会话与渠道挂载的迁移背景       |
-| [Plugin 自动化设计记录](docs/claude-code-plugin-automation-design.md) | Claude Code Plugin catalog 与运行快照的历史设计    |
+### 8. 流式卡片：一条三级降级链
 
-## 常见问题
+Agent 的回复卡片按能力逐级下降，任一级不可用就退下一级，用户侧最多少个动画：
 
-<details>
-<summary><strong>必须安装 Docker 吗？</strong></summary>
+| 级别 | 接口 | 效果 |
+| --- | --- | --- |
+| **Level 0** | `cardkit.v1.card.create(streaming_mode)` + `element/content` 增量 | 原生打字机 |
+| Level 1 | `cardkit.v1.card.update`（整卡 JSON） | 整卡刷新 |
+| Level 2 | `im.message.create` + `message.patch` | 整卡刷新（最差但一定能用） |
 
-不一定。管理员只使用 Host 工作区时可以不安装 Docker；普通成员和所有 Container 工作区需要 Docker。
+降级是**逐条回复现判**的，没有持久化的能力缓存：权限一开通，下一条回复自动回到 Level 0。实测日志：
 
-</details>
+```
+INFO Streaming card created via streaming mode
+     mode: "streaming"          ← Level 0，原生流式
+```
 
-<details>
-<summary><strong>需要另外安装 Claude Code CLI 吗？</strong></summary>
+（Level 0 需要开放平台 `cardkit:card:write`；JSON 2.0 卡片需客户端 7.20+，自定义流式参数需 7.23+。）
 
-不需要。官方 Agent 镜像会在每次发布时安装最新稳定版 Claude Agent SDK 和
-Claude Code，并把实际版本写入
-`/usr/local/share/happyclaw-tool-versions.txt`。固定版本的内置 Skills 会在
-`make install`、`make dev` 和 `make start` 时自动物化，并由 Host/Container
-共用同一 Manifest；其他 Host 工具可通过 `make install-host-tools` 安装。
+### 9. 守护进程：五个进程，一个入口
 
-</details>
+`make up` 背后的 `scripts/supervise.mjs`（零依赖）托管五个服务：
 
-<details>
-<summary><strong>可以使用第三方 Claude 兼容接口吗？</strong></summary>
+| 服务 | 端口 | 挂了会怎样 |
+| --- | --- | --- |
+| 后端 / API / WebSocket | 3000 | 看板白屏、飞书失联 |
+| Web 前端 | 5173 | 打不开页面 |
+| MES API | 8002 | 工单、看板、卡片按钮全挂 |
+| 工况模拟器 | — | 曲线停在原地，巡检永远「无异常」 |
+| 班次简报定时器 | — | 收班没人提醒，坑留到下一班 |
 
-可以。在“设置 → 模型配置”点“添加模型连接”：常见厂商直接选预设，只填 API Key；其他兼容接口选“自定义兼容地址”，填写地址和密钥后系统会识别认证方式、获取模型列表并测试连接。1M 上下文及 Claude Code 兼容环境变量由系统预填，也允许在连接设置中编辑。
+它做了四件容易漏的事：子进程退出按指数退避重启（1s → 60s，稳定 60s 后归零）；带端口的服务每 5s 探活、连续 3 次失败判僵死并强制重启；收到 `SIGTERM` 按进程组整体收尾不留孤儿；给每个服务注入 `NO_PROXY`——宿主机上的 `HTTP_PROXY` 会把 `127.0.0.1` 的探活也代理走，直接 502。
 
-</details>
+> 踩坑记录：后端冷启动（tsx 编译）实测 25~40s，而默认启动宽限是 20s，重启后进入「启动 → 被杀 → 再启动」死循环——**「慢」被误判成「僵死」**。宽限调到 60s 后一次通过。凡是带编译/迁移的服务，都别用默认值赌启动速度。
 
-<details>
-<summary><strong>如何迁移或备份实例？</strong></summary>
+## 架构
 
-运行 `make backup` 创建一致性归档。在目标实例停止服务后运行 `make restore FILE=<备份文件>`。不要在服务运行时直接复制 SQLite 文件。
+```mermaid
+flowchart LR
+    GW["采集网关 / 工况模拟器"] -->|"POST /api/metric"| API
 
-</details>
+    subgraph MES["mes-mcp-server（Python，标准库 + FastMCP）"]
+        API["HTTP API :8002"]
+        DB[("mes.db<br/>6 张表")]
+        SCHED["巡检 scheduler.py"]
+        REPORT["班次简报 shift_report.py"]
+        API --- DB
+        SCHED --- DB
+        REPORT --- DB
+    end
 
-<details>
-<summary><strong>如何修改服务端口？</strong></summary>
+    MCP["MCP Server :18080<br/>9 个业务工具"] --- DB
+    PULSE["PulseOps 平台 :3000<br/>会话 / 定时任务 / 飞书渠道"] -->|"MCP over SSE"| MCP
+    PULSE -->|"长连接回调 card.action.trigger"| FEISHU["飞书群"]
+    SCHED -->|"报警卡片"| FEISHU
+    REPORT -->|"班次简报"| FEISHU
+    WEB["Web 看板 :5173"] -->|"/mes-api 代理"| API
+    PULSE --- WEB
+```
 
-生产模式运行 `WEB_PORT=8080 make start`。开发模式需要同时设置后端端口和 Vite 的 API/WebSocket 代理目标。
+| 组件 | 技术 |
+| --- | --- |
+| MES 服务 | Python 3、`http.server`、`sqlite3`（**零第三方依赖**也能跑）、FastMCP |
+| 诊断节点 | 任意 OpenAI 兼容端点（DeepSeek / Qwen / GPT），无 key 自动降级 |
+| 平台 | Node.js 20+、TypeScript、Hono、WebSocket、Claude Agent SDK |
+| 看板 | React 19、Vite、Tailwind、Recharts、Zustand |
+| 渠道 | 飞书自建应用（卡片 2.0 + 事件回调）、Webhook 纯文本兜底 |
 
-</details>
+## 数据模型
 
-## 贡献
+六张表，关系很简单但都有人问：
 
-欢迎提交 Issue 和 Pull Request：
+```
+equipment ──1:n── metric              # 设备台账 → 运行指标（时序）
+    │
+    ├──1:n── history_fault            # 历史故障（诊断的事实包来源之一）
+    │
+    └──1:n── work_order ──1:n── work_order_log   # 工单 → 每次流转留痕
+                  │
+                  └──1:1(按 source_wo_id)── knowledge   # 关单沉淀的经验，可溯源回工单
+```
 
-1. Fork 本仓库并从 `main` 创建功能分支。
-2. 完成修改并补充相应测试。
-3. 运行 `make typecheck && make test && make build`。
-4. 确认 `make format-check` 通过。
-5. 提交 Pull Request，说明用户影响、验证方式和兼容性变化。
+字段上两个细节：`metric` 的同设备同秒去重是在 `insert_metric()` 里判的（应用层，不是数据库唯一约束）；`work_order` **没有** `closed_at`，闭环时间只能从 `work_order_log` 读——这是班次简报统计口径的来源。
 
-提交信息建议使用 [Conventional Commits](https://www.conventionalcommits.org/)：
+## 跑起来
+
+前置：Python 3.10+、Node.js 20+、GNU Make。
+
+```bash
+# 1. 初始化模拟 MES（幂等，可重复跑）
+cd mes-mcp-server && python3 init_db.py && cd ..
+
+# 2. 一键守护启动五个服务
+make up
+make status          # 五项健康状态 + 日志尾部
+```
+
+打开 <http://localhost:5173>，登录后从左侧进入设备监控 / 工单中心 / 故障知识库 / 智能巡检。
+
+**5 分钟验收路径**（不配任何第三方凭证也能跑完前四步）：
+
+1. 设备监控页看到 4 台设备在出曲线（模拟器每 10s 采一次）
+2. 等 CNC-03 振动爬过 8.0，或直接在智能巡检页点「巡检」立刻判异
+3. 工单中心出现新工单，点开能看到根因与置信度（没配 LLM key 时是知识库命中，同一套字段）
+4. 走完 派单 → 回填 → 闭环，故障知识库多出一条带溯源的 `KN-xxx`
+5. 配好飞书三件套后，同一张单走卡片按钮，群里直接改状态
+
+常用命令：
+
+```bash
+make up / make down / make status / make logs   # 守护
+make mes-sim ARGS="--interval 10"               # 单独跑模拟器
+make mes-report                                 # 生成/推送班次简报
+make mes-test                                   # MES 全量回归
+```
+
+飞书卡片需要：`FEISHU_APP_ID` / `FEISHU_APP_SECRET` / `FEISHU_CHAT_ID`（写在 `mes-mcp-server/.env`），应用侧开通 `im:message:send_as_bot`、订阅 `card.action.trigger`、机器人已进群。三件套缺任一项就退回 Webhook 纯文本（那条路上没有按钮）。
+
+## 测试与验收
+
+```bash
+make mes-test     # Python：112 项
+npx vitest run tests/mes-workorder-actions.test.ts   # TS：卡片回写 15 项
+```
+
+| 文件 | 用例 | 盯的是什么 |
+| --- | --- | --- |
+| `test_state_machine.py` | 15 | 状态机非法流转、时间线留痕、数据口径 |
+| `test_closed_loop.py` | 13 | 建单幂等（含库级索引）、经验回流、双触发收敛 |
+| `test_feishu.py` | 17 | 卡片结构、按钮 payload、降级到 webhook |
+| `test_ingest.py` | 29 | 上报鉴权/校验/幂等、模拟器不污染演示库 |
+| `test_sediment.py` | 12 | 关单沉淀的字段来源、幂等、开关、失败不阻断 |
+| `test_shift_report.py` | 18 | 班次口径、峰值判定、历史还原、推送降级 |
+| `test_agent_nodes.py` | 8 | 诊断/问诊节点（假传输层，不联网不耗 token） |
+| `tests/mes-workorder-actions.test.ts` | 15 | 点击翻译、2.2s 预算、409 翻译、卡片重建 |
+
+涉及真实数据的用例一律用临时库，跑完不影响演示库；`make mes-test` 会先备份 `data/mes.db` 再恢复。
+建单链路的用例会真的走一遍巡检，所以用例自己设置 `MES_DISABLE_PUSH=1`——开发机的
+`.env` 里配着真实飞书凭证，不拦住就会把测试工单推到维修群，群里的人会以为产线半夜出事。
+
+## 边界与取舍
+
+写清楚没做的和做浅的，比藏起来更省事：
+
+- **阈值是示例值**：振动 8.0 / 温度 75.0 / 压力 5.5 用常量写在 `db.py`，接真实产线要按设备型号分档（同一台设备的报警阈值还应该随工况分段）；
+- **故障码靠关键词推断**：`FAULT_CODE_HINTS` 按症状文本匹配，覆盖不了长尾描述，接真实数据建议换成故障码字典或让诊断节点输出结构化码；
+- **单机 SQLite**：写入都走单库单文件，够一条产线用，多车间要换 PostgreSQL 并给 `metric` 做分区；
+- **MES 是模拟的**：`mes-mcp-server` 模拟的是 MES 的数据形状与接口，不是真实 MES 产品；对接时替换 `db.py` 的查询层即可，编排层不用动；
+- **卡片回调依赖长连接**：飞书侧断线重连期间点按钮会失败，靠重试与「状态已变化」提示兜住，但没有做本地队列补偿。
+
+## 目录结构
 
 ```text
-feat: add a new capability
-fix: prevent duplicate task runs
-docs: update provider setup guide
+.
+├── mes-mcp-server/            # 设备健康业务层（Python）
+│   ├── db.py                  # 数据访问 + 状态机 + 关单沉淀
+│   ├── api.py                 # HTTP JSON API（:8002）
+│   ├── server.py              # MCP Server（9 个工具，SSE/stdio）
+│   ├── scheduler.py           # 定时巡检：判异 → 诊断 → 建单
+│   ├── agent_nodes.py         # 两个 LLM 节点（诊断 / 问诊解析）
+│   ├── shift_report.py        # 班次简报（生成 / 推送 / 常驻定时）
+│   ├── simulator.py           # 工况模拟器（走真实上报端点）
+│   ├── feishu.py              # 报警卡片 / webhook 兜底
+│   └── test_*.py              # 112 项回归
+├── src/                       # PulseOps 平台服务（Node.js）
+│   ├── mes-workorder-actions.ts  # 卡片按钮 → 工单写操作
+│   └── feishu-*.ts               # 渠道、流式卡片、卡片动作
+├── web/                       # 看板（React 19 + Vite）
+│   └── src/pages/             # 设备监控 / 工单中心 / 知识库 / 智能巡检
+├── scripts/supervise.mjs      # 五服务守护
+├── data/                      # 运行数据（不入 Git）
+└── Makefile                   # 统一入口
 ```
 
-## 致谢
+## 上游与致谢
 
-- [Anthropic Claude Code](https://github.com/anthropics/claude-code) 与 [Claude Agent SDK for TypeScript](https://github.com/anthropics/claude-agent-sdk-typescript) 提供完整的智能体运行时。
-- 感谢所有渠道 SDK、开源依赖、Issue 提交者和贡献者。
+平台底座来自 [happyclaw](https://github.com/riba2534/happyclaw)（MIT License，版权归原作者），本项目在其之上构建设备健康维护场景：业务数据层、状态机、巡检与诊断编排、飞书卡片回写、知识回流、班次简报、看板页面与守护进程均为自研。
 
-PulseOps 是独立开源项目，与 Anthropic 及各消息平台不存在官方隶属、授权或背书关系。相关名称和商标归各自权利人所有。
+上游另提供智能体管理、多渠道接入、用量计费、权限与运维等平台能力，与本场景无关，本文不展开。
 
 ## License
 
-[MIT License](LICENSE) © 2025–present [riba2534](https://github.com/riba2534)
-
----
-
-<p align="center">
-  如果 PulseOps 对你有帮助，欢迎点一个 Star ⭐
-</p>
+[MIT](LICENSE)
