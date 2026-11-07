@@ -5,6 +5,11 @@
  * button and its handler cannot drift apart.
  */
 
+import {
+  parseMesWorkOrderValue,
+  type MesWorkOrderPayload,
+} from './mes-workorder-actions.js';
+
 /** Stops the run the streaming card belongs to. */
 export const CARD_ACTION_INTERRUPT_STREAM = 'interrupt_stream';
 /**
@@ -12,6 +17,12 @@ export const CARD_ACTION_INTERRUPT_STREAM = 'interrupt_stream';
  * user's next message in that chat, exactly as if they had typed it.
  */
 export const CARD_ACTION_ANSWER_QUESTION = 'answer_question';
+/**
+ * Advances a work order from a 设备异常工单 alarm card (接单 / 已处理 / 确认闭环).
+ * Those cards are sent by mes-mcp-server, not built here, so only the value
+ * shape is shared with it.
+ */
+export const CARD_ACTION_MES_WORK_ORDER = 'mes_work_order';
 
 /** Longest question/option text carried in a button payload. */
 export const CARD_ANSWER_TEXT_LIMIT = 300;
@@ -26,7 +37,8 @@ export interface AnswerQuestionPayload {
 
 export type CardActionPayload =
   | { action: typeof CARD_ACTION_INTERRUPT_STREAM }
-  | AnswerQuestionPayload;
+  | AnswerQuestionPayload
+  | MesWorkOrderPayload;
 
 function clip(text: string): string {
   const trimmed = text.trim();
@@ -63,6 +75,9 @@ export function parseCardActionValue(value: unknown): CardActionPayload | null {
       typeof record.question === 'string' ? record.question : '',
       record.answer,
     );
+  }
+  if (record.action === CARD_ACTION_MES_WORK_ORDER) {
+    return parseMesWorkOrderValue(value);
   }
   return null;
 }

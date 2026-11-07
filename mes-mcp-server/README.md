@@ -15,7 +15,7 @@ mes-mcp-server/
 ├── health_check.py    # 主动查询触发：人让 Agent 查设备健康状态并判定
 ├── api.py         # 轻量 HTTP JSON API（标准库）：看板取数 + 网关指标上报（/api/metric）
 ├── agent_nodes.py # LLM 节点：诊断 / 问诊解析（OpenAI 兼容端点，无 key 自动降级）
-├── feishu.py      # 飞书群机器人推送（Webhook + 可选签名校验，未配置自动跳过）
+├── feishu.py      # 飞书推送：自建应用卡片（按钮可回写工单）/ webhook 文本兜底
 ├── simulator.py   # 车间工况模拟器：基线+日周期+噪声+劣化，走真实上报入口写库
 ├── test_state_machine.py  # 状态机 + 数据口径回归（15 用例）
 ├── test_closed_loop.py    # 闭环 Eval：幂等 / 经验回流 / 双触发收敛（8 用例）
@@ -26,6 +26,33 @@ mes-mcp-server/
 ├── README.md
 └── data/          # 生成的 mes.db
 ```
+
+## 飞书报警卡片：接单 / 已处理 / 确认闭环
+
+卡片上的按钮能直接把工单往下推，链路是：
+
+```
+巡检发现超限 → 建单 → 自建应用发卡片（按钮只带 wo_id + op）
+  → 群里点按钮 → PulseOps 长连接收到 card.action.trigger
+  → 调 MES API  POST /api/work_orders/{id}/{assign|done|close}
+  → 用库里最新的工单重建卡片，就地替换原消息
+```
+
+配置写在 `.env`（已 gitignore）：
+
+| 变量 | 说明 |
+| --- | --- |
+| `FEISHU_APP_ID` / `FEISHU_APP_SECRET` | 开放平台「凭证与基础信息」里的应用凭证 |
+| `FEISHU_CHAT_ID` | 目标群 chat_id（`oc_` 开头） |
+
+三件套配齐才走应用通道；缺任意一个就退回 `FEISHU_WEBHOOK_URL` 的纯文本推送——
+自定义机器人收不到卡片回调，所以那条路上不出现按钮。
+
+应用侧要求：`im:message:send_as_bot`（发消息）、已订阅卡片回调 `card.action.trigger`、
+机器人已在目标群里。
+
+状态机不会因为按钮而放宽：`open → assigned → done → closed`。重复点击撞上非法流转时，
+按钮会提示「工单状态已变化」，并把卡片刷新成库里的真实状态，而不是停在点击前那一版。
 
 ## 快速开始（无需第三方依赖即可看闭环）
 

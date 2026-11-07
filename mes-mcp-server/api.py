@@ -45,12 +45,17 @@ def _read_json(handler: BaseHTTPRequestHandler) -> dict:
         return {}
 
 
-def _close_work_order(wo_id: str) -> tuple[int, object]:
-    """看板关单：经状态机合法推进到 closed，错误返回 404/409 而非静默 200"""
+def _close_work_order(wo_id: str, operator: str | None = None) -> tuple[int, object]:
+    """看板关单：经状态机合法推进到 closed，错误返回 404/409 而非静默 200
+
+    operator 由调用方给：飞书卡片按钮点击时是真实点击人，看板兜底用「看板」。
+    """
     if db.get_work_order(wo_id) is None:
         return 404, {"error": f"工单不存在: {wo_id}"}
     try:
-        return 200, db.close_work_order(wo_id, "人工回填闭环", operator="看板")
+        return 200, db.close_work_order(
+            wo_id, "人工回填闭环", operator=operator or "看板"
+        )
     except db.WorkOrderError as e:
         return 409, {"error": str(e)}
 
@@ -236,7 +241,7 @@ def handle(
         if len(parts) == 5 and parts[4] == "done":
             return _wo_transition(wo_id, body, "done")
         if len(parts) == 5 and parts[4] == "close":
-            return _close_work_order(wo_id)
+            return _close_work_order(wo_id, (body or {}).get("operator"))
         if len(parts) == 5 and parts[4] == "logs":
             return _wo_logs(wo_id)
         if len(parts) == 4:

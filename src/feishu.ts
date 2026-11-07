@@ -12,9 +12,11 @@ import {
   answerQuestionMessage,
   CARD_ACTION_ANSWER_QUESTION,
   CARD_ACTION_INTERRUPT_STREAM,
+  CARD_ACTION_MES_WORK_ORDER,
   parseCardActionValue,
   type AnswerQuestionPayload,
 } from './feishu-card-actions.js';
+import { dispatchMesWorkOrderAction } from './mes-workorder-actions.js';
 import { FeishuDualDeliveryCoordinator } from './feishu-dual-delivery.js';
 import {
   feishuSdkDomain,
@@ -2551,6 +2553,31 @@ export function createFeishuConnection(
       return senderNames.peek(openId) || openId;
     }
     return (await senderNames.resolve(openId, groupChatId)) || openId;
+  }
+
+  /**
+   * The display name to record as the work-order operator when someone clicks
+   * a button on an alarm card. Card callbacks carry ids only, and Feishu gives
+   * a click 3s before the button shows a failure, so the contact lookup gets
+   * a hard 700ms slice and the id suffix is the fallback.
+   */
+  async function resolveCardOperatorName(
+    openId: string,
+    chatId: string | undefined,
+  ): Promise<string> {
+    if (!openId) return '飞书用户';
+    try {
+      const name = await Promise.race([
+        resolveSenderName(openId, undefined, 'user', chatId),
+        new Promise<string>((resolve) => {
+          const timer = setTimeout(() => resolve(''), 700);
+          timer.unref?.();
+        }),
+      ]);
+      return name || `飞书用户 ${openId.slice(-4)}`;
+    } catch {
+      return `飞书用户 ${openId.slice(-4)}`;
+    }
   }
 
   function withAckReactionTimeout<T>(
@@ -6114,6 +6141,28 @@ export function createFeishuConnection(
                 operatorUserId: data?.operator?.user_id,
                 operatorUnionId: data?.operator?.union_id,
               });
+            }
+            if (payload?.action === CARD_ACTION_MES_WORK_ORDER) {
+              // 报警卡片上的「接单 / 已处理 / 确认闭环」：状态机在 MES 侧，
+              // 这里只负责把点击换成一次 API 调用并把最新工单渲染回去。
+              const operatorName = await resolveCardOperatorName(
+                operatorImId,
+                cardChatId,
+              );
+              const reply = await dispatchMesWorkOrderAction(
+                payload,
+                operatorName,
+              );
+              logger.info(
+                {
+                  woId: payload.wo_id,
+                  op: payload.op,
+                  operator: operatorName,
+                  ok: reply.toast.type === 'success',
+                },
+                'Feishu work-order card action',
+              );
+              return reply;
             }
 
             // Any other button (e.g. queued-message controls on cards older
