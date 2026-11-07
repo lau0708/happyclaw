@@ -44,9 +44,7 @@ PulseOps 把这段流程做成闭环，扮演三个角色：
 
 四个页面共用一套深色工业视觉（右上角可切浅色）。以下截图全部来自**真实运行的 `mes.db`**——拍摄当晚 CNC-03 正处在振动劣化报警中（10.4 mm/s，阈值 8），每张图都是系统正在工作的样子，不是摆拍。
 
-<p align="center">
-  <img src="docs/images/01-device-monitor.png" alt="设备监控" width="880" />
-</p>
+![设备监控 · 4 台设备实时指标与 24h 振动爬坡](docs/images/01-device-monitor.png)
 
 **设备监控** —— 一眼分出 4 台设备里谁在告警：
 
@@ -55,9 +53,7 @@ PulseOps 把这段流程做成闭环，扮演三个角色：
 - 底部 24h 振动趋势是这张图的重点：CNC-03 的振动从凌晨起一路爬坡——巡检正是靠这条曲线在停机前把单开出来的
 - 右侧「最新工单」实时挂到工单中心，点了就能跳过去处置
 
-<p align="center">
-  <img src="docs/images/02-work-orders.png" alt="工单中心" width="880" />
-</p>
+![工单中心 · 状态筛选、生命周期操作与流转留痕](docs/images/02-work-orders.png)
 
 **工单中心** —— 3 张真实工单正好对应三种状态：
 
@@ -66,9 +62,7 @@ PulseOps 把这段流程做成闭环，扮演三个角色：
 - 每张单都有「日志」入口：状态机每一次流转都留痕（谁、何时、从哪个状态到哪个状态）
 - 顶部那行小字 `open → assigned → done → closed · 所有流转经状态机校验并留痕` 就是这套规则的合同
 
-<p align="center">
-  <img src="docs/images/03-knowledge.png" alt="故障知识库" width="880" />
-</p>
+![故障知识库 · 处置经验与来源工单溯源](docs/images/03-knowledge.png)
 
 **故障知识库** —— 处置经验的沉淀与检索：
 
@@ -76,9 +70,7 @@ PulseOps 把这段流程做成闭环，扮演三个角色：
 - 每条经验固定四段：症状 / 根因 / 处置 / 溯源；KPI「溯源沉淀 3 / 3」表示库里的经验全部可回溯到工单
 - 检索按症状关键词命中（搜「振动」「温度」即达），为诊断 Agent 的知识召回预留了升级位
 
-<p align="center">
-  <img src="docs/images/04-inspection.png" alt="智能巡检" width="880" />
-</p>
+![智能巡检 · 当班简报与逐设备手动巡检](docs/images/04-inspection.png)
 
 **智能巡检** —— 整个闭环的「驾驶舱」：
 
