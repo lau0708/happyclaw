@@ -308,15 +308,24 @@ class Handler(BaseHTTPRequestHandler):
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=PORT)
+    parser.add_argument(
+        "--strict-port",
+        action="store_true",
+        help="端口被占用时直接报错退出，不自动顺延（守护/探活场景必须用这个）",
+    )
     args = parser.parse_args()
-    # 若 --port 被占用（如 Docker），自动顺延到空闲端口
-    port = find_free_port(args.port)
+    # 默认顺延可规避 Docker 等占用冲突；但守护进程按固定端口探活，
+    # 静默漂到 8003 会让探针永远失败、前端 vite proxy 也一起失联。
+    port = args.port if args.strict_port else find_free_port(args.port)
     server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     actual = server.server_address[1]
-    print(f"✔ HTTP API 已启动: http://localhost:{actual}/api/health")
-    print(f"  前端 vite proxy 请指向该端口：MES_API_PORT={actual} npm run dev")
+    print(f"✔ HTTP API 已启动: http://localhost:{actual}/api/health", flush=True)
+    print(
+        f"  前端 vite proxy 请指向该端口：MES_API_PORT={actual} npm run dev",
+        flush=True,
+    )
     auth_mode = "X-API-Key" if os.environ.get("INGEST_API_KEY") else "仅本机(未配置 INGEST_API_KEY)"
-    print(f"  采集上报: POST /api/metric（鉴权: {auth_mode}）")
+    print(f"  采集上报: POST /api/metric（鉴权: {auth_mode}）", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

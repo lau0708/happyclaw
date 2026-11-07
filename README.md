@@ -316,11 +316,31 @@ make dev
 - Web 前端：<http://localhost:5173>
 - API / WebSocket：<http://localhost:3000>
 
+### 进程守护（推荐用于演示与长期挂机）
+
+```bash
+make up      # 守护启动：后端 3000 / 前端 5173 / MES API 8002 / 工况模拟器
+make status  # 四项服务的健康状态 + 日志尾部
+make down    # 优雅停止守护进程与其托管的所有服务
+make logs    # 实时汇总全部服务日志
+```
+
+`make up` 由 `scripts/supervise.mjs` 托管（零依赖）：
+
+- 子进程退出按指数退避重启（1s → 2s → … → 60s，稳定运行 60s 后归零）
+- 对带端口的服务每 5s 探活，连续 3 次失败判定僵死并强制重启
+- 收到 `Ctrl-C` / `SIGTERM` 时按进程组整体收尾，不留孤儿进程
+- 日志写入 `logs/<服务名>.log`，同时带时间戳打到终端
+- 模拟器会等 MES API 探活通过再启动，避免开机时刷一串 502
+
+只想跑前后端可用 `make up-core`，只跑部分服务用 `node scripts/supervise.mjs backend web`。
+
 ### 常用运行命令
 
 | 命令                                            | 说明                                                  |
 | ----------------------------------------------- | ----------------------------------------------------- |
 | `make start`                                    | 构建必要产物并以前台生产模式启动                      |
+| `make up` / `make down`                         | 守护启动 / 优雅停止全部服务（含 MES API 与模拟器）    |
 | `WEB_PORT=8080 make start`                      | 使用自定义端口启动                                    |
 | `make status`                                   | 查看端口、健康状态、日志文件和 Docker 容器            |
 | `make stop`                                     | 停止当前端口上的 PulseOps 服务                       |

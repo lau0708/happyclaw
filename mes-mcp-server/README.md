@@ -98,7 +98,11 @@ make mes-sim ARGS="--interval 30"                  # Makefile 入口
 ```bash
 python3 api.py --port 8002
 # 若 8002 被 Docker 等占用，会自动顺延（如 8003）并打印实际端口
+
+python3 api.py --port 8002 --strict-port
+# 守护进程/按固定端口探活的场景用这个：端口冲突直接报错退出，不顺延
 ```
+`make up` 托管的服务用 `--strict-port`——静默漂到 8003 会让前端 proxy 与健康探针一起失联。
 前端看板（`MES_API_PORT` 需与后端实际端口一致）：
 ```bash
 cd web

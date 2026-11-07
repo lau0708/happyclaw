@@ -2,6 +2,7 @@
        typecheck typecheck-backend typecheck-web typecheck-agent-runner \
        format format-check install install-host-tools clean reset-init update-sdk ensure-latest-sdk sync-types \
        backup restore help _ensure-docker-image docker-pull logs status stop \
+       up up-core down \
        _check-sync _ensure-builtin-skills _build-web-if-stale _build-ar-if-stale _build-backend-if-stale
 
 # ─── Runtime ────────────────────────────────────────────────
@@ -122,32 +123,71 @@ _build-backend-if-stale: ## (内部) 后端变更时重新编译（Node 模式�
 	fi; \
 	if [ "$$NEED_BACKEND" = "1" ]; then echo "🔨 检测到后端源码变更，重新编译后端..."; $(PKG) run build; else echo "✅ 后端无变更，跳过编译"; fi
 
-logs: ## 实时查看日志（需配合手动后台运行：make start > /tmp/pulseops.log 2>&1 &）
-	@tail -f /tmp/pulseops.log
+logs: ## 实时查看全部服务日志（make up 启动后写入 logs/）
+	@mkdir -p logs && touch logs/backend.log logs/web.log logs/mes-api.log logs/mes-sim.log && \
+	tail -f -n 20 logs/backend.log logs/web.log logs/mes-api.log logs/mes-sim.log
 
 stop: ## 停止监听指定端口的服务进程
 	@lsof -ti:$(PORT) -sTCP:LISTEN 2>/dev/null | xargs kill 2>/dev/null && echo "✅ 已停止 PulseOps (端口 $(PORT))" || echo "⚠️  端口 $(PORT) 未被占用，无需停止"
 
-status: ## 查看服务运行状态
+status: ## 查看全部服务运行状态（后端/前端/MES API/模拟器/守护进程）
 	@echo "=== PulseOps 服务状态 ==="
-	@if lsof -ti:$(PORT) -sTCP:LISTEN >/dev/null 2>&1; then \
-	  echo "✅ 后端进程: 运行中 (端口 $(PORT))"; \
-	  curl -s http://localhost:$(PORT)/api/health 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(f\"   健康状态: {d.get('status','unknown')}\")" 2>/dev/null || echo "   健康状态: 无法获取"; \
+	@if [ -f logs/supervise.pid ] && kill -0 "$$(cat logs/supervise.pid)" 2>/dev/null; then \
+	  echo "  🛡 守护进程    运行中 (pid $$(cat logs/supervise.pid))"; \
 	else \
-	  echo "❌ 后端进程: 未运行 (端口 $(PORT) 未占用)"; \
+	  echo "  ⚠️  守护进程    未运行（挂了不会自动拉起）"; \
+	fi
+	@check() { \
+	  NAME=$$1; PORTNO=$$2; PATHPART=$$3; \
+	  CODE=$$(curl -s -o /dev/null -w '%{http_code}' --noproxy '*' --max-time 2 "http://127.0.0.1:$$PORTNO$$PATHPART" 2>/dev/null); \
+	  if [ "$$CODE" = "200" ] || [ "$$CODE" = "304" ]; then \
+	    printf "  ✅ %-12s 端口 %-5s HTTP %s\n" "$$NAME" "$$PORTNO" "$$CODE"; \
+	  else \
+	    printf "  ❌ %-12s 端口 %-5s 无响应\n" "$$NAME" "$$PORTNO"; \
+	  fi; \
+	}; \
+	check 后端 $(PORT) /api/health; \
+	check 前端 5173 /; \
+	check "MES API" 8002 /api/equipment
+	@if pgrep -f "simulator.py" >/dev/null 2>&1; then \
+	  echo "  ✅ 工况模拟器  运行中（pgrep 命中 $$(pgrep -f 'simulator.py' | tr '\n' ' '))"; \
+	else \
+	  echo "  ❌ 工况模拟器  未运行"; \
 	fi
 	@echo ""
-	@echo "=== 日志文件 ==="
-	@if [ -f /tmp/pulseops.log ]; then \
-	  echo "✅ /tmp/pulseops.log 存在 ($$(wc -l < /tmp/pulseops.log) 行)"; \
-	  echo "   最近 3 行:"; \
-	  tail -3 /tmp/pulseops.log | sed 's/^/   /'; \
+	@echo "=== 日志 ==="
+	@if [ -d logs ]; then \
+	  for f in logs/backend.log logs/web.log logs/mes-api.log logs/mes-sim.log logs/supervise.log; do \
+	    [ -f "$$f" ] || continue; \
+	    echo "  $$f ($$(wc -l < "$$f" | tr -d ' ') 行)："; \
+	    tail -2 "$$f" | sed 's/^/     /'; \
+	  done; \
 	else \
-	  echo "⚠️  /tmp/pulseops.log 不存在（未用后台模式启动）"; \
+	  echo "  ⚠️  logs/ 不存在（未用 make up 启动）"; \
 	fi
 	@echo ""
 	@echo "=== Docker 容器 ==="
 	@docker ps --filter "name=happyclaw" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null || echo "   Docker 未运行或无 PulseOps 容器"
+
+# ─── Supervision ─────────────────────────────────────────────
+
+up: ## 守护启动全部服务（后端/前端/MES API/模拟器；前台运行，Ctrl-C 全停）
+	@node scripts/supervise.mjs
+
+up-core: ## 只守护后端与前端
+	@node scripts/supervise.mjs backend web
+
+down: ## 停止守护进程及其托管的全部服务
+	@if [ -f logs/supervise.pid ]; then \
+	  PID=$$(cat logs/supervise.pid); \
+	  if kill -0 "$$PID" 2>/dev/null; then \
+	    kill -TERM "$$PID" && echo "✅ 已通知守护进程 ($$PID) 停止，正在收尾..."; \
+	  else \
+	    echo "⚠️  守护进程未运行，清理残留 pid 文件"; rm -f logs/supervise.pid; \
+	  fi; \
+	else \
+	  echo "⚠️  未发现 logs/supervise.pid（是否用 make up 启动？）"; \
+	fi
 
 # ─── MES 采集与巡检 ──────────────────────────────────────────
 
