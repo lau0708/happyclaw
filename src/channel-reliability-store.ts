@@ -1161,6 +1161,34 @@ export function getChannelTurnRun(id: string): ChannelTurnRun | undefined {
 }
 
 /**
+ * Most recent failure text recorded for a channel source, used to explain a
+ * terminal retry-exhaustion notice. Turn errors are already persisted, and the
+ * notice otherwise only says "处理失败", which tells an operator nothing.
+ *
+ * Best-effort by design: the notice must still be delivered when the store is
+ * unavailable during shutdown or startup recovery.
+ */
+export function getLatestTurnFailureReason(
+  sourceJid: string,
+): string | undefined {
+  if (!sourceJid) return undefined;
+  try {
+    const row = requireDatabase()
+      .prepare(
+        `SELECT error FROM turn_runs
+         WHERE source_jid = ? AND error IS NOT NULL AND TRIM(error) <> ''
+         ORDER BY created_at DESC
+         LIMIT 1`,
+      )
+      .get(sourceJid) as { error: string } | undefined;
+    const trimmed = row?.error?.trim();
+    return trimmed ? trimmed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Link a Turn to the Inbox row of its external input so retention keeps the
  * dedupe receipt while the Turn exists. One Inbox row can back at most one
  * Turn (unique index); later Turns of the same input (system notices, other

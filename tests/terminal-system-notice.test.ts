@@ -10,6 +10,7 @@ import {
 } from '../src/channel-address.js';
 import { resolveInputChannelReplySource } from '../src/channel-reply-source.js';
 import { channelTurnScope } from '../src/channel-turn-registry.js';
+import { composeFailureNotice } from '../src/failure-summary.js';
 import { getChannelType } from '../src/im-channel.js';
 import {
   shouldSkipRetryAfterLateError,
@@ -117,6 +118,8 @@ function createNoticeRuntime(imSend: (...args: unknown[]) => Promise<void>) {
     rememberChannelOutboxFailure: () => ({}),
     hasDeliveredChannelImageWithContentHash:
       reliability.hasDeliveredChannelImageWithContentHash,
+    composeFailureNotice,
+    getLatestTurnFailureReason: reliability.getLatestTurnFailureReason,
   };
   const harness = createRuntimeSourceHarness(globals);
   for (const name of [

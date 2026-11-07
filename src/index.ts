@@ -331,11 +331,13 @@ import {
   getChannelOutboxItem,
   markFeishuCapacityReplacementDelivered,
   getChannelTurnRun,
+  getLatestTurnFailureReason,
   getUncertainChannelOutboxForTurn,
   CHANNEL_RELIABILITY_TERMINAL_STATUSES,
   type ChannelOutboxItem,
 } from './channel-reliability-store.js';
 import { prepareWeChatTextChunks } from './wechat-outbound.js';
+import { composeFailureNotice } from './failure-summary.js';
 import { deliverFeishuScopedText } from './feishu-scoped-text-delivery.js';
 import { ChannelTurnRuntime } from './channel-turn-runtime.js';
 import {
@@ -18997,6 +18999,13 @@ async function main(): Promise<void> {
             lastMessage?.source_jid || lastMessage?.chat_jid,
           );
           const inputTurnId = snapshot.cursor.id;
+          // The notice is the only surface the channel user sees, so it has to
+          // carry the cause: `turn_runs.error` is otherwise readable only from
+          // the server log, and "处理失败" alone gives nobody anything to act on.
+          const noticeText = composeFailureNotice(
+            error,
+            targetJid ? getLatestTurnFailureReason(targetJid) : undefined,
+          );
           notifyChannel = () =>
             deliverTerminalFailureNotice({
               logicalChatJid: laneJid,
@@ -19006,7 +19015,7 @@ async function main(): Promise<void> {
               // The same batch can exhaust its retries again after the next
               // message; each exhaustion is a new notice, not a replay.
               noticeKey: `agent-max-retries:${crypto.randomUUID()}`,
-              text: error,
+              text: noticeText,
               agentId,
               presentation:
                 targetJid &&

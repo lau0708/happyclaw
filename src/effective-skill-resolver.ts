@@ -2,6 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { logger } from './logger.js';
 import { scanSkillDirectory } from './skill-utils.js';
 
 export type EffectiveSkillSource =
@@ -424,6 +425,44 @@ export interface SkillReconcileResult {
   quarantined: string[];
 }
 
+/** Staging/previous directories older than this are leftovers, not in-flight. */
+const STALE_SKILL_DIR_MS = 10 * 60 * 1000;
+
+/**
+ * Best-effort removal of `.skills-previous-*` / `.skills-staging-*` directories
+ * left behind by earlier turns. A refused delete only warns: the caller's turn
+ * has nothing to gain from failing over a stale directory.
+ */
+function sweepStaleSkillDirs(sessionClaudeDir: string): void {
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(sessionClaudeDir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  const cutoff = Date.now() - STALE_SKILL_DIR_MS;
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    if (
+      !entry.name.startsWith('.skills-previous-') &&
+      !entry.name.startsWith('.skills-staging-')
+    ) {
+      continue;
+    }
+    const dir = path.join(sessionClaudeDir, entry.name);
+    try {
+      if (fs.statSync(dir).mtimeMs > cutoff) continue;
+      fs.rmSync(dir, { recursive: true, force: true });
+      logger.info({ dir }, 'Removed stale Skill staging directory');
+    } catch (error) {
+      logger.warn(
+        { err: error, dir },
+        'Stale Skill staging directory could not be removed',
+      );
+    }
+  }
+}
+
 /**
  * Rebuild the session Skill directory from a manifest. Real files/directories
  * left by a prior Agent are moved aside instead of deleted. Container mode
@@ -436,6 +475,7 @@ export function reconcileSessionSkills(
   options: { materializeLinks: boolean },
 ): SkillReconcileResult {
   fs.mkdirSync(sessionClaudeDir, { recursive: true });
+  sweepStaleSkillDirs(sessionClaudeDir);
   const skillsDir = path.join(sessionClaudeDir, 'skills');
   const quarantineRoot = path.join(sessionClaudeDir, 'orphaned-skills');
   const quarantined: string[] = [];
@@ -476,13 +516,31 @@ export function reconcileSessionSkills(
     }
     if (fs.existsSync(skillsDir)) fs.renameSync(skillsDir, previous);
     fs.renameSync(staging, skillsDir);
-    fs.rmSync(previous, { recursive: true, force: true });
   } catch (error) {
-    fs.rmSync(staging, { recursive: true, force: true });
+    try {
+      fs.rmSync(staging, { recursive: true, force: true });
+    } catch {
+      // Staging cleanup is best-effort; the original error is what matters.
+    }
     if (!fs.existsSync(skillsDir) && fs.existsSync(previous)) {
       fs.renameSync(previous, skillsDir);
     }
     throw error;
+  }
+
+  // Retiring the replaced directory is housekeeping, not part of the swap: the
+  // session already has a correct `skills/` tree at this point. Hosts may guard
+  // recursive deletes (for example a bulk-delete confirmation prompt) and
+  // refuse to remove a large directory. Failing the turn over that would leave
+  // the session permanently broken, because every later turn retries the same
+  // delete, so a refusal degrades to a warning plus a later sweep.
+  try {
+    fs.rmSync(previous, { recursive: true, force: true });
+  } catch (error) {
+    logger.warn(
+      { err: error, dir: previous },
+      'Retired Skill directory was not removed; leaving it for the next sweep',
+    );
   }
 
   return { quarantineDir, quarantined };
