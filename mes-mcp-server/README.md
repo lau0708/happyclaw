@@ -19,11 +19,10 @@ mes-mcp-server/
 ├── feishu.py      # 飞书推送：自建应用卡片（按钮可回写工单）/ webhook 文本兜底
 ├── simulator.py   # 车间工况模拟器：基线+日周期+噪声+劣化，走真实上报入口写库
 ├── test_state_machine.py  # 状态机 + 数据口径回归（15 用例）
-├── test_closed_loop.py    # 闭环 Eval：幂等 / 经验回流 / 双触发收敛（8 用例）
+├── test_closed_loop.py    # 闭环 Eval：建单幂等 / 经验回流 / 双触发收敛（13 用例）
 ├── test_agent_nodes.py    # LLM 节点单测（假传输层，不联网不耗 token）
 ├── test_ingest.py         # 采集入库 + 模拟器（29 用例，用临时库不污染演示数据）
 ├── test_shift_report.py   # 班次简报：班次口径 / 统计口径 / 历史还原 / 推送降级（18 用例）
-├── web/           # Vue3 + TS 工单看板（Vite）
 ├── requirements.txt
 ├── README.md
 └── data/          # 生成的 mes.db
@@ -79,6 +78,20 @@ python3 scheduler.py --interval 30     # 每 30 秒巡检，异常自动诊断+�
 python3 scheduler.py --devices CNC-03,INJ-01   # 指定设备
 ```
 对同一设备未闭环工单做幂等去重，避免重复建单。真实 PulseOps 中由 Cron 定时任务 + 巡检 Agent 等价实现。
+
+### 建单幂等只有一处定义
+
+「未闭环」= `open` / `assigned` / `done`（`done` 是处置完了没人签字，事情还挂着）。
+这条定义写在 `db.find_open_work_order()` 里，两个地方用它：
+
+- **巡检入口**先查一次，命中就跳过，**省掉一次 LLM 诊断调用**——模型不该为幂等买单；
+- **`db.create_work_order()`** 再兜一次，命中时返回已有工单并带 `deduplicated: true`。
+  之所以要兜，是因为建单入口有三个（巡检 / MCP 工具 / 看板），任何一个入口都不该绕过去。
+
+库里还有一道兜底：`ux_work_order_open` 是**部分唯一索引**
+（`ON work_order(equipment_id) WHERE status IN ('open','assigned','done')`）。
+代码里的检查只能挡住顺序调用，巡检进程和 API 进程并发时两边都可能查到「没有未闭环单」，
+索引把约束真正落到库里，绕过函数直插也会被拒。
 
 ## 班次巡检简报（每班 08:00 / 20:00 推群）
 
@@ -161,7 +174,10 @@ make mes-sim ARGS="--interval 30"                  # Makefile 入口
 **③ 接入真实车间**：把网关/既有 MES 的数据对接到 ① 的上报端点即可，上层零改动；
 若厂里已有 MES 数据库，也可直接改 `db.py` 的 `query_*` 查对方视图。
 
-## 工单看板（Vue3 + TS）
+## 工单看板
+
+看板不在这个目录里——它是仓库根目录的 `web/`（React 19 + Vite），四个业务页面
+（设备监控 / 工单中心 / 故障知识库 / 智能巡检）都通过 Vite 代理 `/mes-api` 打到这里。
 
 后端 HTTP API（端口 8002，被占用时自动顺延到空闲端口）：
 ```bash
@@ -172,14 +188,14 @@ python3 api.py --port 8002 --strict-port
 # 守护进程/按固定端口探活的场景用这个：端口冲突直接报错退出，不顺延
 ```
 `make up` 托管的服务用 `--strict-port`——静默漂到 8003 会让前端 proxy 与健康探针一起失联。
-前端看板（`MES_API_PORT` 需与后端实际端口一致）：
+
 ```bash
-cd web
-npm install
-MES_API_PORT=8003 npm run dev   # http://localhost:5173，/api 代理到 8003
-npm run build      # 生产构建
+make up            # 后端 / 前端 / MES API / 模拟器 / 班次简报 一起起
+make status        # 五项健康状态
 ```
-看板含设备概览（超限警示/未闭环工单数）、工单列表（状态筛选 + 闭环操作）、故障处置经验面板（知识回流）。
+
+看板含设备概览（超限警示 / 未闭环工单数）、工单列表（状态筛选 + 闭环操作）、
+故障知识库（经验回流与溯源）、智能巡检（逐设备巡检 + 班次简报）。
 
 `demo.py` 用标准库模拟三个 Agent（数据 / 诊断 / 工单）的调用链，展示：
 - ① 报警触发 → ② 数据Agent 拉设备上下文 → ③ 诊断Agent 命中知识
@@ -287,11 +303,17 @@ LLM  模式: 根因=主轴轴承磨损复发，导致振动值12.7 mm/s超过8.0
 make mes-test    # 或逐个运行：
 python3 init_db.py
 python3 test_state_machine.py   # 状态机 9 + 数据契约 6
-python3 test_closed_loop.py     # 幂等 / 经验回流 / 双触发收敛
+python3 test_closed_loop.py     # 建单幂等 / 经验回流 / 双触发收敛（13 用例）
 python3 test_agent_nodes.py     # LLM 节点（假传输层，不联网）
 python3 test_ingest.py          # 采集入库 + 模拟器（29 用例，临时库不污染演示数据）
 python3 test_sediment.py        # 关单自动沉淀经验（12 用例，临时库）
+python3 test_shift_report.py    # 班次简报（18 用例，临时库）
+python3 test_feishu.py          # 卡片结构 / 推送降级（17 用例）
 ```
+
+全量 **112 项**。用例会真的走建单链路，所以 `MES_DISABLE_PUSH=1` 由用例自己设置
+（`NoPushCase.setUp`）——开发机的 `.env` 里通常配着真实飞书凭证，不拦住就会把
+测试工单推到维修群里，群里的人会以为产线半夜出事。
 
 ## 关单自动沉淀经验（经验回流）
 

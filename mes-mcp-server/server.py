@@ -71,7 +71,12 @@ def search_knowledge(symptom_keyword: str, limit: int = 5) -> list[dict]:
 # ----------------------------- 工单Agent 工具 ----------------------------- #
 @mcp.tool()
 def create_work_order(equipment_id: str, fault_desc: str, severity: str = "medium") -> dict:
-    """创建设备异常工单，返回工单号。severity: low|medium|high|critical"""
+    """创建设备异常工单，返回工单号。severity: low|medium|high|critical
+
+    幂等：该设备已有未闭环工单（open/assigned/done）时不新开，直接返回那张单并带
+    `deduplicated: true`。调用方据这个字段判断「这次是真建了单，还是撞上了旧单」，
+    别再重复推送报警卡片。
+    """
     return db.create_work_order(equipment_id, fault_desc, severity)
 
 

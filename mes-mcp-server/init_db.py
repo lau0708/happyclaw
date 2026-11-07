@@ -61,6 +61,10 @@ CREATE TABLE IF NOT EXISTS work_order_log (
   ts        TEXT DEFAULT (datetime('now'))
 );
 
+-- 一台设备最多一张未闭环单：绕过 db.create_work_order 直插也插不进来
+CREATE UNIQUE INDEX IF NOT EXISTS ux_work_order_open
+  ON work_order(equipment_id) WHERE status IN ('open','assigned','done');
+
 CREATE TABLE IF NOT EXISTS knowledge (
   id            TEXT PRIMARY KEY,
   fault_code    TEXT,

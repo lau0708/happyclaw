@@ -71,14 +71,50 @@ class EquipmentNotFound(MetricError):
     """上报的 equipment_id 不在设备台账中（编码映射没对齐）"""
 
 
+_INDEX_READY = False
+_INDEX_WARNED = False
+
+# 数据库级不变式：一台设备最多一张未闭环单。
+# 代码里的 find_open_work_order 只能挡住顺序调用；巡检进程与 API 进程并发时，
+# 两边都可能查到「没有未闭环单」再各建一张，所以把约束落到库里。
+OPEN_ORDER_INDEX = (
+    "CREATE UNIQUE INDEX IF NOT EXISTS ux_work_order_open "
+    "ON work_order(equipment_id) WHERE status IN ('open','assigned','done')"
+)
+
+
+def _ensure_open_order_index(conn: sqlite3.Connection) -> bool:
+    """建库后补一次部分唯一索引（老库打开时也会走到这里）；建不了就喊一声"""
+    global _INDEX_WARNED
+    exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='work_order'"
+    ).fetchone()
+    if not exists:  # 还没 init_db，下次再说
+        return False
+    try:
+        conn.execute(OPEN_ORDER_INDEX)
+        conn.commit()
+        return True
+    except sqlite3.Error as e:
+        # 历史库里已经躺着重复的未闭环单时，索引建不起来 —— 不阻断启动，
+        # 但要把话说清楚：这库里有脏数据，去重逻辑仍然生效，只是没有库级兜底了。
+        if not _INDEX_WARNED:
+            print(f"⚠ 未闭环工单唯一索引创建失败（库中已有重复未闭环单？）: {e}")
+            _INDEX_WARNED = True
+        return False
+
+
 def get_db() -> sqlite3.Connection:
     """获取数据库连接（每行自动按列名返回 dict）"""
+    global _INDEX_READY
     try:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
     except FileExistsError:  # 部分环境的 mkdir 代理在目录已存在时仍抛出，忽略即可
         pass
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
+    if not _INDEX_READY:
+        _INDEX_READY = _ensure_open_order_index(conn)
     return conn
 
 
@@ -151,18 +187,51 @@ def search_knowledge(symptom_keyword: str, limit: int = 5) -> list[dict]:
 # --------------------------------------------------------------------------- #
 # 写操作工具（供 工单Agent / 诊断Agent 调用）
 # --------------------------------------------------------------------------- #
+def find_open_work_order(equipment_id: str) -> dict | None:
+    """该设备当前未闭环的工单（open / assigned / done），没有则 None
+
+    「未闭环」的定义只写在这里：巡检跳过、建单幂等、班次简报统计都认这三个状态。
+    `done` 也算未闭环 —— 处置完了但还没签字，事情仍然挂着。
+    """
+    with get_db() as conn:
+        row = conn.execute(
+            "SELECT * FROM work_order WHERE equipment_id = ? "
+            "AND status IN ('open','assigned','done') "
+            "ORDER BY created_at DESC, rowid DESC LIMIT 1",
+            (equipment_id,),
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def create_work_order(
     equipment_id: str, fault_desc: str, severity: str = "medium"
 ) -> dict:
-    """创建设备异常工单，返回工单号"""
+    """创建设备异常工单，返回工单号
+
+    幂等：该设备已有未闭环工单时不再新开，直接返回那张单并标 `deduplicated=True`。
+    检查放在这一层而不是巡检脚本里，是因为建单入口有三个（巡检 / MCP 工具 / 看板），
+    任何一个入口都不该绕过去 —— 巡检每轮都跑，同一台劣化中的设备会连续越限，
+    重复建单只会把维修班刷屏、把工单表搞脏。
+    """
+    dup = find_open_work_order(equipment_id)
+    if dup:
+        return {**dup, "deduplicated": True}
+
     wo_id = _new_id("WO")
+    ts = now()
     with get_db() as conn:
         conn.execute(
             "INSERT INTO work_order(wo_id, equipment_id, fault_desc, severity, "
             "status, created_at, updated_at) VALUES (?,?,?,?,?,?,?)",
-            (wo_id, equipment_id, fault_desc, severity, "open", now(), now()),
+            (wo_id, equipment_id, fault_desc, severity, "open", ts, ts),
         )
-    return {"wo_id": wo_id, "status": "open", "created_at": now()}
+    return {
+        "wo_id": wo_id,
+        "equipment_id": equipment_id,
+        "status": "open",
+        "created_at": ts,
+        "deduplicated": False,
+    }
 
 
 def update_work_order(

@@ -247,6 +247,21 @@ def card_as_text(
     )
 
 
+def push_disabled() -> bool:
+    """`MES_DISABLE_PUSH=1` 时不真的发消息
+
+    给测试和离线演示用：闭环用例会真的走一遍建单，若不拦住，`make mes-test`
+    每跑一次就往维修群里推几张测试工单，群里的人会以为产线半夜出事。
+    每次调用现读环境变量（模块导入之后再设置也生效）。
+    """
+    return os.environ.get("MES_DISABLE_PUSH", "").strip().lower() not in (
+        "",
+        "0",
+        "false",
+        "no",
+    )
+
+
 def send_work_order_card(
     wo_id: str,
     equipment: str,
@@ -259,6 +274,8 @@ def send_work_order_card(
     assignee: str | None = None,
 ) -> tuple[bool, str]:
     """推送工单报警卡片：优先自建应用（按钮可回写），否则退回 webhook 文本。"""
+    if push_disabled():
+        return False, "推送已禁用（MES_DISABLE_PUSH=1）"
     if app_bot_enabled():
         return send_card_via_app(
             build_work_order_card(

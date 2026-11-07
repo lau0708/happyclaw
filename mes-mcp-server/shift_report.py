@@ -404,6 +404,8 @@ def send_shift_report(
     report = collect(at, ended)
     if dry_run:
         return True, "dry-run 未推送", report
+    if feishu.push_disabled():
+        return False, "推送已禁用（MES_DISABLE_PUSH=1）", report
     try:
         if feishu.app_bot_enabled():
             ok, note = feishu.send_card_via_app(build_shift_card(report))

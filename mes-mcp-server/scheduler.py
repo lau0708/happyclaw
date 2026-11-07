@@ -22,17 +22,6 @@ import db
 import feishu
 
 
-def has_open_work_order(equipment_id: str) -> bool:
-    """幂等：该设备若已有未闭环工单，则本次跳过，避免重复建单"""
-    with db.get_db() as conn:
-        row = conn.execute(
-            "SELECT wo_id FROM work_order WHERE equipment_id = ? "
-            "AND status NOT IN ('done','closed') LIMIT 1",
-            (equipment_id,),
-        ).fetchone()
-    return row is not None
-
-
 def inspect_device(equipment_id: str) -> None:
     """巡检单个设备：取最新指标，超阈值则诊断并建单"""
     res = db.check_latest_metric(equipment_id)
@@ -49,8 +38,13 @@ def inspect_device(equipment_id: str) -> None:
     # 超阈值 → Agent 处理
     print(f"[{db.now()}] ⚠ {equipment_id}: 超限项={list(over.keys())} "
           f"振动={m['vibration']} 温度={m['temp']}")
-    if has_open_work_order(equipment_id):
-        print(f"    ↳ 已有未闭环工单，幂等跳过（避免重复建单）")
+    # 幂等：该设备已有未闭环单就只更新指标、不重复建单。
+    # 兜底在 db.create_work_order() 里（MCP / 看板也走那道门），
+    # 这里提前拦一次是为了省掉一次诊断调用——模型调用不该为幂等买单。
+    existing = db.find_open_work_order(equipment_id)
+    if existing:
+        print(f"    ↳ 已有未闭环工单 {existing['wo_id']}"
+              f"（{existing['status']}），幂等跳过（避免重复建单）")
         return
 
     # 诊断节点：LLM 可用时走模型（事实包喂入，数字可对账），

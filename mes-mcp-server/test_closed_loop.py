@@ -11,6 +11,8 @@
 """
 from __future__ import annotations
 
+import os
+import sqlite3
 import sys
 import unittest
 from pathlib import Path
@@ -26,11 +28,23 @@ def _count_orders(equipment_id: str) -> int:
     return len(db.query_work_orders(equipment_id=equipment_id))
 
 
-class IdempotencyTests(unittest.TestCase):
-    """巡检幂等：重复报警不产生重复工单"""
+class NoPushCase(unittest.TestCase):
+    """会真的走一遍建单链路的用例：不能把测试工单推到维修群里
+
+    关掉推送这件事必须在用例里显式做，而不是靠「碰巧没配凭证」——
+    开发机上 .env 通常配着真凭证，漏一次就往群里发几张假工单。
+    """
 
     def setUp(self) -> None:
+        os.environ["MES_DISABLE_PUSH"] = "1"
         init_db.main()
+
+    def tearDown(self) -> None:
+        os.environ.pop("MES_DISABLE_PUSH", None)
+
+
+class IdempotencyTests(NoPushCase):
+    """巡检幂等：重复报警不产生重复工单"""
 
     def test_repeated_alarm_creates_single_order(self) -> None:
         before = _count_orders("CNC-03")
@@ -93,11 +107,8 @@ class KnowledgeLoopTests(unittest.TestCase):
         self.assertTrue(any(h["id"] == "KN-001" for h in hits))
 
 
-class ConvergenceTests(unittest.TestCase):
+class ConvergenceTests(NoPushCase):
     """双触发收敛：主动查询与被动巡检进入同一闭环且幂等"""
-
-    def setUp(self) -> None:
-        init_db.main()
 
     def test_scheduler_then_manual_creates_no_duplicate(self) -> None:
         # 路径一：定时巡检自动建单
@@ -114,6 +125,56 @@ class ConvergenceTests(unittest.TestCase):
         self.assertIn("vibration", status["CNC-03"]["over_threshold"])
         self.assertEqual(status["CNC-01"]["open_work_orders"], 0)
         self.assertEqual(status["CNC-01"]["over_threshold"], [])
+
+
+class CreateOrderIdempotencyTests(NoPushCase):
+    """建单幂等下沉到 db 层：不管从哪个入口调，都开不出第二张未闭环单"""
+
+    def test_second_create_returns_same_order(self) -> None:
+        first = db.create_work_order("CNC-03", "振动超限", severity="high")
+        second = db.create_work_order("CNC-03", "振动仍超限（下一轮巡检）")
+        self.assertFalse(first["deduplicated"])
+        self.assertTrue(second["deduplicated"])
+        self.assertEqual(second["wo_id"], first["wo_id"])
+        self.assertEqual(_count_orders("CNC-03"), 1)
+
+    def test_done_blocks_new_order(self) -> None:
+        """done 也是未闭环：处置完了但没人签字，不该再开一张"""
+        wo = db.create_work_order("CNC-03", "振动超限")
+        db.update_work_order(wo["wo_id"], status="done", resolution="更换轴承", operator="张工")
+        again = db.create_work_order("CNC-03", "振动又超了")
+        self.assertTrue(again["deduplicated"])
+        self.assertEqual(again["status"], "done")
+        self.assertEqual(_count_orders("CNC-03"), 1)
+
+    def test_closed_releases_the_slot(self) -> None:
+        wo = db.create_work_order("CNC-03", "振动超限")
+        db.close_work_order(wo["wo_id"], "已更换轴承", operator="张工")
+        nxt = db.create_work_order("CNC-03", "振动再次超限")
+        self.assertFalse(nxt["deduplicated"])
+        self.assertNotEqual(nxt["wo_id"], wo["wo_id"])
+        self.assertEqual(_count_orders("CNC-03"), 2)
+
+    def test_other_equipment_not_affected(self) -> None:
+        a = db.create_work_order("CNC-03", "振动超限")
+        b = db.create_work_order("INJ-01", "温度超限")
+        self.assertFalse(b["deduplicated"])
+        self.assertNotEqual(a["wo_id"], b["wo_id"])
+
+    def test_index_rejects_manual_insert(self) -> None:
+        """绕过 create_work_order 直插第二张未闭环单，数据库自己会拒"""
+        db.create_work_order("CNC-03", "振动超限")
+        with self.assertRaises(sqlite3.IntegrityError):
+            conn = db.get_db()
+            try:
+                conn.execute(
+                    "INSERT INTO work_order(wo_id, equipment_id, fault_desc, status, "
+                    "created_at, updated_at) VALUES ('WO-DUP','CNC-03','绕过建单函数',"
+                    "'open',datetime('now'),datetime('now'))"
+                )
+                conn.commit()
+            finally:
+                conn.close()
 
 
 if __name__ == "__main__":
